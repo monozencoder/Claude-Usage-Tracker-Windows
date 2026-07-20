@@ -22,6 +22,8 @@ public partial class FlyoutViewModel : ObservableObject
     [ObservableProperty]
     private string _lastUpdatedText = "Never refreshed";
 
+    private DateTimeOffset? _lastUpdatedAt;
+
     /// <summary>When true, the flyout stays open instead of auto-hiding when it loses focus.</summary>
     [ObservableProperty]
     private bool _isPinned;
@@ -57,6 +59,25 @@ public partial class FlyoutViewModel : ObservableObject
         Rows.Add(UsageRowViewModel.For("Session (5h)", usage.EffectiveSessionPercentage(now), usage.SessionResetTime));
         Rows.Add(UsageRowViewModel.For("Weekly (7d)", usage.WeeklyPercentage, usage.WeeklyResetTime));
 
-        LastUpdatedText = $"Updated {usage.LastUpdated:HH:mm:ss}";
+        _lastUpdatedAt = usage.LastUpdated;
+        RefreshLastUpdatedText(now);
+    }
+
+    /// <summary>Recomputes the "Updated HH:mm:ss (Ns ago)" text. Called once per second
+    /// while the flyout is visible so the elapsed-time portion counts up live.</summary>
+    public void RefreshLastUpdatedText(DateTimeOffset now)
+    {
+        if (_lastUpdatedAt is not { } updatedAt)
+            return;
+
+        var elapsed = now - updatedAt;
+        if (elapsed < TimeSpan.Zero)
+            elapsed = TimeSpan.Zero;
+
+        var elapsedText = elapsed.TotalMinutes >= 1
+            ? $"{(int)elapsed.TotalMinutes}m {elapsed.Seconds}s ago"
+            : $"{(int)elapsed.TotalSeconds}s ago";
+
+        LastUpdatedText = $"Updated {updatedAt:HH:mm:ss} ({elapsedText})";
     }
 }

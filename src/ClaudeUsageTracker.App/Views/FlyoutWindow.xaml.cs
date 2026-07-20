@@ -3,6 +3,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.ViewModels;
 
@@ -16,9 +17,18 @@ public partial class FlyoutWindow : Window
     private DateTime _lastDeactivatedAtUtc = DateTime.MinValue;
     private static readonly TimeSpan ReopenGuard = TimeSpan.FromMilliseconds(200);
 
+    // Only ticks while the flyout is visible, so the "(Ns ago)" portion of
+    // LastUpdatedText counts up live without polling in the background.
+    private readonly DispatcherTimer _elapsedTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+
     public FlyoutWindow()
     {
         InitializeComponent();
+        _elapsedTimer.Tick += (_, _) =>
+        {
+            if (DataContext is FlyoutViewModel viewModel)
+                viewModel.RefreshLastUpdatedText(DateTimeOffset.Now);
+        };
     }
 
     public void ToggleNearCursor()
@@ -26,6 +36,7 @@ public partial class FlyoutWindow : Window
         if (IsVisible)
         {
             Hide();
+            _elapsedTimer.Stop();
             return;
         }
 
@@ -40,6 +51,10 @@ public partial class FlyoutWindow : Window
         WindowPositioner.PositionNearCursor(this);
         AnimateIn();
         Activate();
+
+        if (DataContext is FlyoutViewModel viewModel)
+            viewModel.RefreshLastUpdatedText(DateTimeOffset.Now);
+        _elapsedTimer.Start();
     }
 
     // Small fade + rise animation so the flyout feels like a Windows 11 quick-settings
@@ -60,6 +75,7 @@ public partial class FlyoutWindow : Window
 
         _lastDeactivatedAtUtc = DateTime.UtcNow;
         Hide();
+        _elapsedTimer.Stop();
     }
 
     // Lets the borderless window be dragged by its header, skipping clicks that
