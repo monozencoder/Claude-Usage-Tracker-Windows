@@ -7,40 +7,41 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
         Deactivated="OnDeactivated">
-    <Border Background="#FF202020" CornerRadius="8" BorderBrush="#33FFFFFF" BorderThickness="1" Padding="14">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.4" />
-        </Border.Effect>
+    <Border x:Name="RootPanel" Background="{StaticResource WindowBackgroundBrush}" CornerRadius="10"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="16"
+            Effect="{StaticResource FlyoutShadowEffect}" RenderTransformOrigin="0.5,0">
+        <Border.RenderTransform>
+            <TranslateTransform x:Name="RootTranslate" Y="0" />
+        </Border.RenderTransform>
         <StackPanel>
-            <DockPanel LastChildFill="True" Margin="0,0,0,10" Background="Transparent"
+            <DockPanel LastChildFill="True" Margin="0,0,0,12" Background="Transparent"
                        MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
-                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="13" Foreground="White"
-                           VerticalAlignment="Center" DockPanel.Dock="Left" />
-                <Button Content="⚙" Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Right"
-                        Width="26" Height="26" Margin="4,0,0,0" />
-                <Button Content="⟳" Command="{Binding RefreshCommand}" IsEnabled="{Binding IsRefreshing, Converter={StaticResource BooleanInverter}}"
-                        DockPanel.Dock="Right" Width="26" Height="26" Margin="4,0,0,0" />
-                <ToggleButton Content="📌" IsChecked="{Binding IsPinned}" DockPanel.Dock="Right"
-                              Width="26" Height="26" ToolTip="Keep this window open">
-                    <ToggleButton.Style>
-                        <Style TargetType="ToggleButton">
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="BorderBrush" Value="#55FFFFFF" />
-                            <Setter Property="BorderThickness" Value="1" />
-                            <Style.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter Property="Background" Value="#FF3A6EA5" />
-                                    <Setter Property="BorderBrush" Value="#FF5A8EC5" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ToggleButton.Style>
+                <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" DockPanel.Dock="Left" />
+                <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Right"
+                        Style="{StaticResource IconButtonStyle}" ToolTip="Settings" Margin="4,0,0,0">
+                    <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFontFamily}" />
+                </Button>
+                <Button Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding IsRefreshing, Converter={StaticResource BooleanInverter}}"
+                        Style="{StaticResource RefreshIconButtonStyle}" ToolTip="Refresh now" DockPanel.Dock="Right" Margin="4,0,0,0">
+                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" />
+                </Button>
+                <ToggleButton IsChecked="{Binding IsPinned}" DockPanel.Dock="Right"
+                              Style="{StaticResource PinToggleButtonStyle}" Margin="4,0,0,0">
+                    <TextBlock Text="&#xE718;" FontFamily="{StaticResource IconFontFamily}" />
                 </ToggleButton>
             </DockPanel>
 
-            <Border Background="#332C2C2C" CornerRadius="4" Padding="8" Margin="0,0,0,10"
-                    Visibility="{Binding BannerText, Converter={StaticResource StringToVisibility}}">
-                <TextBlock Text="{Binding BannerText}" TextWrapping="Wrap" FontSize="11" Foreground="#FFFFC107" />
+            <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="4" Padding="10,8" Margin="0,0,0,12"
+                    BorderThickness="0,0,0,0" Visibility="{Binding BannerText, Converter={StaticResource StringToVisibility}}">
+                <Border.BorderBrush>
+                    <SolidColorBrush Color="#FFFFC107" />
+                </Border.BorderBrush>
+                <DockPanel LastChildFill="True">
+                    <Border Background="#FFFFC107" Width="3" CornerRadius="1.5" Margin="0,0,8,0" DockPanel.Dock="Left" />
+                    <TextBlock Text="{Binding BannerText}" TextWrapping="Wrap" FontSize="11" Foreground="#FFFFC107" />
+                </DockPanel>
             </Border>
 
             <ItemsControl ItemsSource="{Binding Rows}">
@@ -51,7 +52,7 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <TextBlock Text="{Binding LastUpdatedText}" Foreground="#88FFFFFF" FontSize="10"
+            <TextBlock Text="{Binding LastUpdatedText}" Foreground="{StaticResource TextTertiaryBrush}" FontSize="10"
                        Margin="0,6,0,0" HorizontalAlignment="Right" />
         </StackPanel>
     </Border>

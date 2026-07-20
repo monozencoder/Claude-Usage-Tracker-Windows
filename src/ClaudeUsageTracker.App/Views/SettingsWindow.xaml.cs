@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.Core.Api;
@@ -10,6 +12,13 @@ namespace ClaudeUsageTracker.App.Views;
 
 public partial class SettingsWindow : Window
 {
+    // Undocumented but stable since Windows 10 20H1; makes the native title bar match
+    // the app's dark theme instead of showing a jarring white bar above dark content.
+    private const int DwmwaUseImmersiveDarkMode = 20;
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
+
     private readonly AppSettingsStore _settingsStore;
     private readonly ILaunchAtLoginService _launchAtLoginService;
     private readonly ClaudeCodeUsageClient _usageClient;
@@ -28,6 +37,7 @@ public partial class SettingsWindow : Window
 
         InitializeComponent();
         DataContext = _viewModel;
+        SourceInitialized += (_, _) => EnableDarkTitleBar();
 
         var settings = _settingsStore.Load();
         _viewModel.RefreshIntervalSeconds = settings.RefreshIntervalSeconds;
@@ -35,6 +45,13 @@ public partial class SettingsWindow : Window
         _viewModel.LaunchAtLoginEnabled = _launchAtLoginService.IsEnabled;
 
         RefreshCredentialsSummary();
+    }
+
+    private void EnableDarkTitleBar()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        var useDarkMode = 1;
+        DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref useDarkMode, sizeof(int));
     }
 
     private void RefreshCredentialsSummary()

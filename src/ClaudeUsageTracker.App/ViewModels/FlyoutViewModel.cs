@@ -57,6 +57,6 @@ public partial class FlyoutViewModel : ObservableObject
         Rows.Add(UsageRowViewModel.For("Session (5h)", usage.EffectiveSessionPercentage(now), usage.SessionResetTime));
         Rows.Add(UsageRowViewModel.For("Weekly (7d)", usage.WeeklyPercentage, usage.WeeklyResetTime));
 
-        LastUpdatedText = $"Updated {usage.LastUpdated:t}";
+        LastUpdatedText = $"Updated {usage.LastUpdated:HH:mm:ss}";
     }
 }

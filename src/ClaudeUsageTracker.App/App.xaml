@@ -4,8 +4,14 @@
              xmlns:local="clr-namespace:ClaudeUsageTracker.App"
              xmlns:converters="clr-namespace:ClaudeUsageTracker.App.Views.Converters">
     <Application.Resources>
-        <converters:StringToVisibilityConverter x:Key="StringToVisibility" />
-        <converters:BooleanInverter x:Key="BooleanInverter" />
-        <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:StringToVisibilityConverter x:Key="StringToVisibility" />
+            <converters:BooleanInverter x:Key="BooleanInverter" />
+            <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

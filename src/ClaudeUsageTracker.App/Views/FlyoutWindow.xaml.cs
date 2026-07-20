@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.ViewModels;
 
@@ -37,8 +38,19 @@ public partial class FlyoutWindow : Window
         Show();
         UpdateLayout();
         WindowPositioner.PositionNearCursor(this);
-        Opacity = 1;
+        AnimateIn();
         Activate();
+    }
+
+    // Small fade + rise animation so the flyout feels like a Windows 11 quick-settings
+    // panel appearing, rather than an abrupt on/off toggle.
+    private void AnimateIn()
+    {
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)) { EasingFunction = ease });
+        RootTranslate.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = ease });
     }
 
     private void OnDeactivated(object? sender, EventArgs e)
