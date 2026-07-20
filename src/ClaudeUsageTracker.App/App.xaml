@@ -1,0 +1,11 @@
+﻿<Application x:Class="ClaudeUsageTracker.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClaudeUsageTracker.App"
+             xmlns:converters="clr-namespace:ClaudeUsageTracker.App.Views.Converters">
+    <Application.Resources>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibility" />
+        <converters:BooleanInverter x:Key="BooleanInverter" />
+        <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />
+    </Application.Resources>
+</Application>
