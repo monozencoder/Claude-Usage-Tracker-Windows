@@ -19,7 +19,8 @@
                  HorizontalAlignment="Left" Margin="0,0,0,18" />
 
         <CheckBox Content="Enable threshold notifications" IsChecked="{Binding NotificationsEnabled}" Margin="0,0,0,10" />
-        <CheckBox Content="Launch at Windows login" IsChecked="{Binding LaunchAtLoginEnabled}" Margin="0,0,0,16" />
+        <CheckBox Content="Launch at Windows login" IsChecked="{Binding LaunchAtLoginEnabled}" Margin="0,0,0,10" />
+        <CheckBox Content="Show window on startup" IsChecked="{Binding ShowFlyoutOnStartup}" Margin="0,0,0,16" />
 
         <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="4" Padding="10,8" Margin="0,0,0,16"
                 Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibility}}">

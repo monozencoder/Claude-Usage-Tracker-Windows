@@ -10,6 +10,7 @@ public sealed class AppSettings
     public int RefreshIntervalSeconds { get; set; } = 60;
     public bool NotificationsEnabled { get; set; } = true;
     public bool LaunchAtLoginEnabled { get; set; }
+    public bool ShowFlyoutOnStartup { get; set; } = true;
 
     /// <summary>Threshold-notification dedup state (e.g. "session_75"), so the same threshold doesn't re-notify every refresh.</summary>
     public List<string> NotifiedThresholdKeys { get; set; } = [];

@@ -15,6 +15,9 @@ public partial class SettingsViewModel : ObservableObject
     private bool _launchAtLoginEnabled;
 
     [ObservableProperty]
+    private bool _showFlyoutOnStartup = true;
+
+    [ObservableProperty]
     private string? _statusMessage;
 
     [ObservableProperty]

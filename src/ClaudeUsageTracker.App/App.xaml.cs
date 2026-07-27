@@ -73,6 +73,9 @@ public partial class App : System.Windows.Application
         _refreshTimer.Tick += async (_, _) => await RefreshAsync();
         _refreshTimer.Start();
 
+        if (settings.ShowFlyoutOnStartup)
+            _flyoutWindow.ToggleNearCursor();
+
         _ = RefreshAsync();
     }
 

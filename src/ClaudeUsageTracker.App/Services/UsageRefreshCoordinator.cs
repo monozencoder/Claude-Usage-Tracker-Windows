@@ -1,6 +1,5 @@
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.Core.Api;
-using ClaudeUsageTracker.Core.ClaudeCode;
 using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Core.Status;
 using ClaudeUsageTracker.Platform.ClaudeCli;
@@ -9,11 +8,11 @@ using ClaudeUsageTracker.Platform.Notifications;
 namespace ClaudeUsageTracker.App.Services;
 
 /// <summary>
-/// Orchestrates a single refresh cycle: read Claude Code CLI's own credentials
-/// file, nudge the CLI to refresh its token if expired/rejected, fetch usage from
-/// Anthropic's API, update the flyout view model, evaluate threshold/reset
-/// notifications, and report the session status/percentage back to the caller so
-/// it can repaint the tray icon.
+/// Orchestrates a single refresh cycle: locate Claude Code CLI's own credentials
+/// (Windows-native or WSL, whichever has them), nudge that CLI to refresh its
+/// token if expired/rejected, fetch usage from Anthropic's API, update the
+/// flyout view model, evaluate threshold/reset notifications, and report the
+/// session status/percentage back to the caller so it can repaint the tray icon.
 /// </summary>
 public sealed class UsageRefreshCoordinator
 {
@@ -51,29 +50,18 @@ public sealed class UsageRefreshCoordinator
         _flyoutViewModel.IsRefreshing = true;
         try
         {
-            var credentials = ClaudeCodeCredentialReader.TryRead();
-
-            if (credentials is null || credentials.IsExpired(DateTimeOffset.Now))
-            {
-                ClaudeCliRefresher.TryRefresh();
-                credentials = ClaudeCodeCredentialReader.TryRead();
-            }
+            var resolution = ClaudeCredentialResolver.Resolve();
+            var credentials = resolution.Credentials;
 
             if (credentials is null)
             {
-                _flyoutViewModel.SetBanner(
-                    "Claude Code CLI credentials not found. Install Claude Code and sign in, then refresh.",
-                    isError: true);
-                _onIconUpdate(0, UsageStatusLevel.Safe);
-                return;
-            }
+                var message = resolution.CredentialsFileFound
+                    ? "Claude Code CLI's token is expired. Run \"claude\" in a terminal to sign in again."
+                    : "Claude Code CLI credentials not found. Install Claude Code and sign in, then refresh.";
+                var level = resolution.CredentialsFileFound ? UsageStatusLevel.Critical : UsageStatusLevel.Safe;
 
-            if (credentials.IsExpired(DateTimeOffset.Now))
-            {
-                _flyoutViewModel.SetBanner(
-                    "Claude Code CLI's token is expired. Run \"claude\" in a terminal to sign in again.",
-                    isError: true);
-                _onIconUpdate(0, UsageStatusLevel.Critical);
+                _flyoutViewModel.SetBanner(message, isError: true);
+                _onIconUpdate(0, level);
                 return;
             }
 
@@ -84,8 +72,7 @@ public sealed class UsageRefreshCoordinator
             }
             catch (AuthRequiredException)
             {
-                ClaudeCliRefresher.TryRefresh();
-                var refreshed = ClaudeCodeCredentialReader.TryRead();
+                var refreshed = resolution.Source?.TryRefreshAndReread();
                 if (refreshed is null)
                 {
                     _flyoutViewModel.SetBanner(

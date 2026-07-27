@@ -4,7 +4,6 @@ using System.Windows.Interop;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.Core.Api;
-using ClaudeUsageTracker.Core.ClaudeCode;
 using ClaudeUsageTracker.Platform.ClaudeCli;
 using ClaudeUsageTracker.Platform.Startup;
 
@@ -43,6 +42,7 @@ public partial class SettingsWindow : Window
         _viewModel.RefreshIntervalSeconds = settings.RefreshIntervalSeconds;
         _viewModel.NotificationsEnabled = settings.NotificationsEnabled;
         _viewModel.LaunchAtLoginEnabled = _launchAtLoginService.IsEnabled;
+        _viewModel.ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
 
         RefreshCredentialsSummary();
     }
@@ -56,12 +56,12 @@ public partial class SettingsWindow : Window
 
     private void RefreshCredentialsSummary()
     {
-        var credentials = ClaudeCodeCredentialReader.TryRead();
-        _viewModel.CredentialsSummary = credentials switch
+        var resolution = ClaudeCredentialResolver.Resolve();
+        _viewModel.CredentialsSummary = resolution switch
         {
-            null => $"No credentials found at {ClaudeCodeCredentialReader.CredentialsFilePath}. Install Claude Code and run \"claude\" to sign in.",
-            { } c when c.IsExpired(DateTimeOffset.Now) => "Credentials found, but the token is expired. Run \"claude\" in a terminal to refresh it.",
-            _ => "Credentials found and look valid."
+            { Credentials: not null } => "Credentials found and look valid.",
+            { CredentialsFileFound: true } => "Credentials found, but the token is expired. Run \"claude\" in a terminal to refresh it.",
+            _ => "No credentials found on Windows or in any installed WSL distro. Install Claude Code and run \"claude\" to sign in."
         };
     }
 
@@ -72,24 +72,15 @@ public partial class SettingsWindow : Window
         _viewModel.StatusIsError = false;
         try
         {
-            var credentials = ClaudeCodeCredentialReader.TryRead();
+            var resolution = ClaudeCredentialResolver.Resolve();
+            var credentials = resolution.Credentials;
             if (credentials is null)
             {
-                _viewModel.StatusMessage = "No Claude Code CLI credentials found.";
+                _viewModel.StatusMessage = resolution.CredentialsFileFound
+                    ? "Token is still expired after attempting a refresh. Run \"claude\" in a terminal to sign in."
+                    : "No Claude Code CLI credentials found on Windows or in any installed WSL distro.";
                 _viewModel.StatusIsError = true;
                 return;
-            }
-
-            if (credentials.IsExpired(DateTimeOffset.Now))
-            {
-                ClaudeCliRefresher.TryRefresh();
-                credentials = ClaudeCodeCredentialReader.TryRead();
-                if (credentials is null || credentials.IsExpired(DateTimeOffset.Now))
-                {
-                    _viewModel.StatusMessage = "Token is still expired after attempting a refresh. Run \"claude\" in a terminal to sign in.";
-                    _viewModel.StatusIsError = true;
-                    return;
-                }
             }
 
             try
@@ -125,6 +116,7 @@ public partial class SettingsWindow : Window
             var settings = _settingsStore.Load();
             settings.RefreshIntervalSeconds = _viewModel.RefreshIntervalSeconds;
             settings.NotificationsEnabled = _viewModel.NotificationsEnabled;
+            settings.ShowFlyoutOnStartup = _viewModel.ShowFlyoutOnStartup;
             _settingsStore.Save(settings);
 
             _launchAtLoginService.SetEnabled(_viewModel.LaunchAtLoginEnabled);
