@@ -5,8 +5,7 @@
         Title="Claude Usage Tracker"
         Width="300" SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
-        Deactivated="OnDeactivated">
+        ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize">
     <Border x:Name="RootPanel" Background="{StaticResource WindowBackgroundBrush}" CornerRadius="10"
             BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="16"
             Effect="{StaticResource FlyoutShadowEffect}" RenderTransformOrigin="0.5,0">
@@ -18,6 +17,14 @@
                        MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
                 <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="13"
                            Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" DockPanel.Dock="Left" />
+                <Button Click="OnCloseClicked" DockPanel.Dock="Right"
+                        Style="{StaticResource IconButtonStyle}" ToolTip="Close" Margin="4,0,0,0">
+                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFontFamily}" />
+                </Button>
+                <Button Click="OnMinimizeClicked" DockPanel.Dock="Right"
+                        Style="{StaticResource IconButtonStyle}" ToolTip="Minimize to tray" Margin="4,0,0,0">
+                    <TextBlock Text="&#xE921;" FontFamily="{StaticResource IconFontFamily}" />
+                </Button>
                 <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Right"
                         Style="{StaticResource IconButtonStyle}" ToolTip="Settings" Margin="4,0,0,0">
                     <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFontFamily}" />
@@ -27,10 +34,6 @@
                         Style="{StaticResource RefreshIconButtonStyle}" ToolTip="Refresh now" DockPanel.Dock="Right" Margin="4,0,0,0">
                     <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" />
                 </Button>
-                <ToggleButton IsChecked="{Binding IsPinned}" DockPanel.Dock="Right"
-                              Style="{StaticResource PinToggleButtonStyle}" Margin="4,0,0,0">
-                    <TextBlock Text="&#xE718;" FontFamily="{StaticResource IconFontFamily}" />
-                </ToggleButton>
             </DockPanel>
 
             <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="4" Padding="10,8" Margin="0,0,0,12"

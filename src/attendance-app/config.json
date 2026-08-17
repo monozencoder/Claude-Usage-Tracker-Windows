@@ -1,0 +1,11 @@
+{
+  "kingOfTime": {
+    "baseUrl": "https://s2.ta.kingoftime.jp",
+    "companyCode": "",
+    "userId": "",
+    "password": ""
+  },
+  "server": {
+    "port": 3001
+  }
+}

@@ -11,12 +11,6 @@ namespace ClaudeUsageTracker.App.Views;
 
 public partial class FlyoutWindow : Window
 {
-    // Guards against the "click tray icon while open -> Deactivated hides it -> the
-    // same click immediately reopens it" flicker: a click that arrives right after a
-    // deactivation is treated as the one that closed the window, not a new open request.
-    private DateTime _lastDeactivatedAtUtc = DateTime.MinValue;
-    private static readonly TimeSpan ReopenGuard = TimeSpan.FromMilliseconds(200);
-
     // Only ticks while the flyout is visible, so the "(Ns ago)" portion of
     // LastUpdatedText counts up live without polling in the background.
     private readonly DispatcherTimer _elapsedTimer = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -35,13 +29,9 @@ public partial class FlyoutWindow : Window
     {
         if (IsVisible)
         {
-            Hide();
-            _elapsedTimer.Stop();
+            HideToTray();
             return;
         }
-
-        if (DateTime.UtcNow - _lastDeactivatedAtUtc < ReopenGuard)
-            return;
 
         // Render invisibly first so ActualWidth/ActualHeight are valid for positioning
         // before the window becomes visible at the wrong spot.
@@ -57,6 +47,18 @@ public partial class FlyoutWindow : Window
         _elapsedTimer.Start();
     }
 
+    // Tucks the window away behind the tray icon (used by both the minimize and
+    // close header buttons) without exiting the app.
+    private void HideToTray()
+    {
+        Hide();
+        _elapsedTimer.Stop();
+    }
+
+    private void OnMinimizeClicked(object sender, RoutedEventArgs e) => HideToTray();
+
+    private void OnCloseClicked(object sender, RoutedEventArgs e) => HideToTray();
+
     // Small fade + rise animation so the flyout feels like a Windows 11 quick-settings
     // panel appearing, rather than an abrupt on/off toggle.
     private void AnimateIn()
@@ -66,16 +68,6 @@ public partial class FlyoutWindow : Window
         BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)) { EasingFunction = ease });
         RootTranslate.BeginAnimation(TranslateTransform.YProperty,
             new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = ease });
-    }
-
-    private void OnDeactivated(object? sender, EventArgs e)
-    {
-        if (DataContext is FlyoutViewModel { IsPinned: true })
-            return;
-
-        _lastDeactivatedAtUtc = DateTime.UtcNow;
-        Hide();
-        _elapsedTimer.Stop();
     }
 
     // Lets the borderless window be dragged by its header, skipping clicks that

@@ -24,10 +24,6 @@ public partial class FlyoutViewModel : ObservableObject
 
     private DateTimeOffset? _lastUpdatedAt;
 
-    /// <summary>When true, the flyout stays open instead of auto-hiding when it loses focus.</summary>
-    [ObservableProperty]
-    private bool _isPinned;
-
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
 
     public event Action? RefreshRequested;
@@ -38,9 +34,6 @@ public partial class FlyoutViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenSettings() => SettingsRequested?.Invoke();
-
-    [RelayCommand]
-    private void TogglePin() => IsPinned = !IsPinned;
 
     public void SetBanner(string message, bool isError)
     {
