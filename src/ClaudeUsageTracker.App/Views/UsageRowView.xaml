@@ -3,13 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel Margin="0,0,0,12">
         <DockPanel LastChildFill="False">
-            <TextBlock Text="{Binding Label}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" DockPanel.Dock="Left" />
-            <TextBlock Text="{Binding PercentageText}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12"
-                       FontWeight="SemiBold" DockPanel.Dock="Right" />
+            <TextBlock Text="{Binding Label}" Foreground="{DynamicResource TextSecondaryBrush}" Style="{StaticResource BodyTextStyle}" DockPanel.Dock="Left" />
+            <TextBlock Text="{Binding PercentageText}" Foreground="{DynamicResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyStrongTextStyle}" DockPanel.Dock="Right" />
         </DockPanel>
         <ProgressBar Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100" Height="6" Margin="0,6,0,4"
                      Style="{StaticResource PillProgressBarStyle}" Background="{DynamicResource HoverOverlayBrush}"
                      Foreground="{Binding Status, Converter={StaticResource StatusToBrush}}" />
-        <TextBlock Text="{Binding ResetText}" Foreground="{DynamicResource TextTertiaryBrush}" FontSize="10" />
+        <TextBlock Text="{Binding ResetText}" Foreground="{DynamicResource TextTertiaryBrush}" Style="{StaticResource CaptionTextStyle}" />
     </StackPanel>
 </UserControl>

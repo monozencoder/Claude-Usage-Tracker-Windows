@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views"
         TextOptions.TextFormattingMode="Display"
+        FontSize="{StaticResource BodyFontSize}"
         Title="Claude Usage Tracker"
         Width="348" SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
@@ -19,7 +20,7 @@
         <StackPanel>
             <DockPanel LastChildFill="False" Margin="0,0,0,12" Background="Transparent"
                        MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
-                <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="13"
+                <TextBlock Text="{Binding StatusText}" Style="{StaticResource BodyStrongTextStyle}"
                            Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" DockPanel.Dock="Left" />
                 <Button Click="OnCloseClicked" DockPanel.Dock="Right"
                         Style="{StaticResource IconButtonStyle}" ToolTip="Close" Margin="4,0,0,0">
@@ -40,7 +41,7 @@
                     Visibility="{Binding BannerText, Converter={StaticResource StringToVisibility}}">
                 <DockPanel LastChildFill="True">
                     <Border Background="{DynamicResource WarningBrush}" Width="3" CornerRadius="1.5" Margin="0,0,8,0" DockPanel.Dock="Left" />
-                    <TextBlock Text="{Binding BannerText}" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WarningBrush}" />
+                    <TextBlock Text="{Binding BannerText}" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}" Foreground="{DynamicResource WarningBrush}" />
                 </DockPanel>
             </Border>
 
@@ -54,11 +55,11 @@
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
                 <TextBlock Text="{Binding LastUpdatedText}" ToolTip="{Binding LastUpdatedToolTip}"
-                           Foreground="{DynamicResource TextTertiaryBrush}" FontSize="10" VerticalAlignment="Center" />
+                           Foreground="{DynamicResource TextTertiaryBrush}" Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" />
                 <Button Command="{Binding RefreshCommand}"
                         IsEnabled="{Binding IsRefreshing, Converter={StaticResource BooleanInverter}}"
                         Style="{StaticResource RefreshIconButtonStyle}" ToolTip="Refresh now"
-                        Width="22" Height="22" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                        Width="24" Height="24" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                         VerticalAlignment="Center" Margin="2,0,-4,0">
                     <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" />
                 </Button>
