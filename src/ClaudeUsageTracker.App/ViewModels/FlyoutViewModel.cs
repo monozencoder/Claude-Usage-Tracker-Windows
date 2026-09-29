@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,29 +8,32 @@ namespace ClaudeUsageTracker.App.ViewModels;
 
 public partial class FlyoutViewModel : ObservableObject
 {
-    [ObservableProperty]
-    private string _statusText = "Not connected";
-
     /// <summary>Warning shown above the usage rows (credentials/API problems), or null when all is well.</summary>
     [ObservableProperty]
     private string? _bannerText;
+
+    /// <summary>Shows a Sign in button in the banner (the problem is a missing/expired sign-in).</summary>
+    [ObservableProperty]
+    private bool _canSignIn;
 
     [ObservableProperty]
     private bool _isRefreshing;
 
     [ObservableProperty]
-    private string _lastUpdatedText = "Never refreshed";
+    private string _lastUpdatedText = Loc.Get("Flyout_NeverRefreshed");
 
     /// <summary>Exact timestamp, shown as the tooltip of the relative LastUpdatedText.</summary>
     [ObservableProperty]
     private string? _lastUpdatedToolTip;
 
     private DateTimeOffset? _lastUpdatedAt;
+    private ClaudeUsage? _lastUsage;
 
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
 
     public event Action? RefreshRequested;
     public event Action? SettingsRequested;
+    public event Action? SignInRequested;
 
     [RelayCommand]
     private void Refresh() => RefreshRequested?.Invoke();
@@ -37,18 +41,46 @@ public partial class FlyoutViewModel : ObservableObject
     [RelayCommand]
     private void OpenSettings() => SettingsRequested?.Invoke();
 
-    public void SetBanner(string message) => BannerText = message;
+    [RelayCommand]
+    private void SignIn() => SignInRequested?.Invoke();
 
-    public void ClearBanner() => BannerText = null;
+    public void SetBanner(string message, bool canSignIn = false)
+    {
+        BannerText = message;
+        CanSignIn = canSignIn;
+    }
+
+    public void ClearBanner()
+    {
+        BannerText = null;
+        CanSignIn = false;
+    }
 
     public void ApplyUsage(ClaudeUsage usage, DateTimeOffset now)
     {
-        StatusText = "Claude Code";
-        Rows.Clear();
-        Rows.Add(UsageRowViewModel.For("Session (5h)", usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now));
-        Rows.Add(UsageRowViewModel.For("Weekly (7d)", usage.WeeklyPercentage, usage.WeeklyResetTime, now));
-
+        _lastUsage = usage;
         _lastUpdatedAt = usage.LastUpdated;
+        RenderUsage(now);
+    }
+
+    /// <summary>Rebuilds the code-built texts in the current language (after a language switch).</summary>
+    public void RefreshLanguage()
+    {
+        if (_lastUsage is null)
+        {
+            LastUpdatedText = Loc.Get("Flyout_NeverRefreshed");
+            return;
+        }
+
+        RenderUsage(DateTimeOffset.Now);
+    }
+
+    private void RenderUsage(DateTimeOffset now)
+    {
+        var usage = _lastUsage!;
+        Rows.Clear();
+        Rows.Add(UsageRowViewModel.For(Loc.Get("Usage_Session"), usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now));
+        Rows.Add(UsageRowViewModel.For(Loc.Get("Usage_Weekly"), usage.WeeklyPercentage, usage.WeeklyResetTime, now));
         RefreshLastUpdatedText(now);
     }
 
@@ -66,15 +98,15 @@ public partial class FlyoutViewModel : ObservableObject
 
         LastUpdatedText = elapsed switch
         {
-            { TotalMinutes: < 1 } => "Updated just now",
-            { TotalHours: < 1 } => $"Updated {(int)elapsed.TotalMinutes} min ago",
-            { TotalDays: < 1 } => $"Updated {(int)elapsed.TotalHours} h ago",
-            _ => $"Updated {(int)elapsed.TotalDays} d ago"
+            { TotalMinutes: < 1 } => Loc.Get("Flyout_UpdatedJustNow"),
+            { TotalHours: < 1 } => Loc.Format("Flyout_UpdatedMinutesAgo", (int)elapsed.TotalMinutes),
+            { TotalDays: < 1 } => Loc.Format("Flyout_UpdatedHoursAgo", (int)elapsed.TotalHours),
+            _ => Loc.Format("Flyout_UpdatedDaysAgo", (int)elapsed.TotalDays)
         };
 
         var localUpdatedAt = updatedAt.ToLocalTime();
         LastUpdatedToolTip = localUpdatedAt.Date == now.ToLocalTime().Date
-            ? $"Last updated at {localUpdatedAt:HH:mm:ss}"
-            : $"Last updated at {localUpdatedAt:yyyy-MM-dd HH:mm:ss}";
+            ? Loc.Format("Flyout_LastUpdatedAt", localUpdatedAt.ToString("HH:mm:ss"))
+            : Loc.Format("Flyout_LastUpdatedAt", localUpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
     }
 }

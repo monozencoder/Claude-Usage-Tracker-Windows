@@ -1,3 +1,4 @@
+using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.Core.Models;
@@ -50,31 +51,47 @@ public sealed class UsageRefreshCoordinator
         _flyoutViewModel.IsRefreshing = true;
         try
         {
-            var result = await _fetcher.FetchAsync(ct);
-            if (result.Usage is not { } usage)
-            {
-                _flyoutViewModel.SetBanner(result.Error!);
-                if (result.ErrorStatus is { } errorStatus)
-                    _onIconUpdate(0, errorStatus);
-                return;
-            }
-
-            var now = DateTimeOffset.Now;
-            _flyoutViewModel.ApplyUsage(usage, now);
-            _flyoutViewModel.ClearBanner();
-
-            var effectiveSession = usage.EffectiveSessionPercentage(now);
-            var elapsedFraction = UsageStatusCalculator.ElapsedFraction(
-                usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
-            var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
-
-            EvaluateNotifications(effectiveSession);
-            _onIconUpdate(effectiveSession, status);
+            ApplyResult(await _fetcher.FetchAsync(ct: ct));
         }
         finally
         {
             _flyoutViewModel.IsRefreshing = false;
         }
+    }
+
+    /// <summary>
+    /// Shows a fetch result in the flyout and tray, whether it came from a refresh here or
+    /// from elsewhere, e.g. the settings window's Test connection.
+    /// </summary>
+    public void ApplyResult(UsageFetchResult result)
+    {
+        if (result is { UsageEndpointRateLimited: true, Usage: null })
+        {
+            // Token-free mode only. Keep showing the last good numbers; the next regular
+            // (10-minute) refresh is the retry.
+            _flyoutViewModel.SetBanner(Loc.Format("Error_RateLimited", AppSettings.TokenFreeRefreshIntervalSeconds / 60));
+            return;
+        }
+
+        if (result.Usage is not { } usage)
+        {
+            _flyoutViewModel.SetBanner(result.Error!, result.CanSignIn);
+            if (result.ErrorStatus is { } errorStatus)
+                _onIconUpdate(0, errorStatus);
+            return;
+        }
+
+        var now = DateTimeOffset.Now;
+        _flyoutViewModel.ApplyUsage(usage, now);
+        _flyoutViewModel.ClearBanner();
+
+        var effectiveSession = usage.EffectiveSessionPercentage(now);
+        var elapsedFraction = UsageStatusCalculator.ElapsedFraction(
+            usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
+        var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
+
+        EvaluateNotifications(effectiveSession);
+        _onIconUpdate(effectiveSession, status);
     }
 
     /// <summary>
@@ -96,7 +113,7 @@ public sealed class UsageRefreshCoordinator
         if (previous > 5 && effectiveSessionPercentage < 5)
         {
             _dedupTracker.ResetForWindow(SessionKeyPrefix);
-            _toastService.Show("Claude session reset", "Your 5-hour session window has reset.");
+            _toastService.Show(Loc.Get("Toast_SessionResetTitle"), Loc.Get("Toast_SessionResetBody"));
             stateChanged = true;
         }
 
@@ -105,7 +122,7 @@ public sealed class UsageRefreshCoordinator
             if (effectiveSessionPercentage < threshold || !_dedupTracker.ShouldNotify($"{SessionKeyPrefix}{threshold}"))
                 continue;
 
-            _toastService.Show("Claude usage alert", $"Session usage has reached {threshold}%.");
+            _toastService.Show(Loc.Get("Toast_UsageAlertTitle"), Loc.Format("Toast_UsageAlertBody", threshold));
             stateChanged = true;
         }
 

@@ -6,16 +6,14 @@ using ClaudeUsageTracker.Platform.Processes;
 namespace ClaudeUsageTracker.Platform.ClaudeCode;
 
 /// <summary>
-/// Reads and refreshes Claude Code CLI credentials inside an installed WSL
-/// distro by shelling out to wsl.exe, mirroring
-/// <see cref="ClaudeCodeCredentialReader"/> and <see cref="ClaudeCliRefresher"/>
-/// for the Windows-native case. This lets the app find credentials for users who
-/// only run Claude Code from within WSL rather than Windows directly.
+/// Reads Claude Code CLI credentials inside an installed WSL distro by shelling out
+/// to wsl.exe, mirroring <see cref="ClaudeCodeCredentialReader"/> for the
+/// Windows-native case. This lets the app find credentials for users who only run
+/// Claude Code from within WSL rather than Windows directly.
 /// </summary>
 public static class WslClaudeCli
 {
     private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan RefreshTimeout = TimeSpan.FromSeconds(30);
 
     public static IReadOnlyList<string> ListDistros()
     {
@@ -33,22 +31,6 @@ public static class WslClaudeCli
     {
         var output = Run(["-d", distro, "--", "sh", "-lc", "cat ~/.claude/.credentials.json"], ProbeTimeout);
         return output is null ? null : ClaudeCodeCredentialReader.Parse(output);
-    }
-
-    /// <summary>
-    /// Nudges the WSL distro's own Claude CLI to refresh its token, the same way
-    /// <see cref="ClaudeCliRefresher.TryRefresh"/> does for the Windows CLI.
-    /// Best-effort: failures are swallowed since the caller treats "credentials
-    /// still expired after this" as the real failure signal.
-    /// </summary>
-    public static void TryRefresh(string distro)
-    {
-        const string command =
-            "if command -v claude >/dev/null 2>&1; then claude -p .; " +
-            "elif [ -x \"$HOME/.local/bin/claude\" ]; then \"$HOME/.local/bin/claude\" -p .; " +
-            "else exit 127; fi";
-
-        Run(["-d", distro, "--", "bash", "-lic", command], RefreshTimeout);
     }
 
     // wsl.exe writes UTF-16LE to a redirected stdout regardless of what the guest

@@ -11,19 +11,25 @@ namespace ClaudeUsageTracker.Platform.ClaudeCode;
 public sealed class ClaudeCredentialSource
 {
     private readonly Func<ClaudeCodeCredentials?> _read;
-    private readonly Action _refresh;
 
-    private ClaudeCredentialSource(Func<ClaudeCodeCredentials?> read, Action refresh)
+    private ClaudeCredentialSource(string displayName, bool isWsl, Func<ClaudeCodeCredentials?> read)
     {
+        DisplayName = displayName;
+        IsWsl = isWsl;
         _read = read;
-        _refresh = refresh;
     }
 
+    /// <summary>"Windows", or "WSL (Ubuntu)" etc.</summary>
+    public string DisplayName { get; }
+
+    /// <summary>True for a WSL distro: its CLI can't be driven from here (e.g. to sign in).</summary>
+    public bool IsWsl { get; }
+
     public static ClaudeCredentialSource Windows { get; } =
-        new(ClaudeCodeCredentialReader.TryRead, ClaudeCliRefresher.TryRefresh);
+        new("Windows", isWsl: false, ClaudeCodeCredentialReader.TryRead);
 
     public static ClaudeCredentialSource ForWsl(string distro) =>
-        new(() => WslClaudeCli.TryReadCredentials(distro), () => WslClaudeCli.TryRefresh(distro));
+        new($"WSL ({distro})", isWsl: true, () => WslClaudeCli.TryReadCredentials(distro));
 
     /// <summary>Windows-native first, then every installed WSL distro, in listed order.</summary>
     public static IReadOnlyList<ClaudeCredentialSource> EnumerateAll()
@@ -34,11 +40,4 @@ public sealed class ClaudeCredentialSource
     }
 
     public ClaudeCodeCredentials? TryRead() => _read();
-
-    /// <summary>Nudges this source's own Claude CLI to refresh its token, then re-reads.</summary>
-    public ClaudeCodeCredentials? TryRefreshAndReread()
-    {
-        _refresh();
-        return _read();
-    }
 }

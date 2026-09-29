@@ -1,3 +1,4 @@
+using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Core.Status;
 
@@ -20,18 +21,18 @@ public sealed class UsageRowViewModel
             Label = label,
             Percentage = Math.Clamp(percentage, 0, 100),
             PercentageText = $"{percentage:0.#}%",
-            ResetText = resetTime is { } reset ? $"Resets {FormatRelative(reset - now)}" : string.Empty,
+            ResetText = resetTime is { } reset ? FormatReset(reset - now) : string.Empty,
             Status = status
         };
     }
 
-    private static string FormatRelative(TimeSpan delta)
+    private static string FormatReset(TimeSpan delta)
     {
         if (delta <= TimeSpan.Zero)
-            return "soon";
+            return Loc.Get("Usage_ResetsSoon");
 
         return delta.TotalHours >= 24
-            ? $"in {delta.Days}d {delta.Hours}h"
-            : $"in {(int)delta.TotalHours}h {delta.Minutes}m";
+            ? Loc.Format("Usage_ResetsInDaysHours", delta.Days, delta.Hours)
+            : Loc.Format("Usage_ResetsInHoursMinutes", (int)delta.TotalHours, delta.Minutes);
     }
 }

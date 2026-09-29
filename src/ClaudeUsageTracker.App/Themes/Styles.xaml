@@ -5,7 +5,7 @@
     <!-- Palette brushes live in Colors.Dark.xaml / Colors.Light.xaml (see ThemeManager). -->
 
     <!-- ===== Fonts ===== -->
-    <FontFamily x:Key="UIFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="UIFontFamily">Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo UI</FontFamily>
     <FontFamily x:Key="IconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <DropShadowEffect x:Key="FlyoutShadowEffect" BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.35" Color="Black" />

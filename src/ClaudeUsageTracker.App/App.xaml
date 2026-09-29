@@ -11,6 +11,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <converters:StringToVisibilityConverter x:Key="StringToVisibility" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
             <converters:BooleanInverter x:Key="BooleanInverter" />
             <converters:EnumEqualsConverter x:Key="EnumEquals" />
             <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />

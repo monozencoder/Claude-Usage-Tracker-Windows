@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Platform.TrayIcon;
 using DrawingIcon = System.Drawing.Icon;
@@ -21,10 +22,15 @@ public sealed class TrayIconController : IDisposable
     {
         _renderer = renderer;
 
-        var refreshItem = new MenuItem { Header = "Refresh" };
+        var refreshItem = new MenuItem { Header = Loc.Get("Tray_Refresh") };
         refreshItem.Click += (_, _) => RefreshRequested?.Invoke();
 
-        var exitItem = new MenuItem { Header = "Exit" };
+        var exitItem = new MenuItem { Header = Loc.Get("Tray_Exit") };
+        Loc.LanguageChanged += () =>
+        {
+            refreshItem.Header = Loc.Get("Tray_Refresh");
+            exitItem.Header = Loc.Get("Tray_Exit");
+        };
         exitItem.Click += (_, _) => ExitRequested?.Invoke();
 
         var contextMenu = new ContextMenu();

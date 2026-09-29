@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from one en/ja table; edit both Strings.resx and Strings.ja.resx together. -->
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Flyout_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Flyout_Minimize" xml:space="preserve"><value>Minimize to tray</value></data>
+  <data name="Flyout_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Flyout_RefreshNow" xml:space="preserve"><value>Refresh now</value></data>
+  <data name="Flyout_SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Flyout_SignInToolTip" xml:space="preserve"><value>Opens Claude Code's sign-in in your browser</value></data>
+  <data name="Flyout_NeverRefreshed" xml:space="preserve"><value>Never refreshed</value></data>
+  <data name="Flyout_UpdatedJustNow" xml:space="preserve"><value>Updated just now</value></data>
+  <data name="Flyout_UpdatedMinutesAgo" xml:space="preserve"><value>Updated {0} min ago</value></data>
+  <data name="Flyout_UpdatedHoursAgo" xml:space="preserve"><value>Updated {0} h ago</value></data>
+  <data name="Flyout_UpdatedDaysAgo" xml:space="preserve"><value>Updated {0} d ago</value></data>
+  <data name="Flyout_LastUpdatedAt" xml:space="preserve"><value>Last updated at {0}</value></data>
+  <data name="Usage_Session" xml:space="preserve"><value>Session (5h)</value></data>
+  <data name="Usage_Weekly" xml:space="preserve"><value>Weekly (7d)</value></data>
+  <data name="Usage_ResetsSoon" xml:space="preserve"><value>Resets soon</value></data>
+  <data name="Usage_ResetsInDaysHours" xml:space="preserve"><value>Resets in {0}d {1}h</value></data>
+  <data name="Usage_ResetsInHoursMinutes" xml:space="preserve"><value>Resets in {0}h {1}m</value></data>
+  <data name="Error_MessagesApiFailed" xml:space="preserve"><value>Failed to read usage.</value></data>
+  <data name="Error_SignInRejected" xml:space="preserve"><value>Anthropic rejected Claude Code's sign-in.</value></data>
+  <data name="Error_Status" xml:space="preserve"><value>Failed to read usage (status {0}).</value></data>
+  <data name="Error_Network" xml:space="preserve"><value>Couldn't reach Anthropic's API. Check your network connection.</value></data>
+  <data name="Error_SignInExpired" xml:space="preserve"><value>Claude Code's sign-in has expired. It renews automatically the next time you use Claude Code.</value></data>
+  <data name="Error_NotSignedIn" xml:space="preserve"><value>Not signed in to Claude Code.</value></data>
+  <data name="Error_NotInstalled" xml:space="preserve"><value>Claude Code isn't installed. Install it and sign in to start tracking usage.</value></data>
+  <data name="Error_SignInInWsl" xml:space="preserve"><value>{0} To sign in again, run "claude auth login" in {1}.</value></data>
+  <data name="Error_RateLimited" xml:space="preserve"><value>Anthropic is limiting how often usage can be checked. Retrying at the next update in {0} min.</value></data>
+  <data name="Error_CouldNotStartClaude" xml:space="preserve"><value>Couldn't start Claude Code. Make sure it's installed.</value></data>
+  <data name="Error_Unexpected" xml:space="preserve"><value>Unexpected error: {0}</value></data>
+  <data name="Toast_SessionResetTitle" xml:space="preserve"><value>Claude session reset</value></data>
+  <data name="Toast_SessionResetBody" xml:space="preserve"><value>Your 5-hour session window has reset.</value></data>
+  <data name="Toast_UsageAlertTitle" xml:space="preserve"><value>Claude usage alert</value></data>
+  <data name="Toast_UsageAlertBody" xml:space="preserve"><value>Session usage has reached {0}%.</value></data>
+  <data name="Tray_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>Claude Usage Tracker — Settings</value></data>
+  <data name="Settings_Account" xml:space="preserve"><value>Claude account</value></data>
+  <data name="Settings_SignInToolTip" xml:space="preserve"><value>Opens Claude Code's sign-in (claude auth login) in your browser. This also changes the account Claude Code itself uses.</value></data>
+  <data name="Settings_TestConnection" xml:space="preserve"><value>Test connection</value></data>
+  <data name="Settings_TestConnectionToolTip" xml:space="preserve"><value>Checks that usage can be read, the same way regular updates do (with a 1-token prompt unless tokens are turned off).</value></data>
+  <data name="Settings_InstallLink" xml:space="preserve"><value>How to install Claude Code</value></data>
+  <data name="Settings_RefreshInterval" xml:space="preserve"><value>Refresh interval</value></data>
+  <data name="Settings_Decrease" xml:space="preserve"><value>Decrease by 5 seconds</value></data>
+  <data name="Settings_Increase" xml:space="preserve"><value>Increase by 5 seconds</value></data>
+  <data name="Settings_IntervalToolTip" xml:space="preserve"><value>↑ / ↓ or mouse wheel to adjust by 5 seconds</value></data>
+  <data name="Settings_Seconds" xml:space="preserve"><value>seconds</value></data>
+  <data name="Settings_AvoidTokens" xml:space="preserve"><value>Don't use tokens (updates every 10 minutes)</value></data>
+  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>Reads usage from the usage API, which uses none of your usage. That API limits how often it can be checked, so updates happen every 10 minutes.</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_ThemeSystem" xml:space="preserve"><value>System</value></data>
+  <data name="Settings_ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings_ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_LanguageSystem" xml:space="preserve"><value>System</value></data>
+  <data name="Settings_Notifications" xml:space="preserve"><value>Enable threshold notifications</value></data>
+  <data name="Settings_LaunchAtLogin" xml:space="preserve"><value>Launch at Windows login</value></data>
+  <data name="Settings_ShowOnStartup" xml:space="preserve"><value>Show window on startup</value></data>
+  <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Keep window on top of other windows</value></data>
+  <data name="Settings_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Settings_IntervalEnter" xml:space="preserve"><value>Enter {0}–{1} seconds</value></data>
+  <data name="Settings_IntervalMin" xml:space="preserve"><value>Minimum is {0} seconds</value></data>
+  <data name="Settings_IntervalMax" xml:space="preserve"><value>Maximum is {0} seconds</value></data>
+  <data name="Settings_IntervalRangeTokens" xml:space="preserve"><value>{0}–{1} seconds. Each update sends a 1-token prompt (uses a tiny amount of usage).</value></data>
+  <data name="Settings_IntervalFixedTokenFree" xml:space="preserve"><value>Updates every {0} minutes while tokens aren't used.</value></data>
+  <data name="Settings_CheckingSignIn" xml:space="preserve"><value>Checking Claude Code sign-in...</value></data>
+  <data name="Settings_UsingWsl" xml:space="preserve"><value>Using Claude Code's sign-in from {0}.</value></data>
+  <data name="Settings_WslExpired" xml:space="preserve"><value>Claude Code's sign-in in {0} has expired. Run "claude auth login" there to sign in again.</value></data>
+  <data name="Settings_Expired" xml:space="preserve"><value>Sign-in expired. It renews automatically the next time you use Claude Code.</value></data>
+  <data name="Settings_NotInstalled" xml:space="preserve"><value>Claude Code isn't installed.</value></data>
+  <data name="Settings_SwitchAccount" xml:space="preserve"><value>Switch account</value></data>
+  <data name="Settings_SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Settings_SignedInAsWithPlan" xml:space="preserve"><value>Signed in as {0} ({1})</value></data>
+  <data name="Settings_SignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
+  <data name="Settings_SignedIn" xml:space="preserve"><value>Signed in.</value></data>
+  <data name="Settings_FinishSignIn" xml:space="preserve"><value>Finish signing in in your browser. This window updates when you come back.</value></data>
+  <data name="Settings_Testing" xml:space="preserve"><value>Testing connection...</value></data>
+  <data name="Settings_Connected" xml:space="preserve"><value>Connected. Session usage: {0:0.#}%, weekly: {1:0.#}%.</value></data>
+  <data name="Settings_ConnectedRateLimited" xml:space="preserve"><value>Signed in, but Anthropic is limiting how often usage can be checked. Try again later, or turn off “Don't use tokens”.</value></data>
+</root>

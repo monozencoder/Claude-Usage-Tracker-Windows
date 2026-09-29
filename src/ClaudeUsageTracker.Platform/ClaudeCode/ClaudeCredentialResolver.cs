@@ -3,58 +3,34 @@ using ClaudeUsageTracker.Core.Models;
 namespace ClaudeUsageTracker.Platform.ClaudeCode;
 
 /// <summary>
-/// Finds Claude Code CLI credentials wherever they currently live — trying
-/// Windows-native first, then any installed WSL distro — nudging that
-/// environment's own CLI to refresh an expired token before falling through to
-/// the next source. Mirrors Claude Code CLI's own "just works from Windows or
-/// WSL" behavior instead of assuming Windows-native credentials only.
+/// Finds Claude Code CLI credentials wherever they currently live — Windows-native
+/// first, then any installed WSL distro — mirroring Claude Code CLI's own "just works
+/// from Windows or WSL" behavior. Read-only: an expired token is reported, not
+/// refreshed (refreshing via the CLI would run a prompt and consume usage). Claude
+/// Code refreshes it on its own the next time it's used.
 /// </summary>
 public static class ClaudeCredentialResolver
 {
-    public readonly record struct Result(
-        ClaudeCodeCredentials? Credentials,
-        bool CredentialsFileFound,
-        ClaudeCredentialSource? Source);
+    /// <param name="Credentials">Usable (unexpired) credentials, or null.</param>
+    /// <param name="Source">Where <paramref name="Credentials"/> came from — or, if they're
+    /// null but a credentials file exists, where the expired one was found.</param>
+    public readonly record struct Result(ClaudeCodeCredentials? Credentials, ClaudeCredentialSource? Source)
+    {
+        public bool CredentialsFileFound => Source is not null;
+    }
 
     public static Result Resolve()
     {
-        var sources = ClaudeCredentialSource.EnumerateAll();
-
-        var currentIndex = FindNextWithCredentials(sources, 0);
-        if (currentIndex < 0)
-            return new Result(null, CredentialsFileFound: false, Source: null);
-
-        while (true)
+        ClaudeCredentialSource? firstExpired = null;
+        foreach (var source in ClaudeCredentialSource.EnumerateAll())
         {
-            var source = sources[currentIndex];
-
-            var creds = source.TryRead();
-            if (IsUsable(creds))
-                return new Result(creds, CredentialsFileFound: true, source);
-
-            creds = source.TryRefreshAndReread();
-            if (IsUsable(creds))
-                return new Result(creds, CredentialsFileFound: true, source);
-
-            var nextIndex = FindNextWithCredentials(sources, currentIndex + 1);
-            if (nextIndex < 0)
-                return new Result(null, CredentialsFileFound: true, Source: null);
-
-            currentIndex = nextIndex;
-        }
-    }
-
-    private static bool IsUsable(ClaudeCodeCredentials? credentials)
-        => credentials is not null && !credentials.IsExpired(DateTimeOffset.Now);
-
-    private static int FindNextWithCredentials(IReadOnlyList<ClaudeCredentialSource> sources, int startIndex)
-    {
-        for (var i = startIndex; i < sources.Count; i++)
-        {
-            if (sources[i].TryRead() is not null)
-                return i;
+            if (source.TryRead() is not { } credentials)
+                continue;
+            if (!credentials.IsExpired(DateTimeOffset.Now))
+                return new Result(credentials, source);
+            firstExpired ??= source;
         }
 
-        return -1;
+        return new Result(null, firstExpired);
     }
 }

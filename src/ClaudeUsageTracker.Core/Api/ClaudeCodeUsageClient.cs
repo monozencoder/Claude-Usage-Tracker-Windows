@@ -8,119 +8,134 @@ using ClaudeUsageTracker.Core.Models;
 namespace ClaudeUsageTracker.Core.Api;
 
 /// <summary>
-/// Reads Claude Code usage from Anthropic's actual API (api.anthropic.com) using
-/// the OAuth access token Claude Code CLI itself uses — the same approach the CLI
-/// takes, not claude.ai's bot-protected web app. Tries the dedicated usage
-/// endpoint first, falling back to reading rate-limit headers off a minimal
-/// Messages API call (mirrors Claude Code CLI's own fallback behavior).
+/// Reads Claude Code usage from Anthropic's API (api.anthropic.com) using the access
+/// token Claude Code CLI itself stores — not claude.ai's bot-protected web app.
+/// <see cref="GetUsageAsync"/> consumes no usage but is rate-limited;
+/// <see cref="GetUsageViaMessagesApiAsync"/> consumes a tiny amount of usage per call but
+/// can be polled often. The app decides which one to use.
 /// </summary>
 public sealed class ClaudeCodeUsageClient(HttpClient httpClient)
 {
-    // Mirrors Claude Code CLI's own fallback chain — some accounts/models are
-    // rejected outright, so multiple models are tried until one yields the headers.
-    private static readonly string[] ModelFallbackChain = ["claude-3-haiku-20240307", "claude-haiku-4-5-20251001"];
+    /// <summary>
+    /// The cheapest current model (the probe only needs the response headers). An alias, so it
+    /// follows new Haiku 4.5 snapshots; once retired, <see cref="ProbeModelSelector"/> picks a successor.
+    /// </summary>
+    public const string PreferredProbeModel = "claude-haiku-4-5";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    // Replaced (for this client's lifetime) when the current probe model turns out to be retired.
+    private string _probeModel = PreferredProbeModel;
+
+    /// <summary>The model the next <see cref="GetUsageViaMessagesApiAsync"/> call will prompt.</summary>
+    public string ProbeModel => _probeModel;
+
+    /// <summary>
+    /// Reads usage from the OAuth usage endpoint. The endpoint only reports usage and never
+    /// runs a prompt, so this doesn't consume any of the quota it reports.
+    /// </summary>
+    /// <exception cref="AuthRequiredException">The token was rejected (401/403).</exception>
+    /// <exception cref="ClaudeApiException">Any other non-success status (e.g. 429), or an unreadable response.</exception>
+    /// <exception cref="HttpRequestException">The request couldn't be sent (network failure).</exception>
     public async Task<ClaudeUsage> GetUsageAsync(ClaudeCodeCredentials credentials, CancellationToken ct = default)
     {
-        var now = DateTimeOffset.Now;
-        var fromOAuthEndpoint = await TryGetUsageFromOAuthEndpointAsync(credentials, now, ct);
-        if (fromOAuthEndpoint is null)
-            return await GetUsageFromMessagesApiAsync(credentials, now, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, ApiEndpoints.OAuthUsage);
+        AddAuthHeaders(request, credentials);
 
-        if (fromOAuthEndpoint.SessionResetTime is not null && fromOAuthEndpoint.WeeklyResetTime is not null)
-            return fromOAuthEndpoint;
+        using var response = await httpClient.SendAsync(request, ct);
+        var status = (int)response.StatusCode;
 
-        // Reset timers are sometimes missing from the dedicated endpoint — fill
-        // them in from the Messages API fallback rather than discarding what we have.
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            throw new AuthRequiredException();
+
+        if (!response.IsSuccessStatusCode)
+            throw new ClaudeApiException(status, $"The usage endpoint returned status {status}.");
+
+        var body = await response.Content.ReadAsStringAsync(ct);
         try
         {
-            var fallback = await GetUsageFromMessagesApiAsync(credentials, now, ct);
-            return fromOAuthEndpoint with
-            {
-                SessionResetTime = fromOAuthEndpoint.SessionResetTime ?? fallback.SessionResetTime,
-                WeeklyResetTime = fromOAuthEndpoint.WeeklyResetTime ?? fallback.WeeklyResetTime
-            };
+            var dto = JsonSerializer.Deserialize<OAuthUsageResponseDto>(body, JsonOptions)
+                      ?? throw new ClaudeApiException(status, "The usage endpoint returned an empty response.");
+            return UsageResponseParser.FromOAuthUsage(dto, DateTimeOffset.Now);
         }
-        catch (ClaudeApiException)
+        catch (JsonException)
         {
-            return fromOAuthEndpoint;
+            throw new ClaudeApiException(status, "The usage endpoint returned an unreadable response.");
         }
     }
 
-    private async Task<ClaudeUsage?> TryGetUsageFromOAuthEndpointAsync(ClaudeCodeCredentials credentials, DateTimeOffset now, CancellationToken ct)
+    /// <summary>
+    /// <b>Consumes usage</b> (measured: 8 input + 1 output tokens on Haiku 4.5). Sends a real
+    /// one-token prompt to the Messages API and reads the anthropic-ratelimit-unified-* headers
+    /// off the response (mirrors Claude Code CLI's own fallback). If the probe model has been
+    /// retired (404), a successor is looked up via the Models API (free) and used from then on.
+    /// </summary>
+    /// <exception cref="AuthRequiredException">The token was rejected (401/403).</exception>
+    /// <exception cref="ClaudeApiException">No usable model, or the response carried no rate-limit headers.</exception>
+    /// <exception cref="HttpRequestException">The request couldn't be sent (network failure).</exception>
+    public async Task<ClaudeUsage> GetUsageViaMessagesApiAsync(ClaudeCodeCredentials credentials, CancellationToken ct = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, ApiEndpoints.OAuthUsage);
+        var usage = await TryProbeAsync(credentials, _probeModel, ct);
+        if (usage is not null)
+            return usage;
+
+        // The model is gone: ask which ones exist and switch for good.
+        var successor = await FindProbeModelAsync(credentials, ct);
+        if (successor is null || successor == _probeModel)
+            throw new ClaudeApiException(404, $"Model {_probeModel} is unavailable and no replacement was found.");
+
+        _probeModel = successor;
+        return await TryProbeAsync(credentials, successor, ct)
+               ?? throw new ClaudeApiException(404, $"Replacement model {successor} is unavailable too.");
+    }
+
+    /// <returns>The usage, or null if <paramref name="model"/> doesn't exist (404).</returns>
+    private async Task<ClaudeUsage?> TryProbeAsync(ClaudeCodeCredentials credentials, string model, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoints.Messages)
+        {
+            Content = new StringContent(BuildProbeMessageBody(model), Encoding.UTF8, "application/json")
+        };
+        AddAuthHeaders(request, credentials);
+        request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
+
+        using var response = await httpClient.SendAsync(request, ct);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            throw new AuthRequiredException();
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+        if (!HasRateLimitHeaders(response))
+            throw new ClaudeApiException((int)response.StatusCode, "Could not read usage from Anthropic's rate-limit headers.");
+
+        return UsageResponseParser.FromRateLimitHeaders(response.Headers, DateTimeOffset.Now);
+    }
+
+    /// <summary>Lists the models this token can use (no prompt, no usage) and picks the probe model.</summary>
+    private async Task<string?> FindProbeModelAsync(ClaudeCodeCredentials credentials, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ApiEndpoints.Models);
+        AddAuthHeaders(request, credentials);
+        request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
+
+        using var response = await httpClient.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        try
+        {
+            var dto = JsonSerializer.Deserialize<ModelsListResponseDto>(await response.Content.ReadAsStringAsync(ct), JsonOptions);
+            return dto is null ? null : ProbeModelSelector.Pick(dto.Data.Select(m => (m.Id, m.CreatedAt)));
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static void AddAuthHeaders(HttpRequestMessage request, ClaudeCodeCredentials credentials)
+    {
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credentials.AccessToken);
         request.Headers.TryAddWithoutValidation("anthropic-beta", "oauth-2025-04-20");
-
-        HttpResponseMessage response;
-        try
-        {
-            response = await httpClient.SendAsync(request, ct);
-        }
-        catch (HttpRequestException)
-        {
-            return null; // treat as "endpoint unavailable", caller falls back to Messages API
-        }
-
-        using (response)
-        {
-            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                throw new AuthRequiredException();
-
-            if (!response.IsSuccessStatusCode)
-                return null;
-
-            var body = await response.Content.ReadAsStringAsync(ct);
-            OAuthUsageResponseDto? dto;
-            try
-            {
-                dto = JsonSerializer.Deserialize<OAuthUsageResponseDto>(body, JsonOptions);
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
-
-            return dto is null ? null : UsageResponseParser.FromOAuthUsage(dto, now);
-        }
-    }
-
-    private async Task<ClaudeUsage> GetUsageFromMessagesApiAsync(ClaudeCodeCredentials credentials, DateTimeOffset now, CancellationToken ct)
-    {
-        foreach (var model in ModelFallbackChain)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoints.Messages)
-            {
-                Content = new StringContent(BuildProbeMessageBody(model), Encoding.UTF8, "application/json")
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credentials.AccessToken);
-            request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
-            request.Headers.TryAddWithoutValidation("anthropic-beta", "oauth-2025-04-20");
-
-            HttpResponseMessage response;
-            try
-            {
-                response = await httpClient.SendAsync(request, ct);
-            }
-            catch (HttpRequestException)
-            {
-                continue; // try the next model
-            }
-
-            using (response)
-            {
-                if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                    throw new AuthRequiredException();
-
-                if (HasRateLimitHeaders(response))
-                    return UsageResponseParser.FromRateLimitHeaders(response.Headers, now);
-            }
-        }
-
-        throw new ClaudeApiException(0, "Could not read usage from Anthropic's rate-limit headers.");
     }
 
     private static string BuildProbeMessageBody(string model)

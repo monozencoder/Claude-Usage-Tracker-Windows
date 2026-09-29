@@ -1,4 +1,6 @@
 using System.Net.Http;
+using ClaudeUsageTracker.App.Localization;
+using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Platform.ClaudeCode;
@@ -14,65 +16,84 @@ public sealed record UsageFetchResult
     /// <summary>Tray status to show for this error, or null to leave the icon as it was (transient failures).</summary>
     public UsageStatusLevel? ErrorStatus { get; private init; }
 
+    /// <summary>True when signing in via the Windows Claude Code CLI would fix the error.</summary>
+    public bool CanSignIn { get; private init; }
+
+    /// <summary>The free usage endpoint (token-free mode) answered HTTP 429; the caller should back off.</summary>
+    public bool UsageEndpointRateLimited { get; private init; }
+
     public static UsageFetchResult Success(ClaudeUsage usage) => new() { Usage = usage };
 
-    public static UsageFetchResult Failure(string error, UsageStatusLevel? status = null)
-        => new() { Error = error, ErrorStatus = status };
+    public static UsageFetchResult Failure(string error, UsageStatusLevel? status = null, bool canSignIn = false)
+        => new() { Error = error, ErrorStatus = status, CanSignIn = canSignIn };
+
+    public static UsageFetchResult RateLimited() => new() { UsageEndpointRateLimited = true };
 }
 
 /// <summary>
 /// Fetches usage end to end: locate Claude Code CLI's own credentials (Windows-native
-/// or WSL, whichever has them), call Anthropic's API, and — if the token is rejected —
-/// nudge that CLI to refresh it and retry once. Credential discovery and refresh shell
-/// out to claude / wsl.exe and can take many seconds, so they run off the UI thread.
+/// or WSL, whichever has them), then read usage the way the current mode says:
+/// <list type="bullet">
+///   <item>Default: a one-token Messages API prompt (consumes a tiny amount of usage; not
+///   rate-limited like the usage endpoint, so it can refresh often).</item>
+///   <item><see cref="AppSettings.AvoidTokenUsage"/>: the free usage endpoint only (no usage
+///   consumed; rate-limited, hence the fixed 10-minute interval).</item>
+/// </list>
+/// An expired or rejected sign-in is reported (with a sign-in option), never refreshed by
+/// the app. Credential discovery shells out to wsl.exe / where.exe, so it runs off the UI thread.
 /// </summary>
-public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient)
+public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsStore settingsStore)
 {
-    private const string SignInHint = "Run \"claude\" in a terminal to sign in again.";
-
-    public async Task<UsageFetchResult> FetchAsync(CancellationToken ct = default)
+    /// <param name="avoidTokenUsage">Overrides the saved mode (Test connection checks the unsaved choice).</param>
+    public async Task<UsageFetchResult> FetchAsync(bool? avoidTokenUsage = null, CancellationToken ct = default)
     {
         var resolution = await Task.Run(ClaudeCredentialResolver.Resolve, ct);
         if (resolution.Credentials is not { } credentials)
-        {
-            return resolution.CredentialsFileFound
-                ? UsageFetchResult.Failure($"Claude Code CLI's token is expired. {SignInHint}", UsageStatusLevel.Critical)
-                : UsageFetchResult.Failure(
-                    "Claude Code CLI credentials not found on Windows or in any installed WSL distro. " +
-                    "Install Claude Code and run \"claude\" to sign in.",
-                    UsageStatusLevel.Safe);
-        }
+            return await Task.Run(() => DescribeMissingCredentials(resolution), ct);
 
+        var avoidTokens = avoidTokenUsage ?? settingsStore.Current.AvoidTokenUsage;
         try
         {
-            try
-            {
-                return UsageFetchResult.Success(await usageClient.GetUsageAsync(credentials, ct));
-            }
-            catch (AuthRequiredException)
-            {
-                var refreshed = await Task.Run(() => resolution.Source?.TryRefreshAndReread(), ct);
-                if (refreshed is null)
-                {
-                    return UsageFetchResult.Failure(
-                        $"Claude Code CLI's token was rejected and could not be refreshed. {SignInHint}",
-                        UsageStatusLevel.Critical);
-                }
-
-                return UsageFetchResult.Success(await usageClient.GetUsageAsync(refreshed, ct));
-            }
+            var usage = avoidTokens
+                ? await usageClient.GetUsageAsync(credentials, ct)
+                : await usageClient.GetUsageViaMessagesApiAsync(credentials, ct);
+            return UsageFetchResult.Success(usage);
         }
         catch (AuthRequiredException)
         {
-            return UsageFetchResult.Failure($"Anthropic rejected Claude Code CLI's token. {SignInHint}", UsageStatusLevel.Critical);
+            return SignInFailure(Loc.Get("Error_SignInRejected"), resolution.Source);
+        }
+        catch (ClaudeApiException ex) when (avoidTokens && ex.StatusCode == 429)
+        {
+            return UsageFetchResult.RateLimited();
         }
         catch (ClaudeApiException ex)
         {
-            return UsageFetchResult.Failure($"Failed to read usage (status {ex.StatusCode}).");
+            return UsageFetchResult.Failure(avoidTokens
+                ? Loc.Format("Error_Status", ex.StatusCode)
+                : Loc.Get("Error_MessagesApiFailed"));
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            return UsageFetchResult.Failure("Couldn't reach Anthropic's API. Check your network connection.");
+            return UsageFetchResult.Failure(Loc.Get("Error_Network"));
         }
     }
+
+    private static UsageFetchResult DescribeMissingCredentials(ClaudeCredentialResolver.Result resolution)
+    {
+        if (resolution.CredentialsFileFound)
+        {
+            return SignInFailure(Loc.Get("Error_SignInExpired"), resolution.Source);
+        }
+
+        return ClaudeCli.IsInstalled
+            ? UsageFetchResult.Failure(Loc.Get("Error_NotSignedIn"), UsageStatusLevel.Safe, canSignIn: true)
+            : UsageFetchResult.Failure(Loc.Get("Error_NotInstalled"), UsageStatusLevel.Safe);
+    }
+
+    // A WSL-only setup has to sign in from inside WSL; everything else gets the Sign in button.
+    private static UsageFetchResult SignInFailure(string problem, ClaudeCredentialSource? source)
+        => source is { IsWsl: true }
+            ? UsageFetchResult.Failure(Loc.Format("Error_SignInInWsl", problem, source.DisplayName), UsageStatusLevel.Critical)
+            : UsageFetchResult.Failure(problem, UsageStatusLevel.Critical, canSignIn: true);
 }

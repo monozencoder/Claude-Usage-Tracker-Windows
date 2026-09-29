@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Threading;
+using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.Themes;
@@ -8,6 +9,7 @@ using ClaudeUsageTracker.App.Tray;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.App.Views;
 using ClaudeUsageTracker.Core.Api;
+using ClaudeUsageTracker.Platform.ClaudeCode;
 using ClaudeUsageTracker.Platform.Notifications;
 using ClaudeUsageTracker.Platform.Startup;
 using ClaudeUsageTracker.Platform.TrayIcon;
@@ -33,6 +35,7 @@ public partial class App : System.Windows.Application
     private UsageRefreshCoordinator _coordinator = null!;
     private FlyoutWindow _flyoutWindow = null!;
     private DispatcherTimer _refreshTimer = null!;
+    private CredentialsFileWatcher _credentialsWatcher = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -48,15 +51,20 @@ public partial class App : System.Windows.Application
         _settingsStore = new AppSettingsStore();
         var settings = _settingsStore.Current;
         ThemeManager.Apply(settings.Theme);
+        Loc.Apply(settings.Language);
 
-        _usageFetcher = new UsageFetcher(new ClaudeCodeUsageClient(_httpClient));
+        _usageFetcher = new UsageFetcher(new ClaudeCodeUsageClient(_httpClient), _settingsStore);
         _launchAtLoginService = new RunKeyLaunchAtLoginService(
             appName: AppName,
             executablePathProvider: () => Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0]);
 
-        _flyoutWindow = new FlyoutWindow { DataContext = _flyoutViewModel };
+        _flyoutWindow = new FlyoutWindow { DataContext = _flyoutViewModel, Topmost = settings.AlwaysOnTop };
         _flyoutViewModel.RefreshRequested += RefreshNow;
         _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
+        _flyoutViewModel.SignInRequested += StartSignIn;
+        Loc.LanguageChanged += _flyoutViewModel.RefreshLanguage;
+        // The view model was built (as a field) before the saved language was applied above.
+        _flyoutViewModel.RefreshLanguage();
 
         _trayIconController = new TrayIconController(new TrayIconRenderer());
         _trayIconController.Clicked += _flyoutWindow.ToggleNearCursor;
@@ -70,6 +78,10 @@ public partial class App : System.Windows.Application
         _refreshTimer.Tick += (_, _) => RefreshNow();
         _refreshTimer.Start();
 
+        // Picks up a finished sign-in (or Claude Code renewing its token) immediately.
+        _credentialsWatcher = new CredentialsFileWatcher();
+        _credentialsWatcher.Changed += RefreshNow;
+
         if (settings.ShowFlyoutOnStartup)
             _flyoutWindow.ToggleNearCursor();
 
@@ -81,6 +93,7 @@ public partial class App : System.Windows.Application
         _refreshTimer?.Stop();
         ThemeManager.Shutdown();
         _trayIconController?.Dispose();
+        _credentialsWatcher?.Dispose();
         _httpClient.Dispose();
         base.OnExit(e);
     }
@@ -89,9 +102,15 @@ public partial class App : System.Windows.Application
     // DispatcherUnhandledException (and the banner) instead of vanishing with a Task.
     private async void RefreshNow() => await _coordinator.RefreshAsync();
 
+    private void StartSignIn()
+    {
+        if (!ClaudeCli.StartLogin())
+            _flyoutViewModel.SetBanner(Loc.Get("Error_CouldNotStartClaude"));
+    }
+
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        _flyoutViewModel.SetBanner($"Unexpected error: {e.Exception.Message}");
+        _flyoutViewModel.SetBanner(Loc.Format("Error_Unexpected", e.Exception.Message));
         e.Handled = true;
     }
 
@@ -101,8 +120,10 @@ public partial class App : System.Windows.Application
         viewModel.Saved += () =>
         {
             _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
+            _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
             RefreshNow();
         };
+        viewModel.ConnectionTested += result => _coordinator.ApplyResult(result);
         new SettingsWindow(viewModel).ShowDialog();
     }
 }

@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using ClaudeUsageTracker.App.Themes;
 using ClaudeUsageTracker.App.ViewModels;
 
@@ -26,10 +28,17 @@ public partial class SettingsWindow : Window
             viewModel.Saved -= Close;
             viewModel.DiscardUnsavedPreview();
         };
-        Loaded += async (_, _) => await viewModel.LoadCredentialsSummaryAsync();
+        // Also on re-activation: the user comes back here after signing in in the browser.
+        Activated += async (_, _) => await viewModel.LoadAccountAsync();
     }
 
     private void OnCancelClicked(object sender, RoutedEventArgs e) => Close();
+
+    private void OnInstallLinkNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        e.Handled = true;
+    }
 
     private void OnRefreshIntervalPreviewTextInput(object sender, TextCompositionEventArgs e)
         => e.Handled = !e.Text.All(char.IsAsciiDigit);
