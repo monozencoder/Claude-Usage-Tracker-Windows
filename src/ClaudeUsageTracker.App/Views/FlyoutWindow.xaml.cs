@@ -35,7 +35,7 @@ public partial class FlyoutWindow : Window
 
         // Render invisibly first so ActualWidth/ActualHeight are valid for positioning
         // before the window becomes visible at the wrong spot.
-        Opacity = 0;
+        ResetToAnimationStart();
         Show();
         UpdateLayout();
         WindowPositioner.PositionNearCursor(this, RootPanel.Margin);
@@ -59,6 +59,8 @@ public partial class FlyoutWindow : Window
 
     private void OnCloseClicked(object sender, RoutedEventArgs e) => HideToTray();
 
+    private const double SlideInOffset = 10;
+
     // Small fade + rise animation so the flyout feels like a Windows 11 quick-settings
     // panel appearing, rather than an abrupt on/off toggle.
     private void AnimateIn()
@@ -67,7 +69,18 @@ public partial class FlyoutWindow : Window
 
         BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)) { EasingFunction = ease });
         RootTranslate.BeginAnimation(TranslateTransform.YProperty,
-            new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = ease });
+            new DoubleAnimation(SlideInOffset, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = ease });
+    }
+
+    // A finished animation keeps holding its end value (Opacity 1, offset 0), which
+    // overrides any local value. Without clearing it, the next Show() would flash the
+    // window fully visible at its old spot before the animation snaps it back to the start.
+    private void ResetToAnimationStart()
+    {
+        BeginAnimation(OpacityProperty, null);
+        Opacity = 0;
+        RootTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        RootTranslate.Y = SlideInOffset;
     }
 
     // Lets the borderless window be dragged by its header, skipping clicks that
