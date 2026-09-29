@@ -49,7 +49,7 @@
 
         <TextBlock Text="Refresh interval" FontWeight="SemiBold" FontSize="13"
                     Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" />
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
             <Button Style="{StaticResource StepButtonStyle}" Command="{Binding DecreaseRefreshIntervalCommand}"
                     ToolTip="Decrease by 5 seconds">
                 <TextBlock Text="&#xE738;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" />
@@ -71,18 +71,11 @@
             </Button>
             <TextBlock Text="seconds" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
         </StackPanel>
-        <TextBlock Text="{Binding RefreshIntervalHint}" FontSize="11" Margin="0,0,0,18">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsRefreshIntervalValid}" Value="False">
-                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+        <!-- Shown only while the value can't be saved; pulled up into the row's bottom margin
+             so the layout doesn't shift when it appears. -->
+        <TextBlock Text="{Binding RefreshIntervalError}" Foreground="{DynamicResource DangerBrush}" FontSize="11"
+                   Margin="0,-14,0,0" Height="14" VerticalAlignment="Top"
+                   Visibility="{Binding RefreshIntervalError, Converter={StaticResource StringToVisibility}}" />
 
         <TextBlock Text="Appearance" FontWeight="SemiBold" FontSize="13"
                     Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" />

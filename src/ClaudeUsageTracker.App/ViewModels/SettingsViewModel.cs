@@ -19,17 +19,18 @@ public partial class SettingsViewModel : ObservableObject
 
     /// <summary>Raw text of the interval box. Kept as a string so a half-typed or empty value doesn't fight the binding.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsRefreshIntervalValid), nameof(RefreshIntervalHint), nameof(CanSave))]
+    [NotifyPropertyChangedFor(nameof(IsRefreshIntervalValid), nameof(RefreshIntervalError), nameof(CanSave))]
     private string _refreshIntervalText = "60";
 
     public bool IsRefreshIntervalValid => ParsedRefreshInterval is >= MinInterval and <= MaxInterval;
 
-    public string RefreshIntervalHint => ParsedRefreshInterval switch
+    /// <summary>Why the typed interval can't be saved, or null when it's fine (nothing is shown then).</summary>
+    public string? RefreshIntervalError => ParsedRefreshInterval switch
     {
         null => $"Enter {MinInterval}–{MaxInterval} seconds",
         < MinInterval => $"Minimum is {MinInterval} seconds",
-        > MaxInterval => $"Maximum is {MaxInterval} seconds ({FormatDuration(MaxInterval)})",
-        var s => $"Every {FormatDuration(s.Value)}"
+        > MaxInterval => $"Maximum is {MaxInterval} seconds",
+        _ => null
     };
 
     /// <summary>The interval to persist: the typed value clamped to the allowed range.</summary>
@@ -85,16 +86,4 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void DecreaseRefreshInterval() =>
         RefreshIntervalSeconds = (RefreshIntervalSeconds - 1) / RefreshIntervalStep * RefreshIntervalStep;
-
-    private static string FormatDuration(int seconds)
-    {
-        var span = TimeSpan.FromSeconds(seconds);
-        return span switch
-        {
-            { TotalSeconds: < 60 } => $"{seconds} seconds",
-            { TotalHours: >= 1 } => span.Minutes == 0 ? $"{(int)span.TotalHours} h" : $"{(int)span.TotalHours} h {span.Minutes} min",
-            { Seconds: 0 } => $"{(int)span.TotalMinutes} min",
-            _ => $"{(int)span.TotalMinutes} min {span.Seconds} s"
-        };
-    }
 }
