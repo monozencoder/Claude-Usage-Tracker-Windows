@@ -1,6 +1,6 @@
-using System.Runtime.InteropServices;
+using System.ComponentModel;
 using System.Windows;
-using System.Windows.Interop;
+using System.Windows.Input;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.Core.Api;
@@ -11,17 +11,12 @@ namespace ClaudeUsageTracker.App.Views;
 
 public partial class SettingsWindow : Window
 {
-    // Undocumented but stable since Windows 10 20H1; makes the native title bar match
-    // the app's dark theme instead of showing a jarring white bar above dark content.
-    private const int DwmwaUseImmersiveDarkMode = 20;
-
-    [DllImport("dwmapi.dll", PreserveSig = true)]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
-
     private readonly AppSettingsStore _settingsStore;
     private readonly ILaunchAtLoginService _launchAtLoginService;
     private readonly ClaudeCodeUsageClient _usageClient;
     private readonly SettingsViewModel _viewModel = new();
+    private readonly AppTheme _savedTheme;
+    private bool _saved;
 
     public event Func<Task>? SettingsSaved;
 
@@ -36,22 +31,30 @@ public partial class SettingsWindow : Window
 
         InitializeComponent();
         DataContext = _viewModel;
-        SourceInitialized += (_, _) => EnableDarkTitleBar();
+        ThemeManager.TrackTitleBar(this);
 
         var settings = _settingsStore.Load();
         _viewModel.RefreshIntervalSeconds = settings.RefreshIntervalSeconds;
         _viewModel.NotificationsEnabled = settings.NotificationsEnabled;
         _viewModel.LaunchAtLoginEnabled = _launchAtLoginService.IsEnabled;
         _viewModel.ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
+        _viewModel.Theme = _savedTheme = settings.Theme;
+
+        // Preview the theme as soon as it's picked; Closed reverts it unless saved.
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        Closed += (_, _) =>
+        {
+            if (!_saved)
+                ThemeManager.Apply(_savedTheme);
+        };
 
         RefreshCredentialsSummary();
     }
 
-    private void EnableDarkTitleBar()
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var hwnd = new WindowInteropHelper(this).Handle;
-        var useDarkMode = 1;
-        DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref useDarkMode, sizeof(int));
+        if (e.PropertyName == nameof(SettingsViewModel.Theme))
+            ThemeManager.Apply(_viewModel.Theme);
     }
 
     private void RefreshCredentialsSummary()
@@ -113,11 +116,14 @@ public partial class SettingsWindow : Window
         _viewModel.IsBusy = true;
         try
         {
+            _viewModel.NormalizeRefreshInterval();
             var settings = _settingsStore.Load();
             settings.RefreshIntervalSeconds = _viewModel.RefreshIntervalSeconds;
             settings.NotificationsEnabled = _viewModel.NotificationsEnabled;
             settings.ShowFlyoutOnStartup = _viewModel.ShowFlyoutOnStartup;
+            settings.Theme = _viewModel.Theme;
             _settingsStore.Save(settings);
+            _saved = true;
 
             _launchAtLoginService.SetEnabled(_viewModel.LaunchAtLoginEnabled);
 
@@ -133,4 +139,59 @@ public partial class SettingsWindow : Window
     }
 
     private void OnCancelClicked(object sender, RoutedEventArgs e) => Close();
+
+    private void OnRefreshIntervalPreviewTextInput(object sender, TextCompositionEventArgs e)
+        => e.Handled = !e.Text.All(char.IsAsciiDigit);
+
+    private void OnRefreshIntervalPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            // Space never reaches PreviewTextInput, so it has to be blocked here.
+            case Key.Space:
+                e.Handled = true;
+                break;
+            case Key.Up:
+                StepRefreshInterval(up: true);
+                e.Handled = true;
+                break;
+            case Key.Down:
+                StepRefreshInterval(up: false);
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnRefreshIntervalPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        // Only while focused, so scrolling past the box doesn't silently change it.
+        if (!RefreshIntervalBox.IsKeyboardFocusWithin)
+            return;
+        StepRefreshInterval(up: e.Delta > 0);
+        e.Handled = true;
+    }
+
+    private void OnRefreshIntervalLostFocus(object sender, KeyboardFocusChangedEventArgs e)
+        => _viewModel.NormalizeRefreshInterval();
+
+    /// <summary>Keeps only the digits of pasted text (so "90s" or " 120 " still work).</summary>
+    private void OnRefreshIntervalPasting(object sender, DataObjectPastingEventArgs e)
+    {
+        e.CancelCommand();
+        if (e.SourceDataObject.GetData(DataFormats.UnicodeText) is not string text)
+            return;
+
+        var digits = new string(text.Where(char.IsAsciiDigit).ToArray());
+        if (digits.Length > 0)
+            RefreshIntervalBox.SelectedText = digits;
+        RefreshIntervalBox.CaretIndex = RefreshIntervalBox.SelectionStart + RefreshIntervalBox.SelectionLength;
+        RefreshIntervalBox.SelectionLength = 0;
+    }
+
+    private void StepRefreshInterval(bool up)
+    {
+        var command = up ? _viewModel.IncreaseRefreshIntervalCommand : _viewModel.DecreaseRefreshIntervalCommand;
+        command.Execute(null);
+        RefreshIntervalBox.CaretIndex = RefreshIntervalBox.Text.Length;
+    }
 }

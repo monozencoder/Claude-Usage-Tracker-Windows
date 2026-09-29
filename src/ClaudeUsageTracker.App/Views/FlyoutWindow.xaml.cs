@@ -11,9 +11,10 @@ namespace ClaudeUsageTracker.App.Views;
 
 public partial class FlyoutWindow : Window
 {
-    // Only ticks while the flyout is visible, so the "(Ns ago)" portion of
-    // LastUpdatedText counts up live without polling in the background.
-    private readonly DispatcherTimer _elapsedTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    // Only ticks while the flyout is visible, so the relative "Updated N min ago"
+    // text stays current without polling in the background. The text has minute
+    // granularity, so a few seconds of lag is invisible.
+    private readonly DispatcherTimer _elapsedTimer = new() { Interval = TimeSpan.FromSeconds(5) };
 
     public FlyoutWindow()
     {
@@ -38,7 +39,7 @@ public partial class FlyoutWindow : Window
         Opacity = 0;
         Show();
         UpdateLayout();
-        WindowPositioner.PositionNearCursor(this);
+        WindowPositioner.PositionNearCursor(this, RootPanel.Margin);
         AnimateIn();
         Activate();
 

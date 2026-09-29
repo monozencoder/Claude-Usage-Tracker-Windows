@@ -1,4 +1,4 @@
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Windows;
 using System.Windows.Threading;
 using ClaudeUsageTracker.App.Services;
@@ -13,8 +13,6 @@ namespace ClaudeUsageTracker.App;
 
 public partial class App : System.Windows.Application
 {
-    private static readonly TimeSpan MinRefreshInterval = TimeSpan.FromSeconds(15);
-
     private HttpClient? _httpClient;
     private ClaudeCodeUsageClient? _usageClient;
     private TrayIconController? _trayIconController;
@@ -48,6 +46,8 @@ public partial class App : System.Windows.Application
             executablePathProvider: () => Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0]);
 
         var trayRenderer = new TrayIconRenderer();
+
+        ThemeManager.Apply(_settingsStore.Load().Theme);
 
         _flyoutViewModel = new FlyoutViewModel();
         _flyoutWindow = new FlyoutWindow { DataContext = _flyoutViewModel };
@@ -92,7 +92,7 @@ public partial class App : System.Windows.Application
     }
 
     private static TimeSpan ClampInterval(int seconds)
-        => TimeSpan.FromSeconds(Math.Max(seconds, (int)MinRefreshInterval.TotalSeconds));
+        => TimeSpan.FromSeconds(Math.Clamp(seconds, AppSettings.MinRefreshIntervalSeconds, AppSettings.MaxRefreshIntervalSeconds));
 
     private void OpenSettingsWindow()
     {
@@ -114,6 +114,7 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         _refreshTimer?.Stop();
+        ThemeManager.Shutdown();
         _trayIconController?.Dispose();
         _httpClient?.Dispose();
         base.OnExit(e);

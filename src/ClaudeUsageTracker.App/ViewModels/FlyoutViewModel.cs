@@ -22,6 +22,10 @@ public partial class FlyoutViewModel : ObservableObject
     [ObservableProperty]
     private string _lastUpdatedText = "Never refreshed";
 
+    /// <summary>Exact timestamp, shown as the tooltip of the relative LastUpdatedText.</summary>
+    [ObservableProperty]
+    private string? _lastUpdatedToolTip;
+
     private DateTimeOffset? _lastUpdatedAt;
 
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
@@ -56,8 +60,9 @@ public partial class FlyoutViewModel : ObservableObject
         RefreshLastUpdatedText(now);
     }
 
-    /// <summary>Recomputes the "Updated HH:mm:ss (Ns ago)" text. Called once per second
-    /// while the flyout is visible so the elapsed-time portion counts up live.</summary>
+    /// <summary>Recomputes the relative "Updated N min ago" text (minute granularity, so it
+    /// rarely changes width) and its exact-time tooltip. Called periodically while the
+    /// flyout is visible so the relative time stays current.</summary>
     public void RefreshLastUpdatedText(DateTimeOffset now)
     {
         if (_lastUpdatedAt is not { } updatedAt)
@@ -67,10 +72,17 @@ public partial class FlyoutViewModel : ObservableObject
         if (elapsed < TimeSpan.Zero)
             elapsed = TimeSpan.Zero;
 
-        var elapsedText = elapsed.TotalMinutes >= 1
-            ? $"{(int)elapsed.TotalMinutes}m {elapsed.Seconds}s ago"
-            : $"{(int)elapsed.TotalSeconds}s ago";
+        LastUpdatedText = elapsed switch
+        {
+            { TotalMinutes: < 1 } => "Updated just now",
+            { TotalHours: < 1 } => $"Updated {(int)elapsed.TotalMinutes} min ago",
+            { TotalDays: < 1 } => $"Updated {(int)elapsed.TotalHours} h ago",
+            _ => $"Updated {(int)elapsed.TotalDays} d ago"
+        };
 
-        LastUpdatedText = $"Updated {updatedAt:HH:mm:ss} ({elapsedText})";
+        var localUpdatedAt = updatedAt.ToLocalTime();
+        LastUpdatedToolTip = localUpdatedAt.Date == now.ToLocalTime().Date
+            ? $"Last updated at {localUpdatedAt:HH:mm:ss}"
+            : $"Last updated at {localUpdatedAt:yyyy-MM-dd HH:mm:ss}";
     }
 }

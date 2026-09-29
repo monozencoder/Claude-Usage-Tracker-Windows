@@ -6,11 +6,14 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Must stay first: ThemeManager replaces MergedDictionaries[0] to switch palettes. -->
+                <ResourceDictionary Source="Themes/Colors.Dark.xaml" />
                 <ResourceDictionary Source="Themes/Theme.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <converters:StringToVisibilityConverter x:Key="StringToVisibility" />
             <converters:BooleanInverter x:Key="BooleanInverter" />
+            <converters:EnumEqualsConverter x:Key="EnumEquals" />
             <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />
         </ResourceDictionary>
     </Application.Resources>
