@@ -45,7 +45,7 @@
         <TextBlock Text="{Binding CredentialsSummary}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
                     Margin="0,0,0,10" TextWrapping="Wrap" />
         <Button Content="Test connection" Height="30" HorizontalAlignment="Left" Padding="14,0"
-                Click="OnTestConnectionClicked" Margin="0,0,0,18" />
+                Command="{Binding TestConnectionCommand}" Margin="0,0,0,18" />
 
         <TextBlock Text="Refresh interval" FontWeight="SemiBold" FontSize="13"
                     Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6" />
@@ -114,7 +114,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel" Width="84" Height="30" Margin="0,0,8,0" Click="OnCancelClicked" />
             <Button Content="Save" Width="84" Height="30" Style="{StaticResource AccentButtonStyle}" IsDefault="True"
-                    IsEnabled="{Binding CanSave}" Click="OnSaveClicked" />
+                    Command="{Binding SaveCommand}" />
         </StackPanel>
     </StackPanel>
 </Window>

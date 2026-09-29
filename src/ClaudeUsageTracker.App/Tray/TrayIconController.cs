@@ -4,7 +4,7 @@ using ClaudeUsageTracker.Platform.TrayIcon;
 using DrawingIcon = System.Drawing.Icon;
 using H.NotifyIcon;
 
-namespace ClaudeUsageTracker.App.Services;
+namespace ClaudeUsageTracker.App.Tray;
 
 /// <summary>Owns the tray icon: click routing, right-click menu, and icon repainting on each usage update.</summary>
 public sealed class TrayIconController : IDisposable

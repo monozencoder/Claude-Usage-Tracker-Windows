@@ -3,7 +3,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using ClaudeUsageTracker.Core.Models;
 
-namespace ClaudeUsageTracker.App.Views.Converters;
+namespace ClaudeUsageTracker.App.Converters;
 
 public sealed class UsageStatusToBrushConverter : IValueConverter
 {

@@ -1,8 +1,13 @@
 using System.IO;
 using System.Text.Json;
 
-namespace ClaudeUsageTracker.App.Services;
+namespace ClaudeUsageTracker.App.Settings;
 
+/// <summary>
+/// Owns the app's single <see cref="AppSettings"/> instance. Everything reads and
+/// mutates <see cref="Current"/> and then calls <see cref="Save"/>, so there are no
+/// stale copies that could overwrite each other's changes on disk.
+/// </summary>
 public sealed class AppSettingsStore
 {
     private static readonly string SettingsPath = Path.Combine(
@@ -11,7 +16,15 @@ public sealed class AppSettingsStore
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    public AppSettings Load()
+    public AppSettings Current { get; } = Load();
+
+    public void Save()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(Current, JsonOptions));
+    }
+
+    private static AppSettings Load()
     {
         try
         {
@@ -26,12 +39,5 @@ public sealed class AppSettingsStore
             // Corrupt or unreadable settings file — start fresh rather than crashing the app.
             return new AppSettings();
         }
-    }
-
-    public void Save(AppSettings settings)
-    {
-        var directory = Path.GetDirectoryName(SettingsPath)!;
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, JsonOptions));
     }
 }

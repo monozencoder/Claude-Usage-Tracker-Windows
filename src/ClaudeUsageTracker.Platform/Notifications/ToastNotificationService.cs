@@ -16,6 +16,4 @@ public sealed class ToastNotificationService : IToastNotificationService
             .AddText(message)
             .Show();
     }
-
-    public void ClearAll() => ToastNotificationManagerCompat.History.Clear();
 }

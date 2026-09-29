@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -21,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ClaudeUsageTracker.Core\ClaudeUsageTracker.Core.csproj" />
+    <ProjectReference Include="..\..\src\ClaudeUsageTracker.Core\ClaudeUsageTracker.Core.csproj" />
   </ItemGroup>
 
 </Project>

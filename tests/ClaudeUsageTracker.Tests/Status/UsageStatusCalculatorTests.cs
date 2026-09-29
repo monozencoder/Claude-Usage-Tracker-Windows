@@ -2,7 +2,7 @@ using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Core.Status;
 using Xunit;
 
-namespace ClaudeUsageTracker.Tests;
+namespace ClaudeUsageTracker.Tests.Status;
 
 public class UsageStatusCalculatorTests
 {

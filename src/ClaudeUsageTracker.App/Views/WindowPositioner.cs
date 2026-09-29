@@ -1,7 +1,7 @@
 using System.Windows;
 using WinForms = System.Windows.Forms;
 
-namespace ClaudeUsageTracker.App.Services;
+namespace ClaudeUsageTracker.App.Views;
 
 /// <summary>
 /// Positions a borderless window near the current cursor position, clamped to the

@@ -1,8 +1,5 @@
 namespace ClaudeUsageTracker.Core.Api;
 
-/// <summary>No Claude Code CLI credentials file was found (or it has no usable access token).</summary>
-public sealed class NoCredentialsException() : Exception("No Claude Code CLI credentials were found.");
-
 /// <summary>
 /// The API rejected the access token (401/403). The caller should ask Claude Code
 /// CLI to refresh its token (see ClaudeCliRefresher) and retry once.

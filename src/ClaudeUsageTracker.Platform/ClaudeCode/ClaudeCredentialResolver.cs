@@ -1,6 +1,6 @@
 using ClaudeUsageTracker.Core.Models;
 
-namespace ClaudeUsageTracker.Platform.ClaudeCli;
+namespace ClaudeUsageTracker.Platform.ClaudeCode;
 
 /// <summary>
 /// Finds Claude Code CLI credentials wherever they currently live — trying

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace ClaudeUsageTracker.App.Views.Converters;
+namespace ClaudeUsageTracker.App.Converters;
 
 public sealed class StringToVisibilityConverter : IValueConverter
 {

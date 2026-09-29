@@ -1,7 +1,10 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Threading;
 using ClaudeUsageTracker.App.Services;
+using ClaudeUsageTracker.App.Settings;
+using ClaudeUsageTracker.App.Themes;
+using ClaudeUsageTracker.App.Tray;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.App.Views;
 using ClaudeUsageTracker.Core.Api;
@@ -11,17 +14,25 @@ using ClaudeUsageTracker.Platform.TrayIcon;
 
 namespace ClaudeUsageTracker.App;
 
+/// <summary>Composition root: builds the object graph on startup and tears it down on exit.</summary>
 public partial class App : System.Windows.Application
 {
-    private HttpClient? _httpClient;
-    private ClaudeCodeUsageClient? _usageClient;
-    private TrayIconController? _trayIconController;
-    private UsageRefreshCoordinator? _coordinator;
-    private DispatcherTimer? _refreshTimer;
-    private FlyoutViewModel? _flyoutViewModel;
-    private FlyoutWindow? _flyoutWindow;
-    private AppSettingsStore? _settingsStore;
-    private ILaunchAtLoginService? _launchAtLoginService;
+    private const string AppName = "ClaudeUsageTracker";
+
+    // Usage is read from Anthropic's actual API (api.anthropic.com) using Claude Code
+    // CLI's own OAuth credentials — not claude.ai's bot-protected web app — so a plain
+    // HttpClient is sufficient; no embedded browser needed.
+    private readonly HttpClient _httpClient = new();
+    private readonly FlyoutViewModel _flyoutViewModel = new();
+
+    // Assigned in OnStartup, which WPF always runs before anything else here.
+    private AppSettingsStore _settingsStore = null!;
+    private UsageFetcher _usageFetcher = null!;
+    private ILaunchAtLoginService _launchAtLoginService = null!;
+    private TrayIconController _trayIconController = null!;
+    private UsageRefreshCoordinator _coordinator = null!;
+    private FlyoutWindow _flyoutWindow = null!;
+    private DispatcherTimer _refreshTimer = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -34,81 +45,35 @@ public partial class App : System.Windows.Application
         // and keep running wherever the failure isn't fatal to the process.
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        // Usage is read from Anthropic's actual API (api.anthropic.com) using
-        // Claude Code CLI's own OAuth credentials — not claude.ai's bot-protected
-        // web app — so a plain HttpClient is sufficient; no embedded browser needed.
-        _httpClient = new HttpClient();
-        _usageClient = new ClaudeCodeUsageClient(_httpClient);
-
         _settingsStore = new AppSettingsStore();
+        var settings = _settingsStore.Current;
+        ThemeManager.Apply(settings.Theme);
+
+        _usageFetcher = new UsageFetcher(new ClaudeCodeUsageClient(_httpClient));
         _launchAtLoginService = new RunKeyLaunchAtLoginService(
-            appName: "ClaudeUsageTracker",
+            appName: AppName,
             executablePathProvider: () => Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0]);
 
-        var trayRenderer = new TrayIconRenderer();
-
-        ThemeManager.Apply(_settingsStore.Load().Theme);
-
-        _flyoutViewModel = new FlyoutViewModel();
         _flyoutWindow = new FlyoutWindow { DataContext = _flyoutViewModel };
+        _flyoutViewModel.RefreshRequested += RefreshNow;
+        _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
 
-        _trayIconController = new TrayIconController(trayRenderer);
-        _trayIconController.Clicked += () => _flyoutWindow.ToggleNearCursor();
-        _trayIconController.RefreshRequested += async () => await RefreshAsync();
+        _trayIconController = new TrayIconController(new TrayIconRenderer());
+        _trayIconController.Clicked += _flyoutWindow.ToggleNearCursor;
+        _trayIconController.RefreshRequested += RefreshNow;
         _trayIconController.ExitRequested += () => Shutdown();
 
         _coordinator = new UsageRefreshCoordinator(
-            _usageClient, _settingsStore, _flyoutViewModel, new ToastNotificationService(),
-            (percentage, status) => _trayIconController.UpdateIcon(percentage, status));
+            _usageFetcher, _settingsStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
 
-        _flyoutViewModel.RefreshRequested += async () => await RefreshAsync();
-        _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
-
-        var settings = _settingsStore.Load();
-
-        _refreshTimer = new DispatcherTimer
-        {
-            Interval = ClampInterval(settings.RefreshIntervalSeconds)
-        };
-        _refreshTimer.Tick += async (_, _) => await RefreshAsync();
+        _refreshTimer = new DispatcherTimer { Interval = settings.RefreshInterval };
+        _refreshTimer.Tick += (_, _) => RefreshNow();
         _refreshTimer.Start();
 
         if (settings.ShowFlyoutOnStartup)
             _flyoutWindow.ToggleNearCursor();
 
-        _ = RefreshAsync();
-    }
-
-    private async Task RefreshAsync()
-    {
-        if (_coordinator is not null)
-            await _coordinator.RefreshAsync();
-    }
-
-    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        _flyoutViewModel?.SetBanner($"Unexpected error: {e.Exception.Message}", isError: true);
-        e.Handled = true;
-    }
-
-    private static TimeSpan ClampInterval(int seconds)
-        => TimeSpan.FromSeconds(Math.Clamp(seconds, AppSettings.MinRefreshIntervalSeconds, AppSettings.MaxRefreshIntervalSeconds));
-
-    private void OpenSettingsWindow()
-    {
-        if (_settingsStore is null || _launchAtLoginService is null || _usageClient is null)
-            return;
-
-        var window = new SettingsWindow(_settingsStore, _launchAtLoginService, _usageClient);
-        window.SettingsSaved += async () =>
-        {
-            _coordinator?.ReloadSettings();
-            if (_refreshTimer is not null && _settingsStore is not null)
-                _refreshTimer.Interval = ClampInterval(_settingsStore.Load().RefreshIntervalSeconds);
-            await RefreshAsync();
-        };
-        window.Owner = null;
-        window.ShowDialog();
+        RefreshNow();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -116,7 +81,28 @@ public partial class App : System.Windows.Application
         _refreshTimer?.Stop();
         ThemeManager.Shutdown();
         _trayIconController?.Dispose();
-        _httpClient?.Dispose();
+        _httpClient.Dispose();
         base.OnExit(e);
+    }
+
+    // async void on purpose: an unexpected exception then reaches
+    // DispatcherUnhandledException (and the banner) instead of vanishing with a Task.
+    private async void RefreshNow() => await _coordinator.RefreshAsync();
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        _flyoutViewModel.SetBanner($"Unexpected error: {e.Exception.Message}");
+        e.Handled = true;
+    }
+
+    private void OpenSettingsWindow()
+    {
+        var viewModel = new SettingsViewModel(_settingsStore, _launchAtLoginService, _usageFetcher);
+        viewModel.Saved += () =>
+        {
+            _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
+            RefreshNow();
+        };
+        new SettingsWindow(viewModel).ShowDialog();
     }
 }

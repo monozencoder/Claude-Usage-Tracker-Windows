@@ -4,7 +4,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.ViewModels;
 
 namespace ClaudeUsageTracker.App.Views;

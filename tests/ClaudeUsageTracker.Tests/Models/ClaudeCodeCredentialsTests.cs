@@ -1,7 +1,7 @@
 using ClaudeUsageTracker.Core.Models;
 using Xunit;
 
-namespace ClaudeUsageTracker.Tests;
+namespace ClaudeUsageTracker.Tests.Models;
 
 public class ClaudeCodeCredentialsTests
 {

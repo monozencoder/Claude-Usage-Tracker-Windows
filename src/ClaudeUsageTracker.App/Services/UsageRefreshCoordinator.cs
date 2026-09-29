@@ -1,105 +1,75 @@
+using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.ViewModels;
-using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.Models;
+using ClaudeUsageTracker.Core.Notifications;
 using ClaudeUsageTracker.Core.Status;
-using ClaudeUsageTracker.Platform.ClaudeCli;
 using ClaudeUsageTracker.Platform.Notifications;
 
 namespace ClaudeUsageTracker.App.Services;
 
 /// <summary>
-/// Orchestrates a single refresh cycle: locate Claude Code CLI's own credentials
-/// (Windows-native or WSL, whichever has them), nudge that CLI to refresh its
-/// token if expired/rejected, fetch usage from Anthropic's API, update the
-/// flyout view model, evaluate threshold/reset notifications, and report the
-/// session status/percentage back to the caller so it can repaint the tray icon.
+/// Orchestrates a single refresh cycle: fetch usage (<see cref="UsageFetcher"/>),
+/// update the flyout view model, evaluate threshold/reset notifications, and report
+/// the session status/percentage back to the caller so it can repaint the tray icon.
 /// </summary>
 public sealed class UsageRefreshCoordinator
 {
     private static readonly int[] NotificationThresholds = [75, 90, 95];
+    private const string SessionKeyPrefix = "session_";
 
-    private readonly ClaudeCodeUsageClient _usageClient;
+    private readonly UsageFetcher _fetcher;
     private readonly AppSettingsStore _settingsStore;
     private readonly FlyoutViewModel _flyoutViewModel;
     private readonly IToastNotificationService _toastService;
     private readonly Action<double, UsageStatusLevel> _onIconUpdate;
-
     private readonly NotificationDedupTracker _dedupTracker;
-    private AppSettings _settings;
+
     private double _lastSessionPercentage = -1;
 
     public UsageRefreshCoordinator(
-        ClaudeCodeUsageClient usageClient,
+        UsageFetcher fetcher,
         AppSettingsStore settingsStore,
         FlyoutViewModel flyoutViewModel,
         IToastNotificationService toastService,
         Action<double, UsageStatusLevel> onIconUpdate)
     {
-        _usageClient = usageClient;
+        _fetcher = fetcher;
         _settingsStore = settingsStore;
         _flyoutViewModel = flyoutViewModel;
         _toastService = toastService;
         _onIconUpdate = onIconUpdate;
-
-        _settings = settingsStore.Load();
-        _dedupTracker = new NotificationDedupTracker(_settings.NotifiedThresholdKeys);
+        _dedupTracker = new NotificationDedupTracker(settingsStore.Current.NotifiedThresholdKeys);
     }
 
     public async Task RefreshAsync(CancellationToken ct = default)
     {
+        // The timer and the refresh buttons can fire while a (slow, CLI-backed) refresh is still running.
+        if (_flyoutViewModel.IsRefreshing)
+            return;
+
         _flyoutViewModel.IsRefreshing = true;
         try
         {
-            var resolution = ClaudeCredentialResolver.Resolve();
-            var credentials = resolution.Credentials;
-
-            if (credentials is null)
+            var result = await _fetcher.FetchAsync(ct);
+            if (result.Usage is not { } usage)
             {
-                var message = resolution.CredentialsFileFound
-                    ? "Claude Code CLI's token is expired. Run \"claude\" in a terminal to sign in again."
-                    : "Claude Code CLI credentials not found. Install Claude Code and sign in, then refresh.";
-                var level = resolution.CredentialsFileFound ? UsageStatusLevel.Critical : UsageStatusLevel.Safe;
-
-                _flyoutViewModel.SetBanner(message, isError: true);
-                _onIconUpdate(0, level);
+                _flyoutViewModel.SetBanner(result.Error!);
+                if (result.ErrorStatus is { } errorStatus)
+                    _onIconUpdate(0, errorStatus);
                 return;
             }
 
-            ClaudeUsage usage;
-            try
-            {
-                usage = await _usageClient.GetUsageAsync(credentials, ct);
-            }
-            catch (AuthRequiredException)
-            {
-                var refreshed = resolution.Source?.TryRefreshAndReread();
-                if (refreshed is null)
-                {
-                    _flyoutViewModel.SetBanner(
-                        "Claude Code CLI's token was rejected and could not be refreshed. Run \"claude\" in a terminal to sign in again.",
-                        isError: true);
-                    _onIconUpdate(0, UsageStatusLevel.Critical);
-                    return;
-                }
-
-                usage = await _usageClient.GetUsageAsync(refreshed, ct);
-            }
-
-            _flyoutViewModel.ApplyUsage(usage);
+            var now = DateTimeOffset.Now;
+            _flyoutViewModel.ApplyUsage(usage, now);
             _flyoutViewModel.ClearBanner();
 
-            var effectiveSession = usage.EffectiveSessionPercentage(DateTimeOffset.Now);
+            var effectiveSession = usage.EffectiveSessionPercentage(now);
             var elapsedFraction = UsageStatusCalculator.ElapsedFraction(
-                usage.SessionResetTime, TimeSpan.FromHours(5), showRemaining: false, now: DateTimeOffset.Now);
+                usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
             var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
 
             EvaluateNotifications(effectiveSession);
-
             _onIconUpdate(effectiveSession, status);
-        }
-        catch (ClaudeApiException ex)
-        {
-            _flyoutViewModel.SetBanner($"Failed to refresh usage (status {ex.StatusCode}).", isError: true);
         }
         finally
         {
@@ -114,31 +84,25 @@ public sealed class UsageRefreshCoordinator
     /// </summary>
     private void EvaluateNotifications(double effectiveSessionPercentage)
     {
-        if (!_settings.NotificationsEnabled)
-        {
-            _lastSessionPercentage = effectiveSessionPercentage;
+        var previous = _lastSessionPercentage;
+        _lastSessionPercentage = effectiveSessionPercentage;
+
+        if (!_settingsStore.Current.NotificationsEnabled)
             return;
-        }
 
         var stateChanged = false;
 
         // A drop from a meaningfully-used session back near zero means the 5h window rolled over.
-        if (_lastSessionPercentage > 5 && effectiveSessionPercentage < 5)
+        if (previous > 5 && effectiveSessionPercentage < 5)
         {
-            _dedupTracker.ResetForWindow("session_");
+            _dedupTracker.ResetForWindow(SessionKeyPrefix);
             _toastService.Show("Claude session reset", "Your 5-hour session window has reset.");
             stateChanged = true;
         }
 
-        _lastSessionPercentage = effectiveSessionPercentage;
-
         foreach (var threshold in NotificationThresholds)
         {
-            if (effectiveSessionPercentage < threshold)
-                continue;
-
-            var key = $"session_{threshold}";
-            if (!_dedupTracker.ShouldNotify(key))
+            if (effectiveSessionPercentage < threshold || !_dedupTracker.ShouldNotify($"{SessionKeyPrefix}{threshold}"))
                 continue;
 
             _toastService.Show("Claude usage alert", $"Session usage has reached {threshold}%.");
@@ -147,11 +111,8 @@ public sealed class UsageRefreshCoordinator
 
         if (stateChanged)
         {
-            _settings.NotifiedThresholdKeys = [.. _dedupTracker.SentKeys];
-            _settingsStore.Save(_settings);
+            _settingsStore.Current.NotifiedThresholdKeys = [.. _dedupTracker.SentKeys];
+            _settingsStore.Save();
         }
     }
-
-    /// <summary>Reloads settings from disk (e.g. after the Settings window saves changes).</summary>
-    public void ReloadSettings() => _settings = _settingsStore.Load();
 }

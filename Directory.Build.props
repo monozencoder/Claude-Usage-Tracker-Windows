@@ -1,0 +1,20 @@
+<Project>
+
+  <!-- Defaults shared by every project in the repo. -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
+    Target framework for the Windows-specific projects (App, Platform). Referenced from their
+    csproj as $(WindowsTargetFramework) — this file is imported before the project body, so it
+    can't branch on properties the project itself sets.
+  -->
+  <PropertyGroup>
+    <WindowsTargetFramework>net10.0-windows10.0.19041.0</WindowsTargetFramework>
+    <WindowsSupportedOSPlatformVersion>10.0.17763.0</WindowsSupportedOSPlatformVersion>
+  </PropertyGroup>
+
+</Project>

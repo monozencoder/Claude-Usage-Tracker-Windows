@@ -1,4 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Windows integrations: Claude Code CLI / WSL process calls, toasts, Run-key startup, tray icon rendering. -->
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+    <SupportedOSPlatformVersion>$(WindowsSupportedOSPlatformVersion)</SupportedOSPlatformVersion>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ClaudeUsageTracker.Core\ClaudeUsageTracker.Core.csproj" />
@@ -8,12 +14,5 @@
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
 
 </Project>

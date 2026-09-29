@@ -8,6 +8,9 @@ namespace ClaudeUsageTracker.Core.Models;
 /// </summary>
 public sealed record ClaudeUsage
 {
+    /// <summary>Length of the rolling session window the session percentage is measured over.</summary>
+    public static readonly TimeSpan SessionWindow = TimeSpan.FromHours(5);
+
     public double SessionPercentage { get; init; }
     public DateTimeOffset? SessionResetTime { get; init; }
 
@@ -19,7 +22,4 @@ public sealed record ClaudeUsage
     /// <summary>Session percentage, but 0 once the reset time has already passed (stale window).</summary>
     public double EffectiveSessionPercentage(DateTimeOffset now)
         => SessionResetTime is { } reset && now >= reset ? 0 : SessionPercentage;
-
-    public double RemainingPercentage(DateTimeOffset now)
-        => Math.Max(0, 100 - EffectiveSessionPercentage(now));
 }

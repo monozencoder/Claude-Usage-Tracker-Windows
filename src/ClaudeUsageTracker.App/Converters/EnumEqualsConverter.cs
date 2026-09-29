@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace ClaudeUsageTracker.App.Views.Converters;
+namespace ClaudeUsageTracker.App.Converters;
 
 /// <summary>
 /// Binds a group of RadioButtons to one enum property: IsChecked is true when the

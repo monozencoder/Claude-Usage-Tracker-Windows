@@ -1,8 +1,13 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/ClaudeUsageTracker.App/ClaudeUsageTracker.App.csproj" />
     <Project Path="src/ClaudeUsageTracker.Core/ClaudeUsageTracker.Core.csproj" />
     <Project Path="src/ClaudeUsageTracker.Platform/ClaudeUsageTracker.Platform.csproj" />
-    <Project Path="src/ClaudeUsageTracker.Tests/ClaudeUsageTracker.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ClaudeUsageTracker.Tests/ClaudeUsageTracker.Tests.csproj" />
   </Folder>
 </Solution>

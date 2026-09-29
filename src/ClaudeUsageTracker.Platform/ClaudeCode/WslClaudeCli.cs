@@ -1,10 +1,9 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Text;
 using ClaudeUsageTracker.Core.ClaudeCode;
 using ClaudeUsageTracker.Core.Models;
+using ClaudeUsageTracker.Platform.Processes;
 
-namespace ClaudeUsageTracker.Platform.ClaudeCli;
+namespace ClaudeUsageTracker.Platform.ClaudeCode;
 
 /// <summary>
 /// Reads and refreshes Claude Code CLI credentials inside an installed WSL
@@ -56,40 +55,7 @@ public static class WslClaudeCli
     // process itself wrote, so StandardOutputEncoding must be set explicitly or
     // the output decodes as mojibake.
     private static string? Run(string[] args, TimeSpan timeout)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "wsl.exe",
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = Encoding.Unicode
-        };
-
-        foreach (var arg in args)
-            startInfo.ArgumentList.Add(arg);
-
-        try
-        {
-            using var process = Process.Start(startInfo);
-            if (process is null)
-                return null;
-
-            var output = process.StandardOutput.ReadToEnd();
-            if (!process.WaitForExit((int)timeout.TotalMilliseconds))
-            {
-                process.Kill(entireProcessTree: true);
-                return null;
-            }
-
-            return process.ExitCode == 0 ? output : null;
-        }
-        catch (Win32Exception)
-        {
-            // wsl.exe isn't installed/invocable — nothing more we can do here.
-            return null;
-        }
-    }
+        => ProcessRunner.Run("wsl.exe", args, timeout, Encoding.Unicode) is { ExitCode: 0 } result
+            ? result.StandardOutput
+            : null;
 }

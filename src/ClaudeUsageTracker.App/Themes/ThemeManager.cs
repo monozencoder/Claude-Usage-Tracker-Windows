@@ -3,14 +3,7 @@ using System.Windows;
 using System.Windows.Interop;
 using Microsoft.Win32;
 
-namespace ClaudeUsageTracker.App.Services;
-
-public enum AppTheme
-{
-    System,
-    Light,
-    Dark
-}
+namespace ClaudeUsageTracker.App.Themes;
 
 /// <summary>
 /// Swaps the palette dictionary (Themes/Colors.*.xaml) merged at index 0 of

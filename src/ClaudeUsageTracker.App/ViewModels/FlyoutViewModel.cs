@@ -10,11 +10,9 @@ public partial class FlyoutViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "Not connected";
 
+    /// <summary>Warning shown above the usage rows (credentials/API problems), or null when all is well.</summary>
     [ObservableProperty]
     private string? _bannerText;
-
-    [ObservableProperty]
-    private bool _bannerIsError;
 
     [ObservableProperty]
     private bool _isRefreshing;
@@ -39,22 +37,16 @@ public partial class FlyoutViewModel : ObservableObject
     [RelayCommand]
     private void OpenSettings() => SettingsRequested?.Invoke();
 
-    public void SetBanner(string message, bool isError)
-    {
-        BannerText = message;
-        BannerIsError = isError;
-    }
+    public void SetBanner(string message) => BannerText = message;
 
     public void ClearBanner() => BannerText = null;
 
-    public void ApplyUsage(ClaudeUsage usage)
+    public void ApplyUsage(ClaudeUsage usage, DateTimeOffset now)
     {
-        var now = DateTimeOffset.Now;
-
         StatusText = "Claude Code";
         Rows.Clear();
-        Rows.Add(UsageRowViewModel.For("Session (5h)", usage.EffectiveSessionPercentage(now), usage.SessionResetTime));
-        Rows.Add(UsageRowViewModel.For("Weekly (7d)", usage.WeeklyPercentage, usage.WeeklyResetTime));
+        Rows.Add(UsageRowViewModel.For("Session (5h)", usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now));
+        Rows.Add(UsageRowViewModel.For("Weekly (7d)", usage.WeeklyPercentage, usage.WeeklyResetTime, now));
 
         _lastUpdatedAt = usage.LastUpdated;
         RefreshLastUpdatedText(now);

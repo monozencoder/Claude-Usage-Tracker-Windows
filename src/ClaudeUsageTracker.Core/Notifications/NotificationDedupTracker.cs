@@ -1,4 +1,4 @@
-namespace ClaudeUsageTracker.Platform.Notifications;
+namespace ClaudeUsageTracker.Core.Notifications;
 
 /// <summary>
 /// Tracks which threshold notifications (e.g. "session_75") have already fired so
@@ -19,6 +19,4 @@ public sealed class NotificationDedupTracker(IEnumerable<string>? initialKeys = 
 
     /// <summary>Clears dedup state for a window (e.g. "session_") once that window has reset, so thresholds can refire next cycle.</summary>
     public void ResetForWindow(string windowKeyPrefix) => _sentKeys.RemoveWhere(k => k.StartsWith(windowKeyPrefix, StringComparison.Ordinal));
-
-    public void Clear() => _sentKeys.Clear();
 }

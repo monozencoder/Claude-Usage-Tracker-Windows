@@ -3,7 +3,7 @@ using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.Api.Dtos;
 using Xunit;
 
-namespace ClaudeUsageTracker.Tests;
+namespace ClaudeUsageTracker.Tests.Api;
 
 public class UsageResponseParserTests
 {
