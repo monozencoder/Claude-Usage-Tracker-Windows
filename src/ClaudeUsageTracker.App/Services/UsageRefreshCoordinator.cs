@@ -65,11 +65,19 @@ public sealed class UsageRefreshCoordinator
     /// </summary>
     public void ApplyResult(UsageFetchResult result)
     {
+        if (result.RetryAfter is { } retryAfter)
+        {
+            // Token-free mode, asked again too soon: not an error, so no banner — keep the numbers
+            // and say briefly when a refresh will work.
+            _flyoutViewModel.ShowFooterNote(Loc.Format("Flyout_RefreshAvailableIn", (int)Math.Ceiling(retryAfter.TotalMinutes)));
+            return;
+        }
+
         if (result is { UsageEndpointRateLimited: true, Usage: null })
         {
             // Token-free mode only. Keep showing the last good numbers; the next regular
-            // (10-minute) refresh is the retry.
-            _flyoutViewModel.SetBanner(Loc.Format("Error_RateLimited", AppSettings.TokenFreeRefreshIntervalSeconds / 60));
+            // retry is 10 minutes out (UsageFetcher skips one regular refresh after a 429).
+            _flyoutViewModel.SetBanner(Loc.Format("Error_RateLimited", AppSettings.TokenFreeRateLimitedRetrySeconds / 60));
             return;
         }
 

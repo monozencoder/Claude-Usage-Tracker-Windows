@@ -16,9 +16,17 @@ public sealed class AppSettings
 
     /// <summary>
     /// Fixed interval in token-free mode: the free usage endpoint rate-limits (HTTP 429)
-    /// frequent polling hard, so it's only asked every 10 minutes.
+    /// frequent polling hard (and may take an hour or more to lift), so it's only asked every
+    /// 5 minutes — polling every 2 minutes has been seen to work, this leaves headroom.
     /// </summary>
-    public const int TokenFreeRefreshIntervalSeconds = 600;
+    public const int TokenFreeRefreshIntervalSeconds = 300;
+
+    /// <summary>
+    /// After a 429 from the usage endpoint, the next attempt waits this long instead (one regular
+    /// refresh is skipped), and keeps doing so until a call succeeds. Never polls faster than the
+    /// old fixed 10-minute interval while limited, so it can't prolong a limit more than that did.
+    /// </summary>
+    public const int TokenFreeRateLimitedRetrySeconds = 600;
 
     /// <summary>Used in the default (token-using) mode; ignored while <see cref="AvoidTokenUsage"/> is on.</summary>
     public int RefreshIntervalSeconds { get; set; } = 60;
@@ -30,11 +38,13 @@ public sealed class AppSettings
     public bool AlwaysOnTop { get; set; } = true;
 
     /// <summary>
-    /// Off (default): usage is read from a one-token Messages API prompt on every refresh,
-    /// which consumes a tiny amount of usage but isn't rate-limited like the usage endpoint.
-    /// On: only the free usage endpoint is used (no usage consumed), every 10 minutes.
+    /// On (default): only the free usage endpoint is used (no usage consumed), every 5 minutes —
+    /// a usage tracker shouldn't quietly spend the usage it tracks.
+    /// Off: usage is read from a one-token Messages API prompt on every refresh, which consumes a
+    /// tiny amount of usage but isn't rate-limited like the usage endpoint, so it can refresh often.
+    /// Existing settings files keep whatever they saved; the default only applies to new installs.
     /// </summary>
-    public bool AvoidTokenUsage { get; set; }
+    public bool AvoidTokenUsage { get; set; } = true;
 
     [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
     public AppTheme Theme { get; set; } = AppTheme.System;

@@ -109,7 +109,7 @@
             </TextBlock>
         </Border>
 
-        <!-- Interval and token-free mode share one card: the toggle fixes the interval at 10 minutes. -->
+        <!-- Interval and token-free mode share one card: the toggle fixes the interval at 5 minutes. -->
         <Border Style="{StaticResource SettingsCardStyle}" Margin="0,0,0,18">
             <StackPanel>
                 <Grid Margin="16,12">
@@ -117,7 +117,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <!-- Dimmed with the box in token-free mode: the interval and its cost only apply when it's off. -->
                     <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
                         <TextBlock Text="{loc:Tr Settings_RefreshInterval}" Style="{StaticResource BodyTextStyle}"
                                    Foreground="{DynamicResource TextPrimaryBrush}" />
                         <!-- Always visible: the per-refresh cost, or the error in red while the typed
@@ -149,7 +159,7 @@
                         </TextBlock>
                     </StackPanel>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <!-- NumberBox-style field. Disabled in token-free mode, which always refreshes every 10 minutes. -->
+                        <!-- NumberBox-style field. Disabled in token-free mode, which always refreshes every 5 minutes. -->
                         <Border Height="32" CornerRadius="4" BorderThickness="1"
                                 Background="{DynamicResource WindowBackgroundBrush}"
                                 IsEnabled="{Binding IsRefreshIntervalEditable}">

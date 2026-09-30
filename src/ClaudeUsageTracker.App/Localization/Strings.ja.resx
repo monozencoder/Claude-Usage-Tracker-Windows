@@ -52,7 +52,7 @@
   <data name="Settings_IntervalToolTip" xml:space="preserve"><value>{0}〜{1} 秒</value></data>
   <data name="Settings_Seconds" xml:space="preserve"><value>秒</value></data>
   <data name="Settings_AvoidTokens" xml:space="preserve"><value>使用量を消費しない</value></data>
-  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>更新は 10 分ごとになります。</value></data>
+  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>更新は 5 分ごとになります。</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>外観</value></data>
   <data name="Settings_ThemeSystem" xml:space="preserve"><value>システム</value></data>
   <data name="Settings_ThemeLight" xml:space="preserve"><value>ライト</value></data>
@@ -69,6 +69,8 @@
   <data name="Settings_IntervalTokensPerRefresh" xml:space="preserve"><value>更新 1 回につき約 {0} トークンを消費します。</value></data>
   <data name="Settings_TokensPerHour" xml:space="preserve"><value>約 {0} トークン/時</value></data>
   <data name="Settings_ProbeModel" xml:space="preserve"><value>使用モデル: {0} (自動選択)</value></data>
+  <data name="Flyout_RefreshAvailableIn" xml:space="preserve"><value>あと {0} 分で更新できます</value></data>
+  <data name="Settings_TestAvailableIn" xml:space="preserve"><value>直前に確認したばかりです。あと {0} 分で確認できます。</value></data>
   <data name="Settings_CheckingSignIn" xml:space="preserve"><value>Claude Code のサインインを確認しています...</value></data>
   <data name="Settings_UsingWsl" xml:space="preserve"><value>{0} の Claude Code のサインインを使用しています。</value></data>
   <data name="Settings_WslExpired" xml:space="preserve"><value>{0} の Claude Code のサインインの有効期限が切れています。サインインし直すには、{0} で "claude auth login" を実行してください。</value></data>

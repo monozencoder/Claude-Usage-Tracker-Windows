@@ -52,7 +52,7 @@
   <data name="Settings_IntervalToolTip" xml:space="preserve"><value>{0}–{1} seconds</value></data>
   <data name="Settings_Seconds" xml:space="preserve"><value>seconds</value></data>
   <data name="Settings_AvoidTokens" xml:space="preserve"><value>Don't consume usage</value></data>
-  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>Refreshes every 10 minutes.</value></data>
+  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>Refreshes every 5 minutes.</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
   <data name="Settings_ThemeSystem" xml:space="preserve"><value>System</value></data>
   <data name="Settings_ThemeLight" xml:space="preserve"><value>Light</value></data>
@@ -69,6 +69,8 @@
   <data name="Settings_IntervalTokensPerRefresh" xml:space="preserve"><value>Each refresh uses about {0} tokens.</value></data>
   <data name="Settings_TokensPerHour" xml:space="preserve"><value>≈ {0} tokens/hr</value></data>
   <data name="Settings_ProbeModel" xml:space="preserve"><value>Model: {0} (chosen automatically)</value></data>
+  <data name="Flyout_RefreshAvailableIn" xml:space="preserve"><value>Can refresh in {0} min</value></data>
+  <data name="Settings_TestAvailableIn" xml:space="preserve"><value>Checked moments ago. You can check again in {0} min.</value></data>
   <data name="Settings_CheckingSignIn" xml:space="preserve"><value>Checking Claude Code sign-in...</value></data>
   <data name="Settings_UsingWsl" xml:space="preserve"><value>Using Claude Code's sign-in from {0}.</value></data>
   <data name="Settings_WslExpired" xml:space="preserve"><value>Claude Code's sign-in in {0} has expired. Run "claude auth login" there to sign in again.</value></data>

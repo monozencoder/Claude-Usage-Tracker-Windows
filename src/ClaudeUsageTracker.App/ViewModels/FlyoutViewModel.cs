@@ -29,6 +29,10 @@ public partial class FlyoutViewModel : ObservableObject
     private DateTimeOffset? _lastUpdatedAt;
     private ClaudeUsage? _lastUsage;
 
+    // A short note shown in place of the last-updated text until this time (see ShowFooterNote).
+    private DateTimeOffset _footerNoteUntil;
+    private static readonly TimeSpan FooterNoteDuration = TimeSpan.FromSeconds(4);
+
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
 
     public event Action? RefreshRequested;
@@ -84,12 +88,33 @@ public partial class FlyoutViewModel : ObservableObject
         RefreshLastUpdatedText(now);
     }
 
+    /// <summary>
+    /// Briefly shows <paramref name="note"/> where the last-updated text is (e.g. "Can refresh in
+    /// 2 min"), then puts that text back. For passing information that doesn't warrant a banner.
+    /// </summary>
+    public void ShowFooterNote(string note)
+    {
+        LastUpdatedText = note;
+        _footerNoteUntil = DateTimeOffset.Now + FooterNoteDuration;
+
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = FooterNoteDuration };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (_lastUsage is null)
+                LastUpdatedText = Loc.Get("Flyout_NeverRefreshed");
+            else
+                RefreshLastUpdatedText(DateTimeOffset.Now);
+        };
+        timer.Start();
+    }
+
     /// <summary>Recomputes the relative "Updated N min ago" text (minute granularity, so it
     /// rarely changes width) and its exact-time tooltip. Called periodically while the
     /// flyout is visible so the relative time stays current.</summary>
     public void RefreshLastUpdatedText(DateTimeOffset now)
     {
-        if (_lastUpdatedAt is not { } updatedAt)
+        if (_lastUpdatedAt is not { } updatedAt || now < _footerNoteUntil)
             return;
 
         var elapsed = now - updatedAt;

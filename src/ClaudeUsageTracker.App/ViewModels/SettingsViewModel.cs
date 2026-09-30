@@ -341,9 +341,11 @@ public partial class SettingsViewModel : ObservableObject
         {
             // Tests the mode currently ticked here, even before it's saved.
             var result = await _usageFetcher.FetchAsync(AvoidTokenUsage);
-            StatusIsError = result.Usage is null;
+            // Held back only because it was checked moments ago isn't a failure; everything else without usage is.
+            StatusIsError = result is { Usage: null } and not { RetryAfter: not null, UsageEndpointRateLimited: false };
             StatusMessage = result switch
             {
+                { RetryAfter: { } wait, UsageEndpointRateLimited: false } => Loc.Format("Settings_TestAvailableIn", (int)Math.Ceiling(wait.TotalMinutes)),
                 { Usage: { } usage } => Loc.Format("Settings_Connected", usage.SessionPercentage, usage.WeeklyPercentage),
                 { UsageEndpointRateLimited: true } => Loc.Get("Settings_ConnectedRateLimited"),
                 _ => result.Error
