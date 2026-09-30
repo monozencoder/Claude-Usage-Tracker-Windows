@@ -13,6 +13,15 @@ using CommunityToolkit.Mvvm.Input;
 namespace ClaudeUsageTracker.App.ViewModels;
 
 /// <summary>
+/// One entry of a settings drop-down: the value it selects and its label, either a string key
+/// (translated, so it follows the UI language) or fixed text (e.g. a language's own name).
+/// </summary>
+public sealed record ChoiceOption(object Value, string? TextKey = null, string? Text = null)
+{
+    public string Label => TextKey is { } key ? Loc.Get(key) : Text ?? string.Empty;
+}
+
+/// <summary>
 /// State and actions for SettingsWindow. Every change is written to
 /// <see cref="AppSettingsStore.Current"/> as soon as it's made (Windows 11 Settings style);
 /// there is no Save/Cancel. The interval is the exception: it's written when stepped or
@@ -58,6 +67,21 @@ public partial class SettingsViewModel : ObservableObject
         Loc.LanguageChanged += OnUiLanguageChanged;
         _initializing = false;
     }
+
+    public static IReadOnlyList<ChoiceOption> ThemeOptions { get; } =
+    [
+        new(AppTheme.System, "Settings_ThemeSystem"),
+        new(AppTheme.Light, "Settings_ThemeLight"),
+        new(AppTheme.Dark, "Settings_ThemeDark"),
+    ];
+
+    // Language names stay in their own language so each is findable whatever the UI shows.
+    public static IReadOnlyList<ChoiceOption> LanguageOptions { get; } =
+    [
+        new(AppLanguage.System, "Settings_LanguageSystem"),
+        new(AppLanguage.English, Text: "English"),
+        new(AppLanguage.Japanese, Text: "日本語"),
+    ];
 
     /// <summary>Raised after a change has been written to disk.</summary>
     public event Action? Applied;

@@ -15,6 +15,7 @@
             <converters:BooleanInverter x:Key="BooleanInverter" />
             <converters:EnumEqualsConverter x:Key="EnumEquals" />
             <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />
+            <converters:ChoiceLabelConverter x:Key="ChoiceLabel" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

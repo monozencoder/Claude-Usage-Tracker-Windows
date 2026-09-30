@@ -41,7 +41,7 @@
   <data name="Tray_ResetPosition" xml:space="preserve"><value>Reset position</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Settings - Claude Usage Tracker</value></data>
-  <data name="Settings_Account" xml:space="preserve"><value>Claude account</value></data>
+  <data name="Settings_Account" xml:space="preserve"><value>Account</value></data>
   <data name="Settings_SignInToolTip" xml:space="preserve"><value>Opens Claude Code's sign-in (claude auth login) in your browser. This also changes the account Claude Code itself uses.</value></data>
   <data name="Settings_TestConnection" xml:space="preserve"><value>Test connection</value></data>
   <data name="Settings_TestConnectionToolTip" xml:space="preserve"><value>Checks that usage can be read, the same way regular updates do (using about 10 tokens unless “Don't consume usage” is on).</value></data>
@@ -54,6 +54,18 @@
   <data name="Settings_AvoidTokens" xml:space="preserve"><value>Don't consume usage</value></data>
   <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>Refreshes every 5 minutes.</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_SectionUsage" xml:space="preserve"><value>Fetching usage</value></data>
+  <data name="Settings_AccountRow" xml:space="preserve"><value>Claude Code account</value></data>
+  <data name="Settings_TestConnectionDescription" xml:space="preserve"><value>Checks that usage can be read, the same way regular updates do.</value></data>
+  <data name="Settings_TestButton" xml:space="preserve"><value>Check</value></data>
+  <data name="Settings_ThemeDescription" xml:space="preserve"><value>Choose the app's colors.</value></data>
+  <data name="Settings_LanguageDescription" xml:space="preserve"><value>Choose the display language.</value></data>
+  <data name="Settings_NotificationsDescription" xml:space="preserve"><value>Notifies you at 75%, 90% and 95% usage, and when the session window resets.</value></data>
+  <data name="Settings_LaunchAtLoginDescription" xml:space="preserve"><value>Starts automatically when you sign in to Windows.</value></data>
+  <data name="Settings_ShowOnStartupDescription" xml:space="preserve"><value>Opens the flyout when the app starts.</value></data>
+  <data name="Settings_AlwaysOnTopDescription" xml:space="preserve"><value>Keeps the flyout above other windows.</value></data>
+  <data name="Settings_SectionGeneral" xml:space="preserve"><value>General</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings_ThemeSystem" xml:space="preserve"><value>System</value></data>
   <data name="Settings_ThemeLight" xml:space="preserve"><value>Light</value></data>
   <data name="Settings_ThemeDark" xml:space="preserve"><value>Dark</value></data>
