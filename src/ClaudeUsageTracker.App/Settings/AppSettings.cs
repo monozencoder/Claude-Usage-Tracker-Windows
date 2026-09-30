@@ -22,8 +22,8 @@ public sealed class AppSettings
     public const int TokenFreeRefreshIntervalSeconds = 300;
 
     /// <summary>
-    /// After a 429 from the usage endpoint, the next attempt waits this long instead (one regular
-    /// refresh is skipped), and keeps doing so until a call succeeds. Never polls faster than the
+    /// After a 429 from the usage endpoint, the next attempt waits this long instead (regular
+    /// refreshes before then are skipped), and keeps doing so until a call succeeds. Never polls faster than the
     /// old fixed 10-minute interval while limited, so it can't prolong a limit more than that did.
     /// </summary>
     public const int TokenFreeRateLimitedRetrySeconds = 600;

@@ -80,7 +80,7 @@ public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsS
         var avoidTokens = avoidTokenUsage ?? settingsStore.Current.AvoidTokenUsage;
         if (avoidTokens && _lastUsageEndpointCall is { } lastCall)
         {
-            // Rate-limited: skip the next regular refresh and retry 10 minutes after the 429.
+            // Rate-limited: skip regular refreshes until 10 minutes after the 429, then retry.
             var spacing = _usageEndpointLimited
                 ? TimeSpan.FromSeconds(AppSettings.TokenFreeRateLimitedRetrySeconds) - TimerSlack
                 : MinUsageEndpointSpacing;
