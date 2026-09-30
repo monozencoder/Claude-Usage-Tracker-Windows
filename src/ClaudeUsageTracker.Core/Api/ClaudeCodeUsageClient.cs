@@ -25,7 +25,19 @@ public sealed class ClaudeCodeUsageClient(HttpClient httpClient)
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     // Replaced (for this client's lifetime) when the current probe model turns out to be retired.
+    // Deliberately not persisted: each launch starts from the preferred (cheapest) model again, so
+    // a newer Haiku is picked up instead of staying on a pricier fallback. That costs at most one
+    // 404 per launch, which runs no prompt.
     private string _probeModel = PreferredProbeModel;
+
+    // How to ask for no thinking, tried in order until the model accepts the probe. Haiku 4.5
+    // takes the plain request (no thinking unless asked). Newer models think by default and may
+    // reject a 1-token prompt; they accept one of the others: "between_tools" (Claude Sonnet 5.5)
+    // or "disabled" (Claude Sonnet 5, Claude Opus 5). A rejected request (400) runs no prompt.
+    private static readonly object?[] ThinkingOptions = [null, new { type = "between_tools" }, new { type = "disabled" }];
+
+    // Index into ThinkingOptions that the current probe model last accepted.
+    private int _thinkingOption;
 
     /// <summary>The model the next <see cref="GetUsageViaMessagesApiAsync"/> call will prompt.</summary>
     public string ProbeModel => _probeModel;
@@ -85,6 +97,7 @@ public sealed class ClaudeCodeUsageClient(HttpClient httpClient)
             throw new ClaudeApiException(404, $"Model {_probeModel} is unavailable and no replacement was found.");
 
         _probeModel = successor;
+        _thinkingOption = 0;
         return await TryProbeAsync(credentials, successor, ct)
                ?? throw new ClaudeApiException(404, $"Replacement model {successor} is unavailable too.");
     }
@@ -92,22 +105,29 @@ public sealed class ClaudeCodeUsageClient(HttpClient httpClient)
     /// <returns>The usage, or null if <paramref name="model"/> doesn't exist (404).</returns>
     private async Task<ClaudeUsage?> TryProbeAsync(ClaudeCodeCredentials credentials, string model, CancellationToken ct)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoints.Messages)
+        for (var option = _thinkingOption; ; option++)
         {
-            Content = new StringContent(BuildProbeMessageBody(model), Encoding.UTF8, "application/json")
-        };
-        AddAuthHeaders(request, credentials);
-        request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
+            using var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoints.Messages)
+            {
+                Content = new StringContent(BuildProbeMessageBody(model, ThinkingOptions[option]), Encoding.UTF8, "application/json")
+            };
+            AddAuthHeaders(request, credentials);
+            request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
 
-        using var response = await httpClient.SendAsync(request, ct);
-        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-            throw new AuthRequiredException();
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            return null;
-        if (!HasRateLimitHeaders(response))
-            throw new ClaudeApiException((int)response.StatusCode, "Could not read usage from Anthropic's rate-limit headers.");
+            using var response = await httpClient.SendAsync(request, ct);
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                throw new AuthRequiredException();
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return null;
+            // Rejected as sent (e.g. this model won't take a 1-token prompt with thinking on): try the next shape.
+            if (response.StatusCode == HttpStatusCode.BadRequest && option + 1 < ThinkingOptions.Length)
+                continue;
+            if (!HasRateLimitHeaders(response))
+                throw new ClaudeApiException((int)response.StatusCode, "Could not read usage from Anthropic's rate-limit headers.");
 
-        return UsageResponseParser.FromRateLimitHeaders(response.Headers, DateTimeOffset.Now);
+            _thinkingOption = option;
+            return UsageResponseParser.FromRateLimitHeaders(response.Headers, DateTimeOffset.Now);
+        }
     }
 
     /// <summary>Lists the models this token can use (no prompt, no usage) and picks the probe model.</summary>
@@ -138,13 +158,21 @@ public sealed class ClaudeCodeUsageClient(HttpClient httpClient)
         request.Headers.TryAddWithoutValidation("anthropic-beta", "oauth-2025-04-20");
     }
 
-    private static string BuildProbeMessageBody(string model)
-        => JsonSerializer.Serialize(new
-        {
-            model,
-            max_tokens = 1,
-            messages = new[] { new { role = "user", content = "." } }
-        });
+    private static string BuildProbeMessageBody(string model, object? thinking)
+        => thinking is null
+            ? JsonSerializer.Serialize(new
+            {
+                model,
+                max_tokens = 1,
+                messages = new[] { new { role = "user", content = "." } }
+            })
+            : JsonSerializer.Serialize(new
+            {
+                model,
+                max_tokens = 1,
+                thinking,
+                messages = new[] { new { role = "user", content = "." } }
+            });
 
     private static bool HasRateLimitHeaders(HttpResponseMessage response)
         => response.Headers.Contains("anthropic-ratelimit-unified-5h-utilization")

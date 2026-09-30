@@ -3,6 +3,7 @@ using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.Themes;
+using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.ClaudeCode;
 using ClaudeUsageTracker.Platform.ClaudeCode;
 using ClaudeUsageTracker.Platform.Startup;
@@ -98,6 +99,9 @@ public partial class SettingsViewModel : ObservableObject
         ?? Loc.Format("Settings_IntervalTokensPerRefresh", ApproxTokensPerRefresh);
 
     public string RefreshIntervalToolTip => Loc.Format("Settings_IntervalToolTip", MinInterval, MaxInterval);
+
+    /// <summary>Which model token-using refreshes prompt, e.g. "使用モデル: Claude Haiku 4.5 (自動選択)".</summary>
+    public string ProbeModelText => Loc.Format("Settings_ProbeModel", ModelNames.ToDisplayName(_usageFetcher.ProbeModel));
 
     /// <summary>Rough tokens an hour at the typed interval, e.g. "約 600 トークン/時".</summary>
     public string TokensPerHourText => Loc.Format("Settings_TokensPerHour",
@@ -216,6 +220,7 @@ public partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(RefreshIntervalHint));
         OnPropertyChanged(nameof(TokensPerHourText));
         OnPropertyChanged(nameof(RefreshIntervalToolTip));
+        OnPropertyChanged(nameof(ProbeModelText));
         StatusMessage = null;
         if (_account is { } account)
             ApplyAccount(account);
@@ -344,6 +349,7 @@ public partial class SettingsViewModel : ObservableObject
                 _ => result.Error
             };
             ConnectionTested?.Invoke(result);
+            OnPropertyChanged(nameof(ProbeModelText)); // the test may have switched away from a retired model
 
             await LoadAccountAsync();
         }

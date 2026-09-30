@@ -68,6 +68,7 @@
   <data name="Settings_IntervalMax" xml:space="preserve"><value>最大は {0} 秒です</value></data>
   <data name="Settings_IntervalTokensPerRefresh" xml:space="preserve"><value>更新 1 回につき約 {0} トークンを消費します。</value></data>
   <data name="Settings_TokensPerHour" xml:space="preserve"><value>約 {0} トークン/時</value></data>
+  <data name="Settings_ProbeModel" xml:space="preserve"><value>使用モデル: {0} (自動選択)</value></data>
   <data name="Settings_CheckingSignIn" xml:space="preserve"><value>Claude Code のサインインを確認しています...</value></data>
   <data name="Settings_UsingWsl" xml:space="preserve"><value>{0} の Claude Code のサインインを使用しています。</value></data>
   <data name="Settings_WslExpired" xml:space="preserve"><value>{0} の Claude Code のサインインの有効期限が切れています。サインインし直すには、{0} で "claude auth login" を実行してください。</value></data>

@@ -159,6 +159,56 @@ public class ClaudeCodeUsageClientTests
         await Assert.ThrowsAsync<ClaudeApiException>(() => client.GetUsageViaMessagesApiAsync(Credentials));
     }
 
+    // A model that thinks by default and rejects the plain 1-token probe, but accepts it with
+    // thinking turned off via "between_tools" (as Claude Sonnet 5.5 does).
+    private static StubHandler RejectsProbeUnless(string acceptedThinkingType)
+        => new(request =>
+        {
+            var body = request.Content!.ReadAsStringAsync().Result;
+            return body.Contains($"\"thinking\":{{\"type\":\"{acceptedThinkingType}\"}}")
+                ? WithRateLimitHeaders(("anthropic-ratelimit-unified-5h-utilization", "0.4"))
+                : new HttpResponseMessage(HttpStatusCode.BadRequest);
+        });
+
+    [Fact]
+    public async Task GetUsageViaMessagesApiAsync_RetriesWithThinkingOff_WhenModelRejectsThePlainProbe()
+    {
+        var handler = RejectsProbeUnless("between_tools");
+        var client = new ClaudeCodeUsageClient(new HttpClient(handler));
+
+        var usage = await client.GetUsageViaMessagesApiAsync(Credentials);
+
+        Assert.Equal(40, usage.SessionPercentage, precision: 3);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.DoesNotContain("thinking", handler.Bodies[0]);
+    }
+
+    [Fact]
+    public async Task GetUsageViaMessagesApiAsync_RemembersTheAcceptedThinkingShape()
+    {
+        var handler = RejectsProbeUnless("disabled");
+        var client = new ClaudeCodeUsageClient(new HttpClient(handler));
+
+        await client.GetUsageViaMessagesApiAsync(Credentials);
+        var firstRefreshRequests = handler.Requests.Count;
+        await client.GetUsageViaMessagesApiAsync(Credentials);
+
+        Assert.Equal(3, firstRefreshRequests);
+        Assert.Equal(4, handler.Requests.Count); // the next refresh goes straight to the shape that worked
+        Assert.Contains("\"thinking\":{\"type\":\"disabled\"}", handler.Bodies[^1]);
+    }
+
+    [Fact]
+    public async Task GetUsageViaMessagesApiAsync_Throws_WhenEveryThinkingShapeIsRejected()
+    {
+        var client = ClientReturning(HttpStatusCode.BadRequest, null, out var handler);
+
+        var error = await Assert.ThrowsAsync<ClaudeApiException>(() => client.GetUsageViaMessagesApiAsync(Credentials));
+
+        Assert.Equal(400, error.StatusCode);
+        Assert.Equal(3, handler.Requests.Count);
+    }
+
     [Fact]
     public async Task GetUsageViaMessagesApiAsync_ThrowsClaudeApiException_WhenResponseHasNoHeaders()
     {

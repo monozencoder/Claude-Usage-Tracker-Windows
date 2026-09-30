@@ -44,6 +44,9 @@ public sealed record UsageFetchResult
 /// </summary>
 public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsStore settingsStore)
 {
+    /// <summary>The model token-using refreshes prompt (switches automatically if it's retired).</summary>
+    public string ProbeModel => usageClient.ProbeModel;
+
     /// <param name="avoidTokenUsage">Overrides the saved mode (Test connection checks the unsaved choice).</param>
     public async Task<UsageFetchResult> FetchAsync(bool? avoidTokenUsage = null, CancellationToken ct = default)
     {

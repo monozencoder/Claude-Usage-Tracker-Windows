@@ -121,7 +121,8 @@
                         <TextBlock Text="{loc:Tr Settings_RefreshInterval}" Style="{StaticResource BodyTextStyle}"
                                    Foreground="{DynamicResource TextPrimaryBrush}" />
                         <!-- Always visible: the per-refresh cost, or the error in red while the typed
-                             value can't be used. -->
+                             value can't be used. The model line below is hidden (not collapsed) in
+                             token-free mode, which prompts no model, so the row keeps its height. -->
                         <TextBlock Text="{Binding RefreshIntervalHint}" TextWrapping="Wrap" Margin="0,2,0,0">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
@@ -129,6 +130,18 @@
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasRefreshIntervalError}" Value="True">
                                             <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding ProbeModelText}" TextWrapping="Wrap" Margin="0,2,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                            <Setter Property="Visibility" Value="Hidden" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
