@@ -12,9 +12,10 @@ using CommunityToolkit.Mvvm.Input;
 namespace ClaudeUsageTracker.App.ViewModels;
 
 /// <summary>
-/// State and actions for SettingsWindow. Edits are held here and only written to
-/// <see cref="AppSettingsStore.Current"/> on <see cref="SaveCommand"/>; the theme is
-/// previewed live and reverted by <see cref="DiscardUnsavedPreview"/> if not saved.
+/// State and actions for SettingsWindow. Every change is written to
+/// <see cref="AppSettingsStore.Current"/> as soon as it's made (Windows 11 Settings style);
+/// there is no Save/Cancel. The interval is the exception: it's written when stepped or
+/// committed (focus leaves the box / the window closes), not on every keystroke.
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
@@ -24,12 +25,14 @@ public partial class SettingsViewModel : ObservableObject
     private const int MinInterval = AppSettings.MinRefreshIntervalSeconds;
     private const int MaxInterval = AppSettings.MaxRefreshIntervalSeconds;
 
+    // Rough cost of one token-using refresh: a "." prompt (~8 input tokens) with max_tokens = 1.
+    private const int ApproxTokensPerRefresh = 10;
+
     private readonly AppSettingsStore _settingsStore;
     private readonly ILaunchAtLoginService _launchAtLoginService;
     private readonly UsageFetcher _usageFetcher;
-    private readonly AppTheme _savedTheme;
-    private readonly AppLanguage _savedLanguage;
-    private bool _saved;
+    private readonly AppSettings _initialSettings;
+    private readonly bool _initializing = true;
 
     // Last in-range value, restored if the box is left empty.
     private int _lastValidRefreshInterval;
@@ -41,28 +44,37 @@ public partial class SettingsViewModel : ObservableObject
         _usageFetcher = usageFetcher;
 
         var settings = settingsStore.Current;
+        _initialSettings = new AppSettings { AvoidTokenUsage = settings.AvoidTokenUsage, RefreshIntervalSeconds = settings.RefreshIntervalSeconds };
         AvoidTokenUsage = settings.AvoidTokenUsage;
         RefreshIntervalSeconds = _lastValidRefreshInterval = settings.RefreshIntervalSeconds;
         NotificationsEnabled = settings.NotificationsEnabled;
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
         LaunchAtLoginEnabled = launchAtLoginService.IsEnabled;
-        Theme = _savedTheme = settings.Theme;
-        Language = _savedLanguage = settings.Language;
+        Theme = settings.Theme;
+        Language = settings.Language;
 
         Loc.LanguageChanged += OnUiLanguageChanged;
+        _initializing = false;
     }
 
-    /// <summary>Raised after the settings have been written to disk.</summary>
-    public event Action? Saved;
+    /// <summary>Raised after a change has been written to disk.</summary>
+    public event Action? Applied;
+
+    /// <summary>
+    /// Whether how usage is fetched (mode or interval) differs from when the window opened,
+    /// so the caller can refresh once on close rather than on every click.
+    /// </summary>
+    public bool FetchSettingsChanged =>
+        _settingsStore.Current.AvoidTokenUsage != _initialSettings.AvoidTokenUsage
+        || _settingsStore.Current.RefreshInterval != _initialSettings.RefreshInterval;
 
     /// <summary>Raised with each Test connection result, so the flyout and tray can show it too.</summary>
     public event Action<UsageFetchResult>? ConnectionTested;
 
     /// <summary>Raw text of the interval box. Kept as a string so a half-typed or empty value doesn't fight the binding.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RefreshIntervalError), nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [NotifyPropertyChangedFor(nameof(RefreshIntervalError), nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(TokensPerHourText))]
     private string _refreshIntervalText = string.Empty;
 
     /// <summary>Why the typed interval can't be saved, or null when it's fine (or not in use: token-free mode).</summary>
@@ -77,21 +89,35 @@ public partial class SettingsViewModel : ObservableObject
     public bool HasRefreshIntervalError => RefreshIntervalError is not null;
 
     /// <summary>
-    /// Always shown under the interval box: the error if there is one, otherwise what the
-    /// interval does in the current mode (its range and cost, or the fixed token-free interval).
+    /// Always shown beside the interval box: the error if there is one, otherwise the per-refresh
+    /// cost. Fixed text (it doesn't follow the value or the mode); the value-dependent estimate is
+    /// <see cref="TokensPerHourText"/>, shown under the box. The allowed range only surfaces in the
+    /// error and <see cref="RefreshIntervalToolTip"/>, since stepping can't leave it anyway.
     /// </summary>
-    public string RefreshIntervalHint => RefreshIntervalError ?? (AvoidTokenUsage
-        ? Loc.Format("Settings_IntervalFixedTokenFree", AppSettings.TokenFreeRefreshIntervalSeconds / 60)
-        : Loc.Format("Settings_IntervalRangeTokens", MinInterval, MaxInterval));
+    public string RefreshIntervalHint => RefreshIntervalError
+        ?? Loc.Format("Settings_IntervalTokensPerRefresh", ApproxTokensPerRefresh);
+
+    public string RefreshIntervalToolTip => Loc.Format("Settings_IntervalToolTip", MinInterval, MaxInterval);
+
+    /// <summary>Rough tokens an hour at the typed interval, e.g. "約 600 トークン/時".</summary>
+    public string TokensPerHourText => Loc.Format("Settings_TokensPerHour",
+        Math.Round(3600.0 / RefreshIntervalSeconds * ApproxTokensPerRefresh).ToString("N0", Loc.Culture));
 
     /// <summary>The interval box only applies in the default (token-using) mode.</summary>
     public bool IsRefreshIntervalEditable => !AvoidTokenUsage;
 
-    /// <summary>The interval to persist: the typed value clamped to the allowed range.</summary>
+    /// <summary>
+    /// The typed value clamped to the allowed range. Setting it (step buttons, normalizing)
+    /// commits the interval; typing alone doesn't.
+    /// </summary>
     public int RefreshIntervalSeconds
     {
         get => ParsedRefreshInterval is { } s ? Math.Clamp(s, MinInterval, MaxInterval) : _lastValidRefreshInterval;
-        set => RefreshIntervalText = Math.Clamp(value, MinInterval, MaxInterval).ToString(CultureInfo.InvariantCulture);
+        set
+        {
+            RefreshIntervalText = Math.Clamp(value, MinInterval, MaxInterval).ToString(CultureInfo.InvariantCulture);
+            Apply();
+        }
     }
 
     [ObservableProperty]
@@ -108,7 +134,6 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RefreshIntervalError), nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(IsRefreshIntervalEditable))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _avoidTokenUsage;
 
     [ObservableProperty]
@@ -124,7 +149,7 @@ public partial class SettingsViewModel : ObservableObject
     private bool _statusIsError;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(TestConnectionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(TestConnectionCommand))]
     private bool _isBusy;
 
     /// <summary>Which Claude account is being tracked (or why none is).</summary>
@@ -140,6 +165,11 @@ public partial class SettingsViewModel : ObservableObject
 
     private bool _loadingAccount;
 
+    // Result of the last account lookup, kept so a language switch can re-render it without the CLI.
+    private AccountInfo? _account;
+
+    private sealed record AccountInfo(ClaudeCredentialResolver.Result Resolution, bool Installed, ClaudeAuthStatus? Status);
+
     private int? ParsedRefreshInterval =>
         int.TryParse(RefreshIntervalText, NumberStyles.None, CultureInfo.InvariantCulture, out var s) ? s : null;
 
@@ -151,32 +181,77 @@ public partial class SettingsViewModel : ObservableObject
             _lastValidRefreshInterval = ParsedRefreshInterval!.Value;
     }
 
-    // Live preview; DiscardUnsavedPreview puts the saved theme/language back if the window is closed without saving.
-    partial void OnThemeChanged(AppTheme value) => ThemeManager.Apply(value);
+    partial void OnThemeChanged(AppTheme value)
+    {
+        ThemeManager.Apply(value);
+        Apply();
+    }
 
-    partial void OnLanguageChanged(AppLanguage value) => Loc.Apply(value);
+    partial void OnLanguageChanged(AppLanguage value)
+    {
+        Loc.Apply(value);
+        Apply();
+    }
 
-    // XAML text follows Loc on its own; strings built here have to be rebuilt.
-    private async void OnUiLanguageChanged()
+    partial void OnNotificationsEnabledChanged(bool value) => Apply();
+
+    partial void OnShowFlyoutOnStartupChanged(bool value) => Apply();
+
+    partial void OnAlwaysOnTopChanged(bool value) => Apply();
+
+    partial void OnAvoidTokenUsageChanged(bool value) => Apply();
+
+    partial void OnLaunchAtLoginEnabledChanged(bool value)
+    {
+        if (!_initializing)
+            _launchAtLoginService.SetEnabled(value);
+    }
+
+    // XAML text follows Loc on its own; strings built here have to be rebuilt. The account
+    // text is rebuilt from the last lookup rather than re-running the (slow) CLI, so it
+    // switches language at the same moment as everything else.
+    private void OnUiLanguageChanged()
     {
         OnPropertyChanged(nameof(RefreshIntervalError));
         OnPropertyChanged(nameof(RefreshIntervalHint));
+        OnPropertyChanged(nameof(TokensPerHourText));
+        OnPropertyChanged(nameof(RefreshIntervalToolTip));
         StatusMessage = null;
-        await LoadAccountAsync();
+        if (_account is { } account)
+            ApplyAccount(account);
+        else
+            AccountSummary = Loc.Get("Settings_CheckingSignIn");
     }
 
-    /// <summary>Snaps the typed value into range (or restores the last valid one if the box is empty).</summary>
+    /// <summary>
+    /// Snaps the typed value into range (or restores the last valid one if the box is empty)
+    /// and commits it. Called when focus leaves the box.
+    /// </summary>
     public void NormalizeRefreshInterval() => RefreshIntervalSeconds = RefreshIntervalSeconds;
 
-    /// <summary>Call when the window closes: reverts the previewed theme unless it was saved.</summary>
-    public void DiscardUnsavedPreview()
+    /// <summary>Call when the window closes: commits a half-typed interval and detaches.</summary>
+    public void Close()
     {
+        NormalizeRefreshInterval();
         Loc.LanguageChanged -= OnUiLanguageChanged;
-        if (_saved)
+    }
+
+    /// <summary>Writes the current state to disk.</summary>
+    private void Apply()
+    {
+        if (_initializing)
             return;
 
-        ThemeManager.Apply(_savedTheme);
-        Loc.Apply(_savedLanguage);
+        var settings = _settingsStore.Current;
+        settings.RefreshIntervalSeconds = _lastValidRefreshInterval;
+        settings.NotificationsEnabled = NotificationsEnabled;
+        settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
+        settings.AlwaysOnTop = AlwaysOnTop;
+        settings.AvoidTokenUsage = AvoidTokenUsage;
+        settings.Theme = Theme;
+        settings.Language = Language;
+        _settingsStore.Save();
+        Applied?.Invoke();
     }
 
     /// <summary>
@@ -191,33 +266,39 @@ public partial class SettingsViewModel : ObservableObject
         _loadingAccount = true;
         try
         {
-            var (resolution, installed, status) = await Task.Run(() =>
+            _account = await Task.Run(() =>
             {
                 var resolution = ClaudeCredentialResolver.Resolve();
                 var installed = ClaudeCli.IsInstalled;
-                return (resolution, installed, installed ? ClaudeCli.GetAuthStatus() : null);
+                return new AccountInfo(resolution, installed, installed ? ClaudeCli.GetAuthStatus() : null);
             });
-
-            var source = resolution.Source;
-            var signedIn = resolution.Credentials is not null;
-            AccountSummary = source switch
-            {
-                { IsWsl: true } when signedIn => Loc.Format("Settings_UsingWsl", source.DisplayName),
-                { IsWsl: true } => Loc.Format("Settings_WslExpired", source.DisplayName),
-                not null when signedIn => DescribeSignedIn(status),
-                not null => Loc.Get("Settings_Expired"),
-                null when installed => Loc.Get("Error_NotSignedIn"),
-                null => Loc.Get("Settings_NotInstalled")
-            };
-            AccountActionText = !installed ? null
-                : signedIn && source is { IsWsl: false } ? Loc.Get("Settings_SwitchAccount")
-                : Loc.Get("Settings_SignIn");
-            ShowInstallLink = !installed;
+            ApplyAccount(_account);
         }
         finally
         {
             _loadingAccount = false;
         }
+    }
+
+    /// <summary>Builds the account section's text from a lookup, in the current UI language.</summary>
+    private void ApplyAccount(AccountInfo account)
+    {
+        var (resolution, installed, status) = account;
+        var source = resolution.Source;
+        var signedIn = resolution.Credentials is not null;
+        AccountSummary = source switch
+        {
+            { IsWsl: true } when signedIn => Loc.Format("Settings_UsingWsl", source.DisplayName),
+            { IsWsl: true } => Loc.Format("Settings_WslExpired", source.DisplayName),
+            not null when signedIn => DescribeSignedIn(status),
+            not null => Loc.Get("Settings_Expired"),
+            null when installed => Loc.Get("Error_NotSignedIn"),
+            null => Loc.Get("Settings_NotInstalled")
+        };
+        AccountActionText = !installed ? null
+            : signedIn && source is { IsWsl: false } ? Loc.Get("Settings_SwitchAccount")
+            : Loc.Get("Settings_SignIn");
+        ShowInstallLink = !installed;
     }
 
     private static string DescribeSignedIn(ClaudeAuthStatus? status) => status switch
@@ -273,26 +354,4 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     private bool CanTestConnection() => !IsBusy;
-
-    [RelayCommand(CanExecute = nameof(CanSave))]
-    private void Save()
-    {
-        NormalizeRefreshInterval();
-
-        var settings = _settingsStore.Current;
-        settings.RefreshIntervalSeconds = RefreshIntervalSeconds;
-        settings.NotificationsEnabled = NotificationsEnabled;
-        settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
-        settings.AlwaysOnTop = AlwaysOnTop;
-        settings.AvoidTokenUsage = AvoidTokenUsage;
-        settings.Theme = Theme;
-        settings.Language = Language;
-        _settingsStore.Save();
-        _launchAtLoginService.SetEnabled(LaunchAtLoginEnabled);
-
-        _saved = true;
-        Saved?.Invoke();
-    }
-
-    private bool CanSave() => !IsBusy && IsRefreshIntervalValid;
 }

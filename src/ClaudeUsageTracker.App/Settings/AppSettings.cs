@@ -42,6 +42,13 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<AppLanguage>))]
     public AppLanguage Language { get; set; } = AppLanguage.System;
 
+    /// <summary>
+    /// Where the flyout was last dragged to (window top-left, screen pixels), or null if it never
+    /// has been — then it opens near the tray/cursor. Clamped onto a monitor when applied, since
+    /// the display it was saved on may be gone.
+    /// </summary>
+    public ScreenPoint? FlyoutPosition { get; set; }
+
     /// <summary>Threshold-notification dedup state (e.g. "session_75"), so the same threshold doesn't re-notify every refresh.</summary>
     public List<string> NotifiedThresholdKeys { get; set; } = [];
 
@@ -51,3 +58,6 @@ public sealed class AppSettings
         ? TimeSpan.FromSeconds(TokenFreeRefreshIntervalSeconds)
         : TimeSpan.FromSeconds(Math.Clamp(RefreshIntervalSeconds, MinRefreshIntervalSeconds, MaxRefreshIntervalSeconds));
 }
+
+/// <summary>A point in screen (device) pixels.</summary>
+public sealed record ScreenPoint(int X, int Y);

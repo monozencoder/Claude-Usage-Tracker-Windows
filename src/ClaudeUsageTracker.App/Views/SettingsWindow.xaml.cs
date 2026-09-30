@@ -8,7 +8,7 @@ using ClaudeUsageTracker.App.ViewModels;
 namespace ClaudeUsageTracker.App.Views;
 
 /// <summary>
-/// Settings dialog. Behavior lives in <see cref="SettingsViewModel"/>; this code-behind
+/// Settings window; changes apply immediately, so it only has a close button. Behavior lives in <see cref="SettingsViewModel"/>; this code-behind
 /// only wires window lifetime and keeps the refresh-interval box digits-only.
 /// </summary>
 public partial class SettingsWindow : Window
@@ -22,17 +22,16 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         ThemeManager.TrackTitleBar(this);
 
-        viewModel.Saved += Close;
-        Closed += (_, _) =>
+        Closing += (_, _) => viewModel.Close();
+        // Changes apply as they're made, so Esc simply closes.
+        PreviewKeyDown += (_, e) =>
         {
-            viewModel.Saved -= Close;
-            viewModel.DiscardUnsavedPreview();
+            if (e.Key == Key.Escape)
+                Close();
         };
         // Also on re-activation: the user comes back here after signing in in the browser.
         Activated += async (_, _) => await viewModel.LoadAccountAsync();
     }
-
-    private void OnCancelClicked(object sender, RoutedEventArgs e) => Close();
 
     private void OnInstallLinkNavigate(object sender, RequestNavigateEventArgs e)
     {

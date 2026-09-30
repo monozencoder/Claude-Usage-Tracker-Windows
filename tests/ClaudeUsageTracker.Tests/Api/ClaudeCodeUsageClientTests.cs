@@ -12,10 +12,14 @@ public class ClaudeCodeUsageClientTests
     {
         public List<HttpRequestMessage> Requests { get; } = [];
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        // Request bodies, captured here because the client disposes each request once it's sent.
+        public List<string?> Bodies { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add(request);
-            return Task.FromResult(respond(request));
+            Bodies.Add(request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken));
+            return respond(request);
         }
     }
 
@@ -108,11 +112,8 @@ public class ClaudeCodeUsageClientTests
         var request = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Post, request.Method);
         Assert.Equal(ApiEndpoints.Messages, request.RequestUri!.ToString());
-        Assert.Contains($"\"model\":\"{ClaudeCodeUsageClient.PreferredProbeModel}\"", RequestBodies[request]);
+        Assert.Contains($"\"model\":\"{ClaudeCodeUsageClient.PreferredProbeModel}\"", Assert.Single(handler.Bodies));
     }
-
-    // Request bodies, captured before the client disposes the requests.
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<HttpRequestMessage, string> RequestBodies = new();
 
     private static StubHandler RetiredModelHandler(string retiredModel, string modelsJson, Action? onModelsListed = null)
         => new(request =>
@@ -124,7 +125,6 @@ public class ClaudeCodeUsageClientTests
             }
 
             var body = request.Content!.ReadAsStringAsync().Result;
-            RequestBodies.AddOrUpdate(request, body);
             return body.Contains($"\"model\":\"{retiredModel}\"")
                 ? new HttpResponseMessage(HttpStatusCode.NotFound)
                 : WithRateLimitHeaders(("anthropic-ratelimit-unified-5h-utilization", "0.5"));

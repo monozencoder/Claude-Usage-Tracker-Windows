@@ -36,6 +36,7 @@ public partial class App : System.Windows.Application
     private FlyoutWindow _flyoutWindow = null!;
     private DispatcherTimer _refreshTimer = null!;
     private CredentialsFileWatcher _credentialsWatcher = null!;
+    private SettingsWindow? _settingsWindow;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -58,7 +59,17 @@ public partial class App : System.Windows.Application
             appName: AppName,
             executablePathProvider: () => Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0]);
 
-        _flyoutWindow = new FlyoutWindow { DataContext = _flyoutViewModel, Topmost = settings.AlwaysOnTop };
+        _flyoutWindow = new FlyoutWindow
+        {
+            DataContext = _flyoutViewModel,
+            Topmost = settings.AlwaysOnTop,
+            SavedPosition = settings.FlyoutPosition
+        };
+        _flyoutWindow.PositionSaved += position =>
+        {
+            _settingsStore.Current.FlyoutPosition = position;
+            _settingsStore.Save();
+        };
         _flyoutViewModel.RefreshRequested += RefreshNow;
         _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
         _flyoutViewModel.SignInRequested += StartSignIn;
@@ -67,8 +78,16 @@ public partial class App : System.Windows.Application
         _flyoutViewModel.RefreshLanguage();
 
         _trayIconController = new TrayIconController(new TrayIconRenderer());
-        _trayIconController.Clicked += _flyoutWindow.ToggleNearCursor;
+        _trayIconController.Clicked += _flyoutWindow.Toggle;
         _trayIconController.RefreshRequested += RefreshNow;
+        _trayIconController.SettingsRequested += OpenSettingsWindow;
+        _trayIconController.CanResetPosition = () => _flyoutWindow.SavedPosition is not null;
+        _trayIconController.ResetPositionRequested += () =>
+        {
+            _flyoutWindow.ResetPosition();
+            _settingsStore.Current.FlyoutPosition = null;
+            _settingsStore.Save();
+        };
         _trayIconController.ExitRequested += () => Shutdown();
 
         _coordinator = new UsageRefreshCoordinator(
@@ -83,7 +102,7 @@ public partial class App : System.Windows.Application
         _credentialsWatcher.Changed += RefreshNow;
 
         if (settings.ShowFlyoutOnStartup)
-            _flyoutWindow.ToggleNearCursor();
+            _flyoutWindow.Toggle();
 
         RefreshNow();
     }
@@ -116,14 +135,35 @@ public partial class App : System.Windows.Application
 
     private void OpenSettingsWindow()
     {
-        var viewModel = new SettingsViewModel(_settingsStore, _launchAtLoginService, _usageFetcher);
-        viewModel.Saved += () =>
+        // Reachable from both the flyout and the tray menu; never stack a second copy.
+        if (_settingsWindow is not null)
         {
-            _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
+            _settingsWindow.Activate();
+            return;
+        }
+
+        var viewModel = new SettingsViewModel(_settingsStore, _launchAtLoginService, _usageFetcher);
+        viewModel.Applied += () =>
+        {
+            // Setting Interval restarts the timer, so only touch it when it actually changed.
+            if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
+                _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
             _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
-            RefreshNow();
         };
         viewModel.ConnectionTested += result => _coordinator.ApplyResult(result);
-        new SettingsWindow(viewModel).ShowDialog();
+        _settingsWindow = new SettingsWindow(viewModel);
+        try
+        {
+            _settingsWindow.ShowDialog();
+        }
+        finally
+        {
+            _settingsWindow = null;
+        }
+
+        // Settings apply as they're changed; fetching with a new mode/interval waits until the
+        // window closes so stepping the interval or flipping the mode doesn't send a prompt each click.
+        if (viewModel.FetchSettingsChanged)
+            RefreshNow();
     }
 }

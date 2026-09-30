@@ -213,6 +213,74 @@
         </Setter>
     </Style>
 
+    <!-- Fluent toggle switch: a CheckBox whose content sits on the left and the switch on the
+         right, so the whole row (label + description) is the click target. -->
+    <Style x:Key="ToggleSwitchStyle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource UIFontFamily}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ContentPresenter VerticalAlignment="Center" Margin="0,0,16,0" />
+                        <Border x:Name="Track" Grid.Column="1" Width="40" Height="20" CornerRadius="10" BorderThickness="1"
+                                BorderBrush="{DynamicResource TextSecondaryBrush}" Background="Transparent" VerticalAlignment="Center">
+                            <Ellipse x:Name="Knob" Width="12" Height="12" HorizontalAlignment="Left" Margin="3,0,0,0"
+                                     Fill="{DynamicResource TextSecondaryBrush}">
+                                <Ellipse.RenderTransform>
+                                    <TranslateTransform x:Name="KnobOffset" X="0" />
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}" />
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            <Setter TargetName="Knob" Property="Fill" Value="White" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="KnobOffset" Storyboard.TargetProperty="X"
+                                                         To="20" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="KnobOffset" Storyboard.TargetProperty="X"
+                                                         To="0" Duration="0:0:0.15">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===== TextBox ===== -->
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
@@ -262,30 +330,37 @@
         </Setter>
     </Style>
 
-    <!-- ===== Context menu (tray icon) ===== -->
+    <!-- ===== Context menu (tray icon), Windows 11 style =====
+         Rounded 8px panel with a soft shadow; the outer margin leaves the shadow room inside
+         the (transparent) popup so it isn't clipped. -->
     <Style TargetType="ContextMenu">
         <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FontFamily" Value="{StaticResource UIFontFamily}" />
         <Setter Property="Padding" Value="4" />
+        <Setter Property="MinWidth" Value="200" />
+        <Setter Property="HasDropShadow" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6"
+                    <Border Margin="12,8,12,16" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8"
                             Padding="{TemplateBinding Padding}">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" />
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.28" />
                         </Border.Effect>
-                        <StackPanel IsItemsHost="True" />
+                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
+    <!-- Menu item: icon column (a Segoe Fluent glyph set as MenuItem.Icon) + label.
+         Hover/keyboard highlight is a subtle overlay, as in Windows 11 menus, not the accent color.
+         The glyph's font is set where the icon is created (see TrayIconController). -->
     <Style TargetType="MenuItem">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontFamily" Value="{StaticResource UIFontFamily}" />
@@ -293,12 +368,26 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="10,6" Margin="0,1">
-                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Height="32" Margin="0,1" Padding="12,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter ContentSource="Icon" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                            <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True"
+                                              VerticalAlignment="Center" />
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -306,10 +395,15 @@
         </Setter>
     </Style>
 
-    <Style TargetType="Separator">
-        <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
-        <Setter Property="Height" Value="1" />
-        <Setter Property="Margin" Value="4,4" />
+    <!-- Menus look separators up by this key rather than the implicit Separator style. Full width, as in Windows 11. -->
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Margin="-4,4" Background="{DynamicResource BorderBrush}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

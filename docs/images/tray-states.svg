@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="64" viewBox="0 0 256 64" role="img" aria-label="トレイアイコンの状態: 緑・橙・赤">
+  <!-- Mirrors TrayIconRenderer: stroke = size / 8, translucent gray track,
+       status-colored arc drawn clockwise from 12 o'clock with round caps.
+       pathLength="100" lets the dash length be the usage percentage. -->
+  <defs>
+    <style>
+      .track { fill: none; stroke: rgb(128 128 128 / 0.24); stroke-width: 8; }
+      .arc { fill: none; stroke-width: 8; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <!-- Safe (green): 30% -->
+  <g transform="translate(32 32) rotate(-90)">
+    <circle class="track" r="28" />
+    <circle class="arc" r="28" pathLength="100" stroke="#34C759" stroke-dasharray="30 100" />
+  </g>
+
+  <!-- Moderate (orange): 75% -->
+  <g transform="translate(128 32) rotate(-90)">
+    <circle class="track" r="28" />
+    <circle class="arc" r="28" pathLength="100" stroke="#FF9500" stroke-dasharray="75 100" />
+  </g>
+
+  <!-- Critical (red): 95% -->
+  <g transform="translate(224 32) rotate(-90)">
+    <circle class="track" r="28" />
+    <circle class="arc" r="28" pathLength="100" stroke="#FF3B30" stroke-dasharray="95 100" />
+  </g>
+</svg>

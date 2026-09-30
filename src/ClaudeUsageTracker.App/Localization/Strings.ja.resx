@@ -37,21 +37,23 @@
   <data name="Toast_SessionResetBody" xml:space="preserve"><value>5 時間のセッション枠がリセットされました。</value></data>
   <data name="Toast_UsageAlertTitle" xml:space="preserve"><value>Claude 使用量のお知らせ</value></data>
   <data name="Toast_UsageAlertBody" xml:space="preserve"><value>セッション枠の使用率が {0}% に達しました。</value></data>
-  <data name="Tray_Refresh" xml:space="preserve"><value>更新</value></data>
+  <data name="Tray_Refresh" xml:space="preserve"><value>今すぐ更新</value></data>
+  <data name="Tray_Settings" xml:space="preserve"><value>設定</value></data>
+  <data name="Tray_ResetPosition" xml:space="preserve"><value>表示位置をリセット</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>終了</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Claude Usage Tracker — 設定</value></data>
   <data name="Settings_Account" xml:space="preserve"><value>Claude アカウント</value></data>
   <data name="Settings_SignInToolTip" xml:space="preserve"><value>ブラウザで Claude Code のサインイン (claude auth login) を開きます。Claude Code 自体のアカウントも切り替わります。</value></data>
   <data name="Settings_TestConnection" xml:space="preserve"><value>接続テスト</value></data>
-  <data name="Settings_TestConnectionToolTip" xml:space="preserve"><value>定期更新と同じ方法で、使用量を取得できるか確認します (トークンを使用しない設定でなければ、1 トークンのプロンプトを送ります)。</value></data>
+  <data name="Settings_TestConnectionToolTip" xml:space="preserve"><value>定期更新と同じ方法で、使用量を取得できるか確認します (「使用量を消費しない」がオフなら、約 10 トークンを消費します)。</value></data>
   <data name="Settings_InstallLink" xml:space="preserve"><value>Claude Code のインストール方法</value></data>
   <data name="Settings_RefreshInterval" xml:space="preserve"><value>更新間隔</value></data>
   <data name="Settings_Decrease" xml:space="preserve"><value>5 秒減らす</value></data>
   <data name="Settings_Increase" xml:space="preserve"><value>5 秒増やす</value></data>
-  <data name="Settings_IntervalToolTip" xml:space="preserve"><value>↑ / ↓ キーかマウスホイールで 5 秒ずつ調整できます</value></data>
+  <data name="Settings_IntervalToolTip" xml:space="preserve"><value>{0}〜{1} 秒</value></data>
   <data name="Settings_Seconds" xml:space="preserve"><value>秒</value></data>
-  <data name="Settings_AvoidTokens" xml:space="preserve"><value>トークンを使用しない (10 分ごとに更新)</value></data>
-  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>使用量 API から読み取るため、使用量を消費しません。この API は確認回数の制限が厳しいため、更新は 10 分ごとになります。</value></data>
+  <data name="Settings_AvoidTokens" xml:space="preserve"><value>使用量を消費しない</value></data>
+  <data name="Settings_AvoidTokensDescription" xml:space="preserve"><value>更新は 10 分ごとになります。</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>外観</value></data>
   <data name="Settings_ThemeSystem" xml:space="preserve"><value>システム</value></data>
   <data name="Settings_ThemeLight" xml:space="preserve"><value>ライト</value></data>
@@ -62,13 +64,11 @@
   <data name="Settings_LaunchAtLogin" xml:space="preserve"><value>Windows へのサインイン時に起動する</value></data>
   <data name="Settings_ShowOnStartup" xml:space="preserve"><value>起動時にウィンドウを表示する</value></data>
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>ウィンドウを常に最前面に表示する</value></data>
-  <data name="Settings_Cancel" xml:space="preserve"><value>キャンセル</value></data>
-  <data name="Settings_Save" xml:space="preserve"><value>保存</value></data>
   <data name="Settings_IntervalEnter" xml:space="preserve"><value>{0}〜{1} 秒で入力してください</value></data>
   <data name="Settings_IntervalMin" xml:space="preserve"><value>最小は {0} 秒です</value></data>
   <data name="Settings_IntervalMax" xml:space="preserve"><value>最大は {0} 秒です</value></data>
-  <data name="Settings_IntervalRangeTokens" xml:space="preserve"><value>{0}〜{1} 秒。更新のたびに 1 トークンのプロンプトを送ります (使用量をわずかに消費します)。</value></data>
-  <data name="Settings_IntervalFixedTokenFree" xml:space="preserve"><value>トークンを使用しない設定のため、{0} 分ごとに更新します。</value></data>
+  <data name="Settings_IntervalTokensPerRefresh" xml:space="preserve"><value>更新 1 回につき約 {0} トークンを消費します。</value></data>
+  <data name="Settings_TokensPerHour" xml:space="preserve"><value>約 {0} トークン/時</value></data>
   <data name="Settings_CheckingSignIn" xml:space="preserve"><value>Claude Code のサインインを確認しています...</value></data>
   <data name="Settings_UsingWsl" xml:space="preserve"><value>{0} の Claude Code のサインインを使用しています。</value></data>
   <data name="Settings_WslExpired" xml:space="preserve"><value>{0} の Claude Code のサインインの有効期限が切れています。サインインし直すには、{0} で "claude auth login" を実行してください。</value></data>
@@ -82,5 +82,5 @@
   <data name="Settings_FinishSignIn" xml:space="preserve"><value>ブラウザでサインインを完了してください。この画面に戻ると表示が更新されます。</value></data>
   <data name="Settings_Testing" xml:space="preserve"><value>接続をテストしています...</value></data>
   <data name="Settings_Connected" xml:space="preserve"><value>接続できました。セッション: {0:0.#}%、週間: {1:0.#}%</value></data>
-  <data name="Settings_ConnectedRateLimited" xml:space="preserve"><value>サインインは有効ですが、使用量の確認回数が制限されています。時間をおいて試すか、「トークンを使用しない」をオフにしてください。</value></data>
+  <data name="Settings_ConnectedRateLimited" xml:space="preserve"><value>サインインは有効ですが、使用量の確認回数が制限されています。時間をおいて試すか、「使用量を消費しない」をオフにしてください。</value></data>
 </root>

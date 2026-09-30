@@ -16,27 +16,30 @@ public sealed class TrayIconController : IDisposable
 
     public event Action? Clicked;
     public event Action? RefreshRequested;
+    public event Action? SettingsRequested;
+    public event Action? ResetPositionRequested;
     public event Action? ExitRequested;
+
+    /// <summary>Whether "Reset position" has anything to reset; checked each time the menu opens.</summary>
+    public Func<bool>? CanResetPosition { get; set; }
 
     public TrayIconController(TrayIconRenderer renderer)
     {
         _renderer = renderer;
 
-        var refreshItem = new MenuItem { Header = Loc.Get("Tray_Refresh") };
-        refreshItem.Click += (_, _) => RefreshRequested?.Invoke();
-
-        var exitItem = new MenuItem { Header = Loc.Get("Tray_Exit") };
-        Loc.LanguageChanged += () =>
-        {
-            refreshItem.Header = Loc.Get("Tray_Refresh");
-            exitItem.Header = Loc.Get("Tray_Exit");
-        };
-        exitItem.Click += (_, _) => ExitRequested?.Invoke();
+        // Segoe Fluent Icons glyphs: Refresh, Settings, Undo, PowerButton.
+        var refreshItem = CreateItem("Tray_Refresh", "\uE72C", () => RefreshRequested?.Invoke());
+        var settingsItem = CreateItem("Tray_Settings", "\uE713", () => SettingsRequested?.Invoke());
+        var resetPositionItem = CreateItem("Tray_ResetPosition", "\uE7A7", () => ResetPositionRequested?.Invoke());
+        var exitItem = CreateItem("Tray_Exit", "\uE7E8", () => ExitRequested?.Invoke());
 
         var contextMenu = new ContextMenu();
         contextMenu.Items.Add(refreshItem);
+        contextMenu.Items.Add(settingsItem);
+        contextMenu.Items.Add(resetPositionItem);
         contextMenu.Items.Add(new Separator());
         contextMenu.Items.Add(exitItem);
+        contextMenu.Opened += (_, _) => resetPositionItem.IsEnabled = CanResetPosition?.Invoke() ?? false;
 
         _taskbarIcon = new TaskbarIcon
         {
@@ -47,6 +50,22 @@ public sealed class TrayIconController : IDisposable
 
         UpdateIcon(0, UsageStatusLevel.Safe);
         _taskbarIcon.ForceCreate();
+    }
+
+    private static MenuItem CreateItem(string textKey, string glyph, Action onClick)
+    {
+        // The font is set on the TextBlock itself: the app's implicit TextBlock style would
+        // otherwise swap in the UI font and render the glyph as a box.
+        var icon = new TextBlock
+        {
+            Text = glyph,
+            FontFamily = (System.Windows.Media.FontFamily)System.Windows.Application.Current.Resources["IconFontFamily"],
+            FontSize = 16
+        };
+        var item = new MenuItem { Header = Loc.Get(textKey), Icon = icon };
+        item.Click += (_, _) => onClick();
+        Loc.LanguageChanged += () => item.Header = Loc.Get(textKey);
+        return item;
     }
 
     public void UpdateIcon(double percentage, UsageStatusLevel status)
