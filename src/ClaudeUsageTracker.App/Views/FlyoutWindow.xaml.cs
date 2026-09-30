@@ -119,8 +119,7 @@ public partial class FlyoutWindow : Window
                 : SlideInOffset;
     }
 
-    // Tucks the window away behind the tray icon (used by both the minimize and
-    // close header buttons) without exiting the app.
+    // Tucks the window away behind the tray icon (the close button) without exiting the app.
     //
     // A transparent (layered) window keeps its last frame while hidden, and Show() puts that
     // frame on screen for an instant before WPF draws the new one — the fully opaque flyout
@@ -139,8 +138,6 @@ public partial class FlyoutWindow : Window
     }
 
     private bool _hidePending;
-
-    private void OnMinimizeClicked(object sender, RoutedEventArgs e) => HideToTray();
 
     private void OnCloseClicked(object sender, RoutedEventArgs e) => HideToTray();
 
@@ -171,9 +168,9 @@ public partial class FlyoutWindow : Window
         RootTranslate.Y = _slideFrom;
     }
 
-    // Lets the borderless window be dragged by its header, skipping clicks that
-    // land on one of the header buttons so they still work normally.
-    private void OnHeaderMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    // Lets the borderless window be dragged by anywhere on its panel, skipping clicks that
+    // land on a button (settings, close, refresh, sign in) so they still work normally.
+    private void OnPanelMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is DependencyObject source && IsWithinButton(source))
             return;

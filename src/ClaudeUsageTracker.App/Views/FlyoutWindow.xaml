@@ -12,31 +12,30 @@
     <!-- The margin is transparent room for FlyoutShadowEffect (blur 24, offset 4 down) and the
          slide-in animation; without it the shadow is clipped to the window's square bounds and
          shows as a faint rectangle behind the rounded corners. Width = 300 card + 2 x 24. -->
+    <!-- The whole panel is a drag handle (buttons excluded), so the header can stay minimal. -->
     <Border x:Name="RootPanel" Margin="24,24,24,28" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="10"
-            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16"
-            Effect="{StaticResource FlyoutShadowEffect}" RenderTransformOrigin="0.5,0">
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16,8,16,16"
+            Effect="{StaticResource FlyoutShadowEffect}" RenderTransformOrigin="0.5,0"
+            MouseLeftButtonDown="OnPanelMouseLeftButtonDown">
         <Border.RenderTransform>
             <TranslateTransform x:Name="RootTranslate" Y="0" />
         </Border.RenderTransform>
         <StackPanel>
-            <DockPanel LastChildFill="False" Margin="0,0,0,12" Background="Transparent"
-                       MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
-                <!-- App name, not a status: connection problems show in the banner below. -->
-                <TextBlock Text="Claude Usage Tracker" Style="{StaticResource BodyStrongTextStyle}"
-                           Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" DockPanel.Dock="Left" />
-                <Button Click="OnCloseClicked" DockPanel.Dock="Right"
-                        Style="{StaticResource IconButtonStyle}" ToolTip="{loc:Tr Flyout_Close}" Margin="4,0,0,0">
-                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFontFamily}" />
-                </Button>
-                <Button Click="OnMinimizeClicked" DockPanel.Dock="Right"
-                        Style="{StaticResource IconButtonStyle}" ToolTip="{loc:Tr Flyout_Minimize}" Margin="4,0,0,0">
-                    <TextBlock Text="&#xE921;" FontFamily="{StaticResource IconFontFamily}" />
-                </Button>
-                <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Right"
-                        Style="{StaticResource IconButtonStyle}" ToolTip="{loc:Tr Flyout_Settings}" Margin="4,0,0,0">
+            <!-- Slim header: no title (the content says what this is), just settings and close,
+                 small and quiet in the top-right corner. -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,-8,4">
+                <!-- The gear glyph draws smaller than the close glyph at the same size, so they differ to match visually. -->
+                <Button Command="{Binding OpenSettingsCommand}" Style="{StaticResource IconButtonStyle}"
+                        Width="24" Height="24" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                        ToolTip="{loc:Tr Flyout_Settings}">
                     <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFontFamily}" />
                 </Button>
-            </DockPanel>
+                <Button Click="OnCloseClicked" Style="{StaticResource IconButtonStyle}"
+                        Width="24" Height="24" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"
+                        ToolTip="{loc:Tr Flyout_Close}" Margin="2,0,0,0">
+                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFontFamily}" />
+                </Button>
+            </StackPanel>
 
             <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="4" Padding="10,8" Margin="0,0,0,12"
                     BorderThickness="0,0,0,0" BorderBrush="{DynamicResource WarningBrush}"

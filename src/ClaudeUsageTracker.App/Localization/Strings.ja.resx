@@ -6,7 +6,6 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Flyout_Close" xml:space="preserve"><value>閉じる</value></data>
-  <data name="Flyout_Minimize" xml:space="preserve"><value>トレイに最小化</value></data>
   <data name="Flyout_Settings" xml:space="preserve"><value>設定</value></data>
   <data name="Flyout_RefreshNow" xml:space="preserve"><value>今すぐ更新</value></data>
   <data name="Flyout_SignIn" xml:space="preserve"><value>サインイン</value></data>
