@@ -101,8 +101,15 @@ public partial class App : System.Windows.Application
         };
         _trayIconController.ExitRequested += () => Shutdown();
 
-        _taskbarBarController = new TaskbarBarController(_flyoutViewModel);
+        _taskbarBarController = new TaskbarBarController(_flyoutViewModel, _settingsStore);
         _taskbarBarController.Clicked += _flyoutWindow.Toggle;
+        _taskbarBarController.OffsetChanged += (device, offset) =>
+        {
+            // Keeps the slider of an open settings window in step with the drag.
+            if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel
+                && settingsViewModel.TaskbarBarDisplays.FirstOrDefault(display => display.DeviceName == device) is { } row)
+                row.Offset = offset;
+        };
         ApplyTaskbarBarSettings();
 
         _coordinator = new UsageRefreshCoordinator(
@@ -139,9 +146,8 @@ public partial class App : System.Windows.Application
 
     private void ApplyTaskbarBarSettings()
     {
-        var settings = _settingsStore.Current;
-        _taskbarBarController.Configure(settings.TaskbarBarMonitors, settings.TaskbarBarPrimaryOffset, settings.TaskbarBarSecondaryOffset);
-        _taskbarBarController.Enabled = settings.ShowTaskbarBar;
+        _taskbarBarController.Enabled = _settingsStore.Current.ShowTaskbarBar;
+        _taskbarBarController.Refresh();
     }
 
     private void StartSignIn()

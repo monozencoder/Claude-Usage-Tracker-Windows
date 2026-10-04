@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Interop;
+using ClaudeUsageTracker.App.Services;
 using System.Windows.Media;
 using System.Windows.Threading;
 using ClaudeUsageTracker.App.Settings;
@@ -33,23 +34,25 @@ public sealed class TaskbarBarController : IDisposable
     private const double SecondaryRightInset = 124;
 
     private readonly FlyoutViewModel _viewModel;
+    private readonly AppSettingsStore _settingsStore;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
 
     // One strip per taskbar, by the taskbar's window handle.
     private readonly Dictionary<IntPtr, TaskbarBarWindow> _strips = [];
     private bool _lightTaskbar;
     private bool _enabled;
-    private TaskbarBarMonitors _monitors;
-    private int _primaryOffset;
-    private int _secondaryOffset;
 
-    public TaskbarBarController(FlyoutViewModel viewModel)
+    public TaskbarBarController(FlyoutViewModel viewModel, AppSettingsStore settingsStore)
     {
         _viewModel = viewModel;
+        _settingsStore = settingsStore;
         _timer.Tick += (_, _) => Update();
     }
 
     public event Action? Clicked;
+
+    /// <summary>Raised with the monitor's device name and its new offset after a strip was dragged along its taskbar.</summary>
+    public event Action<string, int>? OffsetChanged;
 
     public bool Enabled
     {
@@ -72,20 +75,9 @@ public sealed class TaskbarBarController : IDisposable
         }
     }
 
-    /// <summary>
-    /// Applies the user's placement: which monitors' taskbars get a strip, and how far each is
-    /// shifted (device-independent pixels, negative is left) from where it's placed automatically.
-    /// </summary>
-    public void Configure(TaskbarBarMonitors monitors, int primaryOffset, int secondaryOffset)
+    /// <summary>Re-places the strips now, after the per-monitor settings changed, instead of on the next tick.</summary>
+    public void Refresh()
     {
-        primaryOffset = Math.Clamp(primaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
-        secondaryOffset = Math.Clamp(secondaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
-        if (monitors == _monitors && primaryOffset == _primaryOffset && secondaryOffset == _secondaryOffset)
-            return;
-
-        _monitors = monitors;
-        _primaryOffset = primaryOffset;
-        _secondaryOffset = secondaryOffset;
         if (_enabled)
             Update();
     }
@@ -114,18 +106,14 @@ public sealed class TaskbarBarController : IDisposable
         }
 
         foreach (var taskbar in taskbars)
-        {
-            var isPrimary = IsPrimary(taskbar);
-            if (_monitors == (isPrimary ? TaskbarBarMonitors.SecondaryOnly : TaskbarBarMonitors.PrimaryOnly))
-                Close(taskbar);
-            else
-                UpdateStrip(taskbar, isPrimary);
-        }
+            UpdateStrip(taskbar, IsPrimary(taskbar));
     }
 
     private void UpdateStrip(IntPtr taskbar, bool isPrimary)
     {
-        if (!GetWindowRect(taskbar, out var taskbarRect))
+        var monitor = WinForms.Screen.FromHandle(taskbar);
+        var placement = _settingsStore.Current.TaskbarBarDisplays.GetValueOrDefault(monitor.DeviceName);
+        if (placement is { Show: false } || !GetWindowRect(taskbar, out var taskbarRect))
         {
             Close(taskbar);
             return;
@@ -137,6 +125,13 @@ public sealed class TaskbarBarController : IDisposable
             strip.UseLightTaskbar(_lightTaskbar);
             strip.Clicked += () => Clicked?.Invoke();
             var created = strip;
+            strip.DragStarted += () => _dragStartOffset = Placement(taskbar).Offset;
+            strip.DragMoved += pixels => Drag(taskbar, created, pixels);
+            strip.DragCompleted += () =>
+            {
+                _settingsStore.Save();
+                OffsetChanged?.Invoke(WinForms.Screen.FromHandle(taskbar).DeviceName, Placement(taskbar).Offset);
+            };
             strip.Closed += (_, _) =>
             {
                 if (_strips.TryGetValue(taskbar, out var current) && current == created)
@@ -147,17 +142,22 @@ public sealed class TaskbarBarController : IDisposable
         }
 
         var bounds = Drawing.Rectangle.FromLTRB(taskbarRect.Left, taskbarRect.Top, taskbarRect.Right, taskbarRect.Bottom);
-        var screen = WinForms.Screen.FromHandle(taskbar).Bounds;
+        var screen = monitor.Bounds;
 
         // Only a horizontal taskbar has room for it. An auto-hidden one is parked almost entirely
-        // off screen, and a full-screen app covers the taskbar: the strip must not be left floating.
+        // off screen, and a full-screen app covers the taskbar: unless the user wants the strip
+        // over that app, it must not be left floating (it isn't hidden with its owner: an owned
+        // window can stay above what covers the taskbar).
         var horizontal = bounds.Width > bounds.Height;
         var onScreen = Drawing.Rectangle.Intersect(bounds, screen).Height >= bounds.Height / 2;
-        if (!horizontal || !onScreen || IsCoveredByFullScreenWindow(screen))
+        var covered = IsCoveredByFullScreenWindow(taskbar, new WindowInteropHelper(strip).Handle, bounds, screen);
+        if (!horizontal || !onScreen || (covered && !_settingsStore.Current.ShowTaskbarBarOverFullScreen))
         {
             strip.Hide();
             return;
         }
+
+        strip.OverFullScreen = covered;
 
         // The strip takes the DPI of the monitor it's on, so right after it's first moved onto a
         // monitor with a different scale this is still the old one; the next tick corrects it.
@@ -176,11 +176,42 @@ public sealed class TaskbarBarController : IDisposable
                 right = notificationRect.Left;
         }
 
+        var offset = Math.Clamp(placement?.Offset ?? 0, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
         var width = (int)Math.Round(strip.ActualWidth * dpi.DpiScaleX);
-        var x = right - width + (int)Math.Round(((isPrimary ? _primaryOffset : _secondaryOffset) - GapToNotificationArea) * dpi.DpiScaleX);
+        var x = right - width + (int)Math.Round((offset - GapToNotificationArea) * dpi.DpiScaleX);
         // However far it's shifted, it stays on its taskbar.
         x = Math.Max(bounds.Left, Math.Min(x, bounds.Right - width));
-        SetWindowPos(new WindowInteropHelper(strip).Handle, IntPtr.Zero, x, bounds.Top, 0, 0, SwpNoSize | SwpNoZOrder | SwpNoActivate);
+        // Over a full-screen app the taskbar has dropped behind that app and may take the strip
+        // with it, so there the strip is raised on its own.
+        SetWindowPos(new WindowInteropHelper(strip).Handle, covered ? HwndTopmost : IntPtr.Zero, x, bounds.Top, 0, 0,
+            SwpNoSize | SwpNoActivate | (covered ? 0 : SwpNoZOrder));
+    }
+
+    // The offset the strip being dragged had when the drag started.
+    private int _dragStartOffset;
+
+    // Dragging a strip sets its monitor's offset, the same setting as the slider in the settings
+    // window. Kept to even numbers, the slider's steps.
+    private void Drag(IntPtr taskbar, TaskbarBarWindow strip, int pixels)
+    {
+        var placement = Placement(taskbar);
+        var moved = (int)Math.Round(pixels / VisualTreeHelper.GetDpi(strip).DpiScaleX / 2) * 2;
+        var offset = Math.Clamp(_dragStartOffset + moved, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
+        if (offset == placement.Offset)
+            return;
+
+        placement.Offset = offset;
+        UpdateStrip(taskbar, IsPrimary(taskbar));
+    }
+
+    /// <summary>The settings of this taskbar's monitor, added (as the defaults) if it has none yet.</summary>
+    private TaskbarBarDisplaySettings Placement(IntPtr taskbar)
+    {
+        var displays = _settingsStore.Current.TaskbarBarDisplays;
+        var device = WinForms.Screen.FromHandle(taskbar).DeviceName;
+        if (!displays.TryGetValue(device, out var placement))
+            displays[device] = placement = new TaskbarBarDisplaySettings();
+        return placement;
     }
 
     /// <summary>The main taskbar first (if there is one), then the other monitors'.</summary>
@@ -223,20 +254,22 @@ public sealed class TaskbarBarController : IDisposable
         return key?.GetValue("SystemUsesLightTheme") is int value && value != 0;
     }
 
-    // A foreground window that fills this taskbar's whole monitor (a video, a game, a slide show).
-    // The desktop also spans the monitor, so it and the taskbars are excluded by class.
-    private static bool IsCoveredByFullScreenWindow(Drawing.Rectangle screen)
+    // What's drawn in the middle of the taskbar isn't the taskbar but a window filling its whole
+    // monitor (a game, a video, a slide show) — whether or not that window is the one in use: a
+    // full-screen game keeps covering the taskbar while another monitor has the focus.
+    private static bool IsCoveredByFullScreenWindow(IntPtr taskbar, IntPtr strip, Drawing.Rectangle bounds, Drawing.Rectangle screen)
     {
-        var foreground = GetForegroundWindow();
-        if (foreground == IntPtr.Zero || !GetWindowRect(foreground, out var rect))
+        var middle = new Point { X = bounds.Left + bounds.Width / 2, Y = bounds.Top + bounds.Height / 2 };
+        var top = GetAncestor(WindowFromPoint(middle), GaRoot);
+        // Shifted far enough, the strip itself is what's in the middle: look beside it instead.
+        if (top == strip)
+            top = GetAncestor(WindowFromPoint(new Point { X = bounds.Left + 8, Y = middle.Y }), GaRoot);
+        if (top == IntPtr.Zero || top == taskbar || !GetWindowRect(top, out var rect))
             return false;
-        if (rect.Left > screen.Left || rect.Top > screen.Top || rect.Right < screen.Right || rect.Bottom < screen.Bottom)
-            return false;
-
-        var className = new StringBuilder(64);
-        GetClassName(foreground, className, className.Capacity);
-        return className.ToString() is not ("Progman" or "WorkerW" or PrimaryTaskbarClass or SecondaryTaskbarClass);
+        return rect.Left <= screen.Left && rect.Top <= screen.Top && rect.Right >= screen.Right && rect.Bottom >= screen.Bottom;
     }
+
+    private static readonly IntPtr HwndTopmost = new(-1);
 
     private const uint SwpNoSize = 0x0001;
     private const uint SwpNoZOrder = 0x0004;
@@ -254,8 +287,19 @@ public sealed class TaskbarBarController : IDisposable
     [DllImport("user32.dll")]
     private static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
 
+    private const uint GaRoot = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Point
+    {
+        public int X, Y;
+    }
+
     [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
+    private static extern IntPtr WindowFromPoint(Point point);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr hWnd, uint flags);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int GetClassName(IntPtr hWnd, StringBuilder className, int maxCount);

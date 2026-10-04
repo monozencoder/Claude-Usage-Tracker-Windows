@@ -77,16 +77,18 @@
   <data name="Settings_ShowOnStartup" xml:space="preserve"><value>Show window on startup</value></data>
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Keep window on top of other windows</value></data>
   <data name="Settings_TaskbarBar" xml:space="preserve"><value>Show usage bars on the taskbar</value></data>
-  <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>Keeps the usage bars on the taskbar, left of the notification area. Click them to open the flyout.</value></data>
-  <data name="Settings_TaskbarBarMonitors" xml:space="preserve"><value>Monitors for the taskbar bars</value></data>
-  <data name="Settings_TaskbarBarMonitorsDescription" xml:space="preserve"><value>Which monitors' taskbars show the usage bars.</value></data>
-  <data name="Settings_TaskbarBarMonitorsAll" xml:space="preserve"><value>All monitors</value></data>
-  <data name="Settings_TaskbarBarMonitorsPrimary" xml:space="preserve"><value>Main monitor only</value></data>
-  <data name="Settings_TaskbarBarMonitorsSecondary" xml:space="preserve"><value>Other monitors only</value></data>
-  <data name="Settings_TaskbarBarPrimaryOffset" xml:space="preserve"><value>Bar position on the main monitor</value></data>
-  <data name="Settings_TaskbarBarPrimaryOffsetDescription" xml:space="preserve"><value>Shifts the bars left (negative) or right (positive) of their automatic place.</value></data>
-  <data name="Settings_TaskbarBarSecondaryOffset" xml:space="preserve"><value>Bar position on other monitors</value></data>
-  <data name="Settings_TaskbarBarSecondaryOffsetDescription" xml:space="preserve"><value>Shifts the bars left (negative) or right (positive) of their automatic place.</value></data>
+  <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>Keeps the usage bars on the taskbar, left of the notification area. Click them to open the flyout; drag them sideways to move them.</value></data>
+  <data name="Settings_TaskbarBarDisplay" xml:space="preserve"><value>Taskbar bars on display {0}</value></data>
+  <data name="Settings_TaskbarBarDisplayMain" xml:space="preserve"><value>Taskbar bars on display {0} (main)</value></data>
+  <data name="Settings_TaskbarBarDisplayDescription" xml:space="preserve"><value>{0} × {1}, {2}. The slider shifts the bars, like dragging them on the taskbar.</value></data>
+  <data name="Settings_TaskbarBarOffsetToolTip" xml:space="preserve"><value>Shifts the bars left (negative) or right (positive) of their automatic place</value></data>
+  <data name="Settings_DisplayPositionLeft" xml:space="preserve"><value>leftmost</value></data>
+  <data name="Settings_DisplayPositionRight" xml:space="preserve"><value>rightmost</value></data>
+  <data name="Settings_DisplayPositionMiddle" xml:space="preserve"><value>no. {0} from the left</value></data>
+  <data name="Settings_DisplayPositionOnly" xml:space="preserve"><value>the only display</value></data>
+  <data name="Settings_TaskbarBarOverFullScreen" xml:space="preserve"><value>Show the usage bars over full-screen apps</value></data>
+  <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>Keeps the bars visible, on a dark backdrop, while a full-screen game or video covers the taskbar.</value></data>
+  <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>Reset to 0px (the automatic place)</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>Window size</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>Scales the whole flyout. Dragging its edges changes the same setting.</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>

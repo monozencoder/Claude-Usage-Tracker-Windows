@@ -9,13 +9,14 @@
         WindowStartupLocation="Manual" Left="-10000" Top="-10000">
     <!-- A strip laid over the taskbar, left of the notification area: one compact line per usage
          row (label, bar, percentage). As tall as the taskbar and as wide as its content; placed by
-         TaskbarBarController, and off screen until it has been. The text/track/hover brushes are
-         set in code-behind to suit the taskbar's color, which follows Windows' mode, not the app theme. -->
-    <Border CornerRadius="4" Margin="0,4" Padding="8,0" Cursor="Hand" MouseLeftButtonUp="OnMouseLeftButtonUp">
+         TaskbarBarController, and off screen until it has been. The text/track/backdrop/hover brushes
+         are set in code-behind to suit the taskbar's color, which follows Windows' mode, not the app
+         theme (or, over a full-screen app, to stand on their own). -->
+    <Border CornerRadius="4" Margin="0,4" Padding="8,0" Cursor="Hand" MouseLeftButtonDown="OnMouseLeftButtonDown"
+            MouseMove="OnMouseMove" MouseLeftButtonUp="OnMouseLeftButtonUp" LostMouseCapture="OnLostMouseCapture">
         <Border.Style>
             <Style TargetType="Border">
-                <!-- Transparent rather than null, so the gaps between the lines are clickable too. -->
-                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Background" Value="{DynamicResource TaskbarBarBackdropBrush}" />
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{DynamicResource TaskbarBarHoverBrush}" />

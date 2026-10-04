@@ -32,9 +32,9 @@ public sealed class AppSettings
     public const int MinFlyoutOpacityPercent = 20;
     public const int MaxFlyoutOpacityPercent = 100;
 
-    /// <summary>Range of the taskbar bars' horizontal offsets, in device-independent pixels (negative is left).</summary>
-    public const int MinTaskbarBarOffset = -800;
-    public const int MaxTaskbarBarOffset = 200;
+    /// <summary>Range of the <see cref="TaskbarBarDisplaySettings.Offset"/>.</summary>
+    public const int MinTaskbarBarOffset = -3000;
+    public const int MaxTaskbarBarOffset = 300;
 
     /// <summary>Used in the default (token-using) mode; ignored while <see cref="AvoidTokenUsage"/> is on.</summary>
     public int RefreshIntervalSeconds { get; set; } = 60;
@@ -48,16 +48,17 @@ public sealed class AppSettings
     /// <summary>Shows the usage bars on the taskbar, left of the notification area.</summary>
     public bool ShowTaskbarBar { get; set; }
 
-    /// <summary>Which monitors' taskbars get the usage bars.</summary>
-    [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarMonitors>))]
-    public TaskbarBarMonitors TaskbarBarMonitors { get; set; } = TaskbarBarMonitors.All;
+    /// <summary>
+    /// Keeps the taskbar bars up while a full-screen app (a game, a video) covers the taskbar,
+    /// drawn over that app where the taskbar would be. Off: they're hidden along with the taskbar.
+    /// </summary>
+    public bool ShowTaskbarBarOverFullScreen { get; set; }
 
     /// <summary>
-    /// How far the usage bars are shifted from where they're placed automatically, on the main
-    /// taskbar and on the other monitors' (whose automatic place is only a guess). Clamped when applied.
+    /// Per-monitor placement of the taskbar bars, by the monitor's device name (e.g. "\\.\DISPLAY2").
+    /// A monitor without an entry shows them, unshifted.
     /// </summary>
-    public int TaskbarBarPrimaryOffset { get; set; }
-    public int TaskbarBarSecondaryOffset { get; set; }
+    public Dictionary<string, TaskbarBarDisplaySettings> TaskbarBarDisplays { get; set; } = [];
 
     /// <summary>How opaque the flyout is, in percent: 100 is solid, lower lets what's behind it show through.</summary>
     public int FlyoutOpacityPercent { get; set; } = MaxFlyoutOpacityPercent;
@@ -101,7 +102,17 @@ public sealed class AppSettings
     public double FlyoutOpacity => Math.Clamp(FlyoutOpacityPercent, MinFlyoutOpacityPercent, MaxFlyoutOpacityPercent) / 100.0;
 }
 
-public enum TaskbarBarMonitors { All, PrimaryOnly, SecondaryOnly }
+/// <summary>Whether one monitor's taskbar gets the usage bars, and where on it.</summary>
+public sealed class TaskbarBarDisplaySettings
+{
+    public bool Show { get; set; } = true;
+
+    /// <summary>
+    /// How far the bars are shifted from where they're placed automatically, in device-independent
+    /// pixels (negative is left). Clamped when applied.
+    /// </summary>
+    public int Offset { get; set; }
+}
 
 /// <summary>A point in screen (device) pixels.</summary>
 public sealed record ScreenPoint(int X, int Y);

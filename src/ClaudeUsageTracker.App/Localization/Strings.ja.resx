@@ -77,16 +77,18 @@
   <data name="Settings_ShowOnStartup" xml:space="preserve"><value>起動時にウィンドウを表示する</value></data>
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>ウィンドウを常に最前面に表示する</value></data>
   <data name="Settings_TaskbarBar" xml:space="preserve"><value>タスクバーに使用率バーを表示する</value></data>
-  <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>通知領域の左に、使用率のバーを常に表示します。クリックするとフライアウトを開きます。</value></data>
-  <data name="Settings_TaskbarBarMonitors" xml:space="preserve"><value>使用率バーを表示するモニター</value></data>
-  <data name="Settings_TaskbarBarMonitorsDescription" xml:space="preserve"><value>どのモニターのタスクバーに使用率バーを表示するかを選びます。</value></data>
-  <data name="Settings_TaskbarBarMonitorsAll" xml:space="preserve"><value>すべてのモニター</value></data>
-  <data name="Settings_TaskbarBarMonitorsPrimary" xml:space="preserve"><value>メインモニターのみ</value></data>
-  <data name="Settings_TaskbarBarMonitorsSecondary" xml:space="preserve"><value>サブモニターのみ</value></data>
-  <data name="Settings_TaskbarBarPrimaryOffset" xml:space="preserve"><value>メインモニターでのバーの位置</value></data>
-  <data name="Settings_TaskbarBarPrimaryOffsetDescription" xml:space="preserve"><value>自動で決まる位置から、左(マイナス)または右(プラス)にずらします。</value></data>
-  <data name="Settings_TaskbarBarSecondaryOffset" xml:space="preserve"><value>サブモニターでのバーの位置</value></data>
-  <data name="Settings_TaskbarBarSecondaryOffsetDescription" xml:space="preserve"><value>自動で決まる位置から、左(マイナス)または右(プラス)にずらします。</value></data>
+  <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>通知領域の左に、使用率のバーを常に表示します。クリックするとフライアウトを開き、左右にドラッグすると位置を変えられます。</value></data>
+  <data name="Settings_TaskbarBarDisplay" xml:space="preserve"><value>ディスプレイ {0} の使用率バー</value></data>
+  <data name="Settings_TaskbarBarDisplayMain" xml:space="preserve"><value>ディスプレイ {0} (メイン) の使用率バー</value></data>
+  <data name="Settings_TaskbarBarDisplayDescription" xml:space="preserve"><value>{0} × {1}、{2}。スライダーでも、タスクバー上でのドラッグでも位置を変えられます。</value></data>
+  <data name="Settings_TaskbarBarOffsetToolTip" xml:space="preserve"><value>自動で決まる位置から、左(マイナス)または右(プラス)にずらします</value></data>
+  <data name="Settings_DisplayPositionLeft" xml:space="preserve"><value>左端</value></data>
+  <data name="Settings_DisplayPositionRight" xml:space="preserve"><value>右端</value></data>
+  <data name="Settings_DisplayPositionMiddle" xml:space="preserve"><value>左から {0} 番目</value></data>
+  <data name="Settings_DisplayPositionOnly" xml:space="preserve"><value>唯一のディスプレイ</value></data>
+  <data name="Settings_TaskbarBarOverFullScreen" xml:space="preserve"><value>全画面表示のアプリの上にも使用率バーを表示する</value></data>
+  <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>全画面のゲームや動画がタスクバーを覆っている間も、暗い背景を付けてバーを表示します。</value></data>
+  <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>0px(自動の位置)に戻す</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>ウィンドウの拡大率</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>フライアウト全体の大きさを変えます。フライアウトの端をドラッグしても変更できます。</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>ウィンドウの不透明度</value></data>

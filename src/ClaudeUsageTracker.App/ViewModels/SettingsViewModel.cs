@@ -62,9 +62,8 @@ public partial class SettingsViewModel : ObservableObject
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
         ShowTaskbarBar = settings.ShowTaskbarBar;
-        TaskbarBarMonitors = settings.TaskbarBarMonitors;
-        TaskbarBarPrimaryOffset = Math.Clamp(settings.TaskbarBarPrimaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
-        TaskbarBarSecondaryOffset = Math.Clamp(settings.TaskbarBarSecondaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
+        ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
+        TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
         FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
         FlyoutScalePercent = ToScalePercent(settings.FlyoutScale);
         LaunchAtLoginEnabled = launchAtLoginService.IsEnabled;
@@ -88,13 +87,6 @@ public partial class SettingsViewModel : ObservableObject
         new(AppLanguage.System, "Settings_LanguageSystem"),
         new(AppLanguage.English, Text: "English"),
         new(AppLanguage.Japanese, Text: "日本語"),
-    ];
-
-    public static IReadOnlyList<ChoiceOption> TaskbarBarMonitorOptions { get; } =
-    [
-        new(TaskbarBarMonitors.All, "Settings_TaskbarBarMonitorsAll"),
-        new(TaskbarBarMonitors.PrimaryOnly, "Settings_TaskbarBarMonitorsPrimary"),
-        new(TaskbarBarMonitors.SecondaryOnly, "Settings_TaskbarBarMonitorsSecondary"),
     ];
 
     /// <summary>Raised after a change has been written to disk.</summary>
@@ -178,17 +170,10 @@ public partial class SettingsViewModel : ObservableObject
     private bool _showTaskbarBar;
 
     [ObservableProperty]
-    private TaskbarBarMonitors _taskbarBarMonitors;
+    private bool _showTaskbarBarOverFullScreen;
 
-    public double MinTaskbarBarOffset => AppSettings.MinTaskbarBarOffset;
-    public double MaxTaskbarBarOffset => AppSettings.MaxTaskbarBarOffset;
-
-    /// <summary>Horizontal shift of the taskbar bars (negative is left); the sliders move them live.</summary>
-    [ObservableProperty]
-    private int _taskbarBarPrimaryOffset;
-
-    [ObservableProperty]
-    private int _taskbarBarSecondaryOffset;
+    /// <summary>One row per connected monitor: whether its taskbar gets the bars, and where on it.</summary>
+    public IReadOnlyList<TaskbarBarDisplayViewModel> TaskbarBarDisplays { get; }
 
     // Slider range (as doubles: Slider.Minimum/Maximum don't take an int).
     public double MinFlyoutOpacityPercent => AppSettings.MinFlyoutOpacityPercent;
@@ -281,11 +266,7 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnShowTaskbarBarChanged(bool value) => Apply();
 
-    partial void OnTaskbarBarMonitorsChanged(TaskbarBarMonitors value) => Apply();
-
-    partial void OnTaskbarBarPrimaryOffsetChanged(int value) => Apply();
-
-    partial void OnTaskbarBarSecondaryOffsetChanged(int value) => Apply();
+    partial void OnShowTaskbarBarOverFullScreenChanged(bool value) => Apply();
 
     partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
 
@@ -317,6 +298,8 @@ public partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(TokensPerHourText));
         OnPropertyChanged(nameof(RefreshIntervalToolTip));
         OnPropertyChanged(nameof(ProbeModelText));
+        foreach (var display in TaskbarBarDisplays)
+            display.RefreshLanguage();
         StatusMessage = null;
         if (_account is { } account)
             ApplyAccount(account);
@@ -349,9 +332,7 @@ public partial class SettingsViewModel : ObservableObject
         settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
         settings.AlwaysOnTop = AlwaysOnTop;
         settings.ShowTaskbarBar = ShowTaskbarBar;
-        settings.TaskbarBarMonitors = TaskbarBarMonitors;
-        settings.TaskbarBarPrimaryOffset = TaskbarBarPrimaryOffset;
-        settings.TaskbarBarSecondaryOffset = TaskbarBarSecondaryOffset;
+        settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
         settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;
