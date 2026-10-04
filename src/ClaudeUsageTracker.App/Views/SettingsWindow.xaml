@@ -430,6 +430,14 @@
                                 <TextBlock Text="{loc:Tr Settings_AlwaysOnTopDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowTaskbarBar}"
+                                  AutomationProperties.Name="{loc:Tr Settings_TaskbarBar}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBar}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
                     </StackPanel>
                 </Border>
             </StackPanel>

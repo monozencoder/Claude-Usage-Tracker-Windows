@@ -41,6 +41,9 @@ public sealed class AppSettings
     /// <summary>Keeps the flyout above other windows (Topmost).</summary>
     public bool AlwaysOnTop { get; set; } = true;
 
+    /// <summary>Shows the usage bars on the taskbar, left of the notification area.</summary>
+    public bool ShowTaskbarBar { get; set; }
+
     /// <summary>How opaque the flyout is, in percent: 100 is solid, lower lets what's behind it show through.</summary>
     public int FlyoutOpacityPercent { get; set; } = MaxFlyoutOpacityPercent;
 

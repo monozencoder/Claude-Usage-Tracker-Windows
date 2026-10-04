@@ -60,6 +60,7 @@ public partial class SettingsViewModel : ObservableObject
         NotificationsEnabled = settings.NotificationsEnabled;
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
+        ShowTaskbarBar = settings.ShowTaskbarBar;
         FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
         LaunchAtLoginEnabled = launchAtLoginService.IsEnabled;
         Theme = settings.Theme;
@@ -161,6 +162,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _alwaysOnTop;
 
+    [ObservableProperty]
+    private bool _showTaskbarBar;
+
     // Slider range (as doubles: Slider.Minimum/Maximum don't take an int).
     public double MinFlyoutOpacityPercent => AppSettings.MinFlyoutOpacityPercent;
     public double MaxFlyoutOpacityPercent => AppSettings.MaxFlyoutOpacityPercent;
@@ -236,6 +240,8 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnAlwaysOnTopChanged(bool value) => Apply();
 
+    partial void OnShowTaskbarBarChanged(bool value) => Apply();
+
     partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
 
     partial void OnAvoidTokenUsageChanged(bool value) => Apply();
@@ -287,6 +293,7 @@ public partial class SettingsViewModel : ObservableObject
         settings.NotificationsEnabled = NotificationsEnabled;
         settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
         settings.AlwaysOnTop = AlwaysOnTop;
+        settings.ShowTaskbarBar = ShowTaskbarBar;
         settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;

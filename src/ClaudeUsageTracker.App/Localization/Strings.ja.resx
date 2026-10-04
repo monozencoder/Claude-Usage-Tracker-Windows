@@ -76,6 +76,8 @@
   <data name="Settings_LaunchAtLogin" xml:space="preserve"><value>Windows へのサインイン時に起動する</value></data>
   <data name="Settings_ShowOnStartup" xml:space="preserve"><value>起動時にウィンドウを表示する</value></data>
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>ウィンドウを常に最前面に表示する</value></data>
+  <data name="Settings_TaskbarBar" xml:space="preserve"><value>タスクバーに使用率バーを表示する</value></data>
+  <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>通知領域の左に、使用率のバーを常に表示します。クリックするとフライアウトを開きます。</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>ウィンドウの不透明度</value></data>
   <data name="Settings_OpacityDescription" xml:space="preserve"><value>値を下げるほど、フライアウトの後ろが透けて見えます。</value></data>
   <data name="Settings_IntervalEnter" xml:space="preserve"><value>{0}〜{1} 秒で入力してください</value></data>

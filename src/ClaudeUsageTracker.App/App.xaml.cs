@@ -32,6 +32,7 @@ public partial class App : System.Windows.Application
     private UsageFetcher _usageFetcher = null!;
     private ILaunchAtLoginService _launchAtLoginService = null!;
     private TrayIconController _trayIconController = null!;
+    private TaskbarBarController _taskbarBarController = null!;
     private UsageRefreshCoordinator _coordinator = null!;
     private FlyoutWindow _flyoutWindow = null!;
     private DispatcherTimer _refreshTimer = null!;
@@ -97,6 +98,10 @@ public partial class App : System.Windows.Application
         };
         _trayIconController.ExitRequested += () => Shutdown();
 
+        _taskbarBarController = new TaskbarBarController(_flyoutViewModel);
+        _taskbarBarController.Clicked += _flyoutWindow.Toggle;
+        _taskbarBarController.Enabled = settings.ShowTaskbarBar;
+
         _coordinator = new UsageRefreshCoordinator(
             _usageFetcher, _settingsStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
 
@@ -119,6 +124,7 @@ public partial class App : System.Windows.Application
         _refreshTimer?.Stop();
         ThemeManager.Shutdown();
         _trayIconController?.Dispose();
+        _taskbarBarController?.Dispose();
         _credentialsWatcher?.Dispose();
         _httpClient.Dispose();
         base.OnExit(e);
@@ -156,6 +162,7 @@ public partial class App : System.Windows.Application
             if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
                 _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
             _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
+            _taskbarBarController.Enabled = _settingsStore.Current.ShowTaskbarBar;
             if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
                 _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
         };

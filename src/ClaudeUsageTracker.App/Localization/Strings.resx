@@ -76,6 +76,8 @@
   <data name="Settings_LaunchAtLogin" xml:space="preserve"><value>Launch at Windows login</value></data>
   <data name="Settings_ShowOnStartup" xml:space="preserve"><value>Show window on startup</value></data>
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Keep window on top of other windows</value></data>
+  <data name="Settings_TaskbarBar" xml:space="preserve"><value>Show usage bars on the taskbar</value></data>
+  <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>Keeps the usage bars on the taskbar, left of the notification area. Click them to open the flyout.</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>
   <data name="Settings_OpacityDescription" xml:space="preserve"><value>Lower values let what's behind the flyout show through.</value></data>
   <data name="Settings_IntervalEnter" xml:space="preserve"><value>Enter {0}–{1} seconds</value></data>
