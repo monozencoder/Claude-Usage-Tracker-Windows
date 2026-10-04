@@ -32,6 +32,10 @@ public sealed class AppSettings
     public const int MinFlyoutOpacityPercent = 20;
     public const int MaxFlyoutOpacityPercent = 100;
 
+    /// <summary>Range of the taskbar bars' horizontal offsets, in device-independent pixels (negative is left).</summary>
+    public const int MinTaskbarBarOffset = -800;
+    public const int MaxTaskbarBarOffset = 200;
+
     /// <summary>Used in the default (token-using) mode; ignored while <see cref="AvoidTokenUsage"/> is on.</summary>
     public int RefreshIntervalSeconds { get; set; } = 60;
 
@@ -43,6 +47,17 @@ public sealed class AppSettings
 
     /// <summary>Shows the usage bars on the taskbar, left of the notification area.</summary>
     public bool ShowTaskbarBar { get; set; }
+
+    /// <summary>Which monitors' taskbars get the usage bars.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarMonitors>))]
+    public TaskbarBarMonitors TaskbarBarMonitors { get; set; } = TaskbarBarMonitors.All;
+
+    /// <summary>
+    /// How far the usage bars are shifted from where they're placed automatically, on the main
+    /// taskbar and on the other monitors' (whose automatic place is only a guess). Clamped when applied.
+    /// </summary>
+    public int TaskbarBarPrimaryOffset { get; set; }
+    public int TaskbarBarSecondaryOffset { get; set; }
 
     /// <summary>How opaque the flyout is, in percent: 100 is solid, lower lets what's behind it show through.</summary>
     public int FlyoutOpacityPercent { get; set; } = MaxFlyoutOpacityPercent;
@@ -85,6 +100,8 @@ public sealed class AppSettings
     [JsonIgnore]
     public double FlyoutOpacity => Math.Clamp(FlyoutOpacityPercent, MinFlyoutOpacityPercent, MaxFlyoutOpacityPercent) / 100.0;
 }
+
+public enum TaskbarBarMonitors { All, PrimaryOnly, SecondaryOnly }
 
 /// <summary>A point in screen (device) pixels.</summary>
 public sealed record ScreenPoint(int X, int Y);

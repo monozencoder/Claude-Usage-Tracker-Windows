@@ -3,6 +3,7 @@ using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.Themes;
+using ClaudeUsageTracker.App.Views;
 using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.ClaudeCode;
 using ClaudeUsageTracker.Platform.ClaudeCode;
@@ -61,7 +62,11 @@ public partial class SettingsViewModel : ObservableObject
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
         ShowTaskbarBar = settings.ShowTaskbarBar;
+        TaskbarBarMonitors = settings.TaskbarBarMonitors;
+        TaskbarBarPrimaryOffset = Math.Clamp(settings.TaskbarBarPrimaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
+        TaskbarBarSecondaryOffset = Math.Clamp(settings.TaskbarBarSecondaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
         FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
+        FlyoutScalePercent = ToScalePercent(settings.FlyoutScale);
         LaunchAtLoginEnabled = launchAtLoginService.IsEnabled;
         Theme = settings.Theme;
         Language = settings.Language;
@@ -83,6 +88,13 @@ public partial class SettingsViewModel : ObservableObject
         new(AppLanguage.System, "Settings_LanguageSystem"),
         new(AppLanguage.English, Text: "English"),
         new(AppLanguage.Japanese, Text: "日本語"),
+    ];
+
+    public static IReadOnlyList<ChoiceOption> TaskbarBarMonitorOptions { get; } =
+    [
+        new(TaskbarBarMonitors.All, "Settings_TaskbarBarMonitorsAll"),
+        new(TaskbarBarMonitors.PrimaryOnly, "Settings_TaskbarBarMonitorsPrimary"),
+        new(TaskbarBarMonitors.SecondaryOnly, "Settings_TaskbarBarMonitorsSecondary"),
     ];
 
     /// <summary>Raised after a change has been written to disk.</summary>
@@ -165,6 +177,19 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _showTaskbarBar;
 
+    [ObservableProperty]
+    private TaskbarBarMonitors _taskbarBarMonitors;
+
+    public double MinTaskbarBarOffset => AppSettings.MinTaskbarBarOffset;
+    public double MaxTaskbarBarOffset => AppSettings.MaxTaskbarBarOffset;
+
+    /// <summary>Horizontal shift of the taskbar bars (negative is left); the sliders move them live.</summary>
+    [ObservableProperty]
+    private int _taskbarBarPrimaryOffset;
+
+    [ObservableProperty]
+    private int _taskbarBarSecondaryOffset;
+
     // Slider range (as doubles: Slider.Minimum/Maximum don't take an int).
     public double MinFlyoutOpacityPercent => AppSettings.MinFlyoutOpacityPercent;
     public double MaxFlyoutOpacityPercent => AppSettings.MaxFlyoutOpacityPercent;
@@ -173,8 +198,22 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private int _flyoutOpacityPercent;
 
+    public double MinFlyoutScalePercent => FlyoutWindow.MinScale * 100;
+    public double MaxFlyoutScalePercent => FlyoutWindow.MaxScale * 100;
+
+    /// <summary>
+    /// Flyout size in percent; the slider previews it live on an open flyout. Also set by the
+    /// caller when the flyout is resized by dragging while this window is open.
+    /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RefreshIntervalError), nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(IsRefreshIntervalEditable))]
+    private int _flyoutScalePercent;
+
+    /// <summary>A saved scale as the slider shows it (clamped: the file may have been hand-edited).</summary>
+    public static int ToScalePercent(double scale) =>
+        (int)Math.Round(Math.Clamp(scale, FlyoutWindow.MinScale, FlyoutWindow.MaxScale) * 100);
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RefreshIntervalError),nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(IsRefreshIntervalEditable))]
     private bool _avoidTokenUsage;
 
     [ObservableProperty]
@@ -242,7 +281,23 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnShowTaskbarBarChanged(bool value) => Apply();
 
+    partial void OnTaskbarBarMonitorsChanged(TaskbarBarMonitors value) => Apply();
+
+    partial void OnTaskbarBarPrimaryOffsetChanged(int value) => Apply();
+
+    partial void OnTaskbarBarSecondaryOffsetChanged(int value) => Apply();
+
     partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
+
+    // Written here rather than in Apply: a drag saves a finer scale than the slider's whole
+    // percent, which mustn't be rounded off by an unrelated setting being changed.
+    partial void OnFlyoutScalePercentChanged(int value)
+    {
+        if (_initializing || ToScalePercent(_settingsStore.Current.FlyoutScale) == value)
+            return;
+        _settingsStore.Current.FlyoutScale = value / 100.0;
+        Apply();
+    }
 
     partial void OnAvoidTokenUsageChanged(bool value) => Apply();
 
@@ -294,6 +349,9 @@ public partial class SettingsViewModel : ObservableObject
         settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
         settings.AlwaysOnTop = AlwaysOnTop;
         settings.ShowTaskbarBar = ShowTaskbarBar;
+        settings.TaskbarBarMonitors = TaskbarBarMonitors;
+        settings.TaskbarBarPrimaryOffset = TaskbarBarPrimaryOffset;
+        settings.TaskbarBarSecondaryOffset = TaskbarBarSecondaryOffset;
         settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;

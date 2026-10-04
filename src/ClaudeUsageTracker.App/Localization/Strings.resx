@@ -78,6 +78,17 @@
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Keep window on top of other windows</value></data>
   <data name="Settings_TaskbarBar" xml:space="preserve"><value>Show usage bars on the taskbar</value></data>
   <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>Keeps the usage bars on the taskbar, left of the notification area. Click them to open the flyout.</value></data>
+  <data name="Settings_TaskbarBarMonitors" xml:space="preserve"><value>Monitors for the taskbar bars</value></data>
+  <data name="Settings_TaskbarBarMonitorsDescription" xml:space="preserve"><value>Which monitors' taskbars show the usage bars.</value></data>
+  <data name="Settings_TaskbarBarMonitorsAll" xml:space="preserve"><value>All monitors</value></data>
+  <data name="Settings_TaskbarBarMonitorsPrimary" xml:space="preserve"><value>Main monitor only</value></data>
+  <data name="Settings_TaskbarBarMonitorsSecondary" xml:space="preserve"><value>Other monitors only</value></data>
+  <data name="Settings_TaskbarBarPrimaryOffset" xml:space="preserve"><value>Bar position on the main monitor</value></data>
+  <data name="Settings_TaskbarBarPrimaryOffsetDescription" xml:space="preserve"><value>Shifts the bars left (negative) or right (positive) of their automatic place.</value></data>
+  <data name="Settings_TaskbarBarSecondaryOffset" xml:space="preserve"><value>Bar position on other monitors</value></data>
+  <data name="Settings_TaskbarBarSecondaryOffsetDescription" xml:space="preserve"><value>Shifts the bars left (negative) or right (positive) of their automatic place.</value></data>
+  <data name="Settings_Scale" xml:space="preserve"><value>Window size</value></data>
+  <data name="Settings_ScaleDescription" xml:space="preserve"><value>Scales the whole flyout. Dragging its edges changes the same setting.</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>
   <data name="Settings_OpacityDescription" xml:space="preserve"><value>Lower values let what's behind the flyout show through.</value></data>
   <data name="Settings_IntervalEnter" xml:space="preserve"><value>Enter {0}–{1} seconds</value></data>

@@ -390,6 +390,26 @@
                                 <TextBlock Text="{loc:Tr Settings_OpacityDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <!-- Same scale as dragging the flyout's edges; applied as it's dragged, like the opacity. -->
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding FlyoutScalePercent, StringFormat={}{0}%}" Style="{StaticResource CaptionTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" Width="36" TextAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <Slider Style="{StaticResource SliderStyle}" Width="150" VerticalAlignment="Center"
+                                        Minimum="{Binding MinFlyoutScalePercent, Mode=OneTime}"
+                                        Maximum="{Binding MaxFlyoutScalePercent, Mode=OneTime}"
+                                        Value="{Binding FlyoutScalePercent}"
+                                        TickFrequency="5" IsSnapToTickEnabled="True" SmallChange="5" LargeChange="25"
+                                        IsMoveToPointEnabled="True"
+                                        AutomationProperties.Name="{loc:Tr Settings_Scale}" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_Scale}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_ScaleDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -438,6 +458,57 @@
                                 <TextBlock Text="{loc:Tr Settings_TaskbarBarDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </CheckBox>
+                        <!-- Where the taskbar bars go; only meaningful while they're shown. -->
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding ShowTaskbarBar}">
+                            <ComboBox DockPanel.Dock="Right" Width="170" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.TaskbarBarMonitorOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding TaskbarBarMonitors}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_TaskbarBarMonitors}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarMonitors}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarMonitorsDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding ShowTaskbarBar}">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding TaskbarBarPrimaryOffset, StringFormat={}{0}px}" Style="{StaticResource CaptionTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" Width="48" TextAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <Slider Style="{StaticResource SliderStyle}" Width="150" VerticalAlignment="Center"
+                                        Minimum="{Binding MinTaskbarBarOffset, Mode=OneTime}"
+                                        Maximum="{Binding MaxTaskbarBarOffset, Mode=OneTime}"
+                                        Value="{Binding TaskbarBarPrimaryOffset}"
+                                        TickFrequency="2" IsSnapToTickEnabled="True" SmallChange="2" LargeChange="20"
+                                        IsMoveToPointEnabled="True"
+                                        AutomationProperties.Name="{loc:Tr Settings_TaskbarBarPrimaryOffset}" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarPrimaryOffset}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarPrimaryOffsetDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding ShowTaskbarBar}">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding TaskbarBarSecondaryOffset, StringFormat={}{0}px}" Style="{StaticResource CaptionTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" Width="48" TextAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <Slider Style="{StaticResource SliderStyle}" Width="150" VerticalAlignment="Center"
+                                        Minimum="{Binding MinTaskbarBarOffset, Mode=OneTime}"
+                                        Maximum="{Binding MaxTaskbarBarOffset, Mode=OneTime}"
+                                        Value="{Binding TaskbarBarSecondaryOffset}"
+                                        TickFrequency="2" IsSnapToTickEnabled="True" SmallChange="2" LargeChange="20"
+                                        IsMoveToPointEnabled="True"
+                                        AutomationProperties.Name="{loc:Tr Settings_TaskbarBarSecondaryOffset}" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarSecondaryOffset}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarSecondaryOffsetDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>

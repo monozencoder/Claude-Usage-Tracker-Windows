@@ -72,6 +72,9 @@ public partial class App : System.Windows.Application
         {
             _settingsStore.Current.FlyoutScale = scale;
             _settingsStore.Save();
+            // Keeps the slider of an open settings window in step with the drag.
+            if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
+                settingsViewModel.FlyoutScalePercent = SettingsViewModel.ToScalePercent(scale);
         };
         _flyoutWindow.PositionSaved += position =>
         {
@@ -100,7 +103,7 @@ public partial class App : System.Windows.Application
 
         _taskbarBarController = new TaskbarBarController(_flyoutViewModel);
         _taskbarBarController.Clicked += _flyoutWindow.Toggle;
-        _taskbarBarController.Enabled = settings.ShowTaskbarBar;
+        ApplyTaskbarBarSettings();
 
         _coordinator = new UsageRefreshCoordinator(
             _usageFetcher, _settingsStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
@@ -134,6 +137,13 @@ public partial class App : System.Windows.Application
     // DispatcherUnhandledException (and the banner) instead of vanishing with a Task.
     private async void RefreshNow() => await _coordinator.RefreshAsync();
 
+    private void ApplyTaskbarBarSettings()
+    {
+        var settings = _settingsStore.Current;
+        _taskbarBarController.Configure(settings.TaskbarBarMonitors, settings.TaskbarBarPrimaryOffset, settings.TaskbarBarSecondaryOffset);
+        _taskbarBarController.Enabled = settings.ShowTaskbarBar;
+    }
+
     private void StartSignIn()
     {
         if (!ClaudeCli.StartLogin())
@@ -162,9 +172,11 @@ public partial class App : System.Windows.Application
             if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
                 _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
             _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
-            _taskbarBarController.Enabled = _settingsStore.Current.ShowTaskbarBar;
+            ApplyTaskbarBarSettings();
             if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
                 _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
+            if (_flyoutWindow.Scale != _settingsStore.Current.FlyoutScale)
+                _flyoutWindow.Scale = _settingsStore.Current.FlyoutScale;
         };
         viewModel.ConnectionTested += result => _coordinator.ApplyResult(result);
         _settingsWindow = new SettingsWindow(viewModel);

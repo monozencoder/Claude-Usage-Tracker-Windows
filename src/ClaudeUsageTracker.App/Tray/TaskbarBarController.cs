@@ -3,6 +3,7 @@ using System.Text;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.App.Views;
 using Microsoft.Win32;
@@ -38,6 +39,9 @@ public sealed class TaskbarBarController : IDisposable
     private readonly Dictionary<IntPtr, TaskbarBarWindow> _strips = [];
     private bool _lightTaskbar;
     private bool _enabled;
+    private TaskbarBarMonitors _monitors;
+    private int _primaryOffset;
+    private int _secondaryOffset;
 
     public TaskbarBarController(FlyoutViewModel viewModel)
     {
@@ -68,6 +72,24 @@ public sealed class TaskbarBarController : IDisposable
         }
     }
 
+    /// <summary>
+    /// Applies the user's placement: which monitors' taskbars get a strip, and how far each is
+    /// shifted (device-independent pixels, negative is left) from where it's placed automatically.
+    /// </summary>
+    public void Configure(TaskbarBarMonitors monitors, int primaryOffset, int secondaryOffset)
+    {
+        primaryOffset = Math.Clamp(primaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
+        secondaryOffset = Math.Clamp(secondaryOffset, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
+        if (monitors == _monitors && primaryOffset == _primaryOffset && secondaryOffset == _secondaryOffset)
+            return;
+
+        _monitors = monitors;
+        _primaryOffset = primaryOffset;
+        _secondaryOffset = secondaryOffset;
+        if (_enabled)
+            Update();
+    }
+
     public void Dispose()
     {
         _timer.Stop();
@@ -91,8 +113,14 @@ public sealed class TaskbarBarController : IDisposable
                 strip.UseLightTaskbar(light);
         }
 
-        for (var i = 0; i < taskbars.Count; i++)
-            UpdateStrip(taskbars[i], isPrimary: i == 0);
+        foreach (var taskbar in taskbars)
+        {
+            var isPrimary = IsPrimary(taskbar);
+            if (_monitors == (isPrimary ? TaskbarBarMonitors.SecondaryOnly : TaskbarBarMonitors.PrimaryOnly))
+                Close(taskbar);
+            else
+                UpdateStrip(taskbar, isPrimary);
+        }
     }
 
     private void UpdateStrip(IntPtr taskbar, bool isPrimary)
@@ -148,7 +176,10 @@ public sealed class TaskbarBarController : IDisposable
                 right = notificationRect.Left;
         }
 
-        var x = right - (int)Math.Round((strip.ActualWidth + GapToNotificationArea) * dpi.DpiScaleX);
+        var width = (int)Math.Round(strip.ActualWidth * dpi.DpiScaleX);
+        var x = right - width + (int)Math.Round(((isPrimary ? _primaryOffset : _secondaryOffset) - GapToNotificationArea) * dpi.DpiScaleX);
+        // However far it's shifted, it stays on its taskbar.
+        x = Math.Max(bounds.Left, Math.Min(x, bounds.Right - width));
         SetWindowPos(new WindowInteropHelper(strip).Handle, IntPtr.Zero, x, bounds.Top, 0, 0, SwpNoSize | SwpNoZOrder | SwpNoActivate);
     }
 
@@ -164,6 +195,13 @@ public sealed class TaskbarBarController : IDisposable
         while ((secondary = FindWindowEx(IntPtr.Zero, secondary, SecondaryTaskbarClass, null)) != IntPtr.Zero)
             taskbars.Add(secondary);
         return taskbars;
+    }
+
+    private static bool IsPrimary(IntPtr taskbar)
+    {
+        var className = new StringBuilder(64);
+        GetClassName(taskbar, className, className.Capacity);
+        return className.ToString() == PrimaryTaskbarClass;
     }
 
     private void Close(IntPtr taskbar)
