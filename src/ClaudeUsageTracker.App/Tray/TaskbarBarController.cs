@@ -158,6 +158,10 @@ public sealed class TaskbarBarController : IDisposable
         }
 
         strip.OverFullScreen = covered;
+        var settings = _settingsStore.Current;
+        strip.RowsMode = settings.TaskbarBarRows;
+        strip.ShowLabels = settings.TaskbarBarShowLabels;
+        strip.ShowResetTime = settings.TaskbarBarShowResetTime;
 
         // The strip takes the DPI of the monitor it's on, so right after it's first moved onto a
         // monitor with a different scale this is still the old one; the next tick corrects it.

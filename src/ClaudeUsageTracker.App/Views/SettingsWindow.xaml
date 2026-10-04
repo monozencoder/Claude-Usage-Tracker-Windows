@@ -421,6 +421,14 @@
                                 <TextBlock Text="{loc:Tr Settings_ScaleDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowHistoryChart}"
+                                  AutomationProperties.Name="{loc:Tr Settings_HistoryChart}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_HistoryChart}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_HistoryChartDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -437,6 +445,20 @@
                                 <TextBlock Text="{loc:Tr Settings_NotificationsDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding NotificationsEnabled}">
+                            <!-- Committed when focus leaves the box (or on Enter, in code-behind); text that
+                                 isn't a usable list snaps back to the saved one. -->
+                            <TextBox DockPanel.Dock="Right" Width="150" Height="30" Margin="16,0,0,0" VerticalAlignment="Center"
+                                     VerticalContentAlignment="Center" MaxLength="40"
+                                     Text="{Binding NotificationThresholdsText, UpdateSourceTrigger=LostFocus}"
+                                     KeyDown="OnCommitOnEnterKeyDown"
+                                     AutomationProperties.Name="{loc:Tr Settings_Thresholds}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_Thresholds}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{Binding NotificationThresholdsHint}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
                                   AutomationProperties.Name="{loc:Tr Settings_LaunchAtLogin}">
@@ -476,6 +498,36 @@
                             <StackPanel>
                                 <TextBlock Text="{loc:Tr Settings_TaskbarBarOverFullScreen}" Style="{StaticResource RowTitleStyle}" />
                                 <TextBlock Text="{loc:Tr Settings_TaskbarBarOverFullScreenDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding ShowTaskbarBar}">
+                            <ComboBox DockPanel.Dock="Right" Width="170" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.TaskbarBarRowsOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding TaskbarBarRows}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_TaskbarBarRows}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarRows}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarRowsDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowLabels}"
+                                  IsEnabled="{Binding ShowTaskbarBar}"
+                                  AutomationProperties.Name="{loc:Tr Settings_TaskbarBarLabels}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarLabels}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarLabelsDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowResetTime}"
+                                  IsEnabled="{Binding ShowTaskbarBar}"
+                                  AutomationProperties.Name="{loc:Tr Settings_TaskbarBarResetTime}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarResetTime}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarResetTimeDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </CheckBox>
                         <!-- One row per connected monitor: the switch puts the bars on its taskbar, the slider

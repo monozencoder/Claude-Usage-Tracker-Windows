@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using ClaudeUsageTracker.App.Themes;
@@ -92,5 +93,15 @@ public partial class SettingsWindow : Window
         var command = up ? _viewModel.IncreaseRefreshIntervalCommand : _viewModel.DecreaseRefreshIntervalCommand;
         command.Execute(null);
         RefreshIntervalBox.CaretIndex = RefreshIntervalBox.Text.Length;
+    }
+
+    // Enter commits a text box the same way leaving it does.
+    private void OnCommitOnEnterKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || sender is not TextBox box)
+            return;
+        box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        box.SelectAll();
+        e.Handled = true;
     }
 }

@@ -34,6 +34,8 @@ public partial class App : System.Windows.Application
     private TrayIconController _trayIconController = null!;
     private TaskbarBarController _taskbarBarController = null!;
     private UsageRefreshCoordinator _coordinator = null!;
+    private UsageHistoryStore _historyStore = null!;
+    private DispatcherTimer _minuteTimer = null!;
     private FlyoutWindow _flyoutWindow = null!;
     private DispatcherTimer _refreshTimer = null!;
     private CredentialsFileWatcher _credentialsWatcher = null!;
@@ -112,8 +114,24 @@ public partial class App : System.Windows.Application
         };
         ApplyTaskbarBarSettings();
 
+        _historyStore = new UsageHistoryStore();
+        _historyStore.Changed += () => _flyoutViewModel.HistorySamples = [.. _historyStore.Samples];
+        _flyoutViewModel.HistorySamples = [.. _historyStore.Samples];
+        _flyoutViewModel.ShowHistory = settings.ShowHistoryChart;
+        _flyoutViewModel.HistoryRange = settings.HistoryRange;
+        _flyoutViewModel.HistoryRangePicked += range =>
+        {
+            _settingsStore.Current.HistoryRange = range;
+            _settingsStore.Save();
+        };
+
         _coordinator = new UsageRefreshCoordinator(
-            _usageFetcher, _settingsStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
+            _usageFetcher, _settingsStore, _flyoutViewModel, _historyStore, new ToastNotificationService(), _trayIconController.UpdateIcon);
+
+        // Refreshes can be minutes apart; the "resets in" times shown in between must still run down.
+        _minuteTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        _minuteTimer.Tick += (_, _) => _flyoutViewModel.RefreshTimes();
+        _minuteTimer.Start();
 
         _refreshTimer = new DispatcherTimer { Interval = settings.RefreshInterval };
         _refreshTimer.Tick += (_, _) => RefreshNow();
@@ -132,6 +150,7 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         _refreshTimer?.Stop();
+        _minuteTimer?.Stop();
         ThemeManager.Shutdown();
         _trayIconController?.Dispose();
         _taskbarBarController?.Dispose();
@@ -181,6 +200,7 @@ public partial class App : System.Windows.Application
             ApplyTaskbarBarSettings();
             if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
                 _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
+            _flyoutViewModel.ShowHistory = _settingsStore.Current.ShowHistoryChart;
             if (_flyoutWindow.Scale != _settingsStore.Current.FlyoutScale)
                 _flyoutWindow.Scale = _settingsStore.Current.FlyoutScale;
         };

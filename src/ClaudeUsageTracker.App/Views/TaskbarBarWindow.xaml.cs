@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using ClaudeUsageTracker.App.Settings;
 
 namespace ClaudeUsageTracker.App.Views;
 
@@ -25,6 +26,36 @@ public partial class TaskbarBarWindow : Window
             var handle = new WindowInteropHelper(this).Handle;
             SetWindowLongPtr(handle, GwlExStyle, GetWindowLongPtr(handle, GwlExStyle) | WsExNoActivate | WsExToolWindow);
         };
+    }
+
+    public static readonly DependencyProperty RowsModeProperty = DependencyProperty.Register(
+        nameof(RowsMode), typeof(TaskbarBarRows), typeof(TaskbarBarWindow), new PropertyMetadata(TaskbarBarRows.Both));
+
+    public static readonly DependencyProperty ShowLabelsProperty = DependencyProperty.Register(
+        nameof(ShowLabels), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(true));
+
+    public static readonly DependencyProperty ShowResetTimeProperty = DependencyProperty.Register(
+        nameof(ShowResetTime), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(false));
+
+    /// <summary>Which usage rows the strip shows.</summary>
+    public TaskbarBarRows RowsMode
+    {
+        get => (TaskbarBarRows)GetValue(RowsModeProperty);
+        set => SetValue(RowsModeProperty, value);
+    }
+
+    /// <summary>Whether each row's name is shown left of its bar.</summary>
+    public bool ShowLabels
+    {
+        get => (bool)GetValue(ShowLabelsProperty);
+        set => SetValue(ShowLabelsProperty, value);
+    }
+
+    /// <summary>Whether the time left until each row resets is shown right of its percentage.</summary>
+    public bool ShowResetTime
+    {
+        get => (bool)GetValue(ShowResetTimeProperty);
+        set => SetValue(ShowResetTimeProperty, value);
     }
 
     public event Action? Clicked;

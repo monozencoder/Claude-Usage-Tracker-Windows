@@ -61,7 +61,7 @@
   <data name="Settings_TestButton" xml:space="preserve"><value>確認</value></data>
   <data name="Settings_ThemeDescription" xml:space="preserve"><value>アプリの配色を選びます。</value></data>
   <data name="Settings_LanguageDescription" xml:space="preserve"><value>表示する言語を選びます。</value></data>
-  <data name="Settings_NotificationsDescription" xml:space="preserve"><value>使用率が 75% / 90% / 95% に達したときと、セッション枠のリセット時に通知します。</value></data>
+  <data name="Settings_NotificationsDescription" xml:space="preserve"><value>セッションの使用率が下で指定した値に達したときと、セッション枠のリセット時に通知します。</value></data>
   <data name="Settings_LaunchAtLoginDescription" xml:space="preserve"><value>Windows にサインインしたときに、自動で起動します。</value></data>
   <data name="Settings_ShowOnStartupDescription" xml:space="preserve"><value>起動したときに、フライアウトを開きます。</value></data>
   <data name="Settings_AlwaysOnTopDescription" xml:space="preserve"><value>フライアウトを、ほかのウィンドウより手前に表示します。</value></data>
@@ -90,6 +90,26 @@
   <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>全画面のゲームや動画がタスクバーを覆っている間も、暗い背景を付けてバーを表示します。</value></data>
   <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>0px(自動の位置)に戻す</value></data>
   <data name="Settings_ResetTo100" xml:space="preserve"><value>100% に戻す</value></data>
+  <data name="Usage_ShortDaysHours" xml:space="preserve"><value>{0}日{1}時間</value></data>
+  <data name="History_Title" xml:space="preserve"><value>履歴</value></data>
+  <data name="History_Day" xml:space="preserve"><value>24 時間</value></data>
+  <data name="History_Week" xml:space="preserve"><value>7 日</value></data>
+  <data name="History_Session" xml:space="preserve"><value>セッション</value></data>
+  <data name="History_Weekly" xml:space="preserve"><value>週間</value></data>
+  <data name="History_Empty" xml:space="preserve"><value>データを集めています…</value></data>
+  <data name="Settings_Thresholds" xml:space="preserve"><value>通知する使用率</value></data>
+  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>通知するセッション使用率を、カンマ区切りで指定します({0} 個まで)。例: 75, 90, 95</value></data>
+  <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>タスクバーに表示する項目</value></data>
+  <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>タスクバーの使用率バーに、どの使用率を表示するかを選びます。</value></data>
+  <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>セッションと週間</value></data>
+  <data name="Settings_TaskbarBarRowsSession" xml:space="preserve"><value>セッションのみ</value></data>
+  <data name="Settings_TaskbarBarRowsWeekly" xml:space="preserve"><value>週間のみ</value></data>
+  <data name="Settings_TaskbarBarLabels" xml:space="preserve"><value>タスクバーのバーに項目名を表示する</value></data>
+  <data name="Settings_TaskbarBarLabelsDescription" xml:space="preserve"><value>バーの左に「セッション (5 時間)」「週間 (7 日)」を表示します。オフにすると幅が狭くなります。カーソルを載せれば項目名を確認できます。</value></data>
+  <data name="Settings_TaskbarBarResetTime" xml:space="preserve"><value>タスクバーのバーに残り時間を表示する</value></data>
+  <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間を表示します(例: 2:15、3日4時間)。</value></data>
+  <data name="Settings_HistoryChart" xml:space="preserve"><value>履歴グラフを表示する</value></data>
+  <data name="Settings_HistoryChartDescription" xml:space="preserve"><value>フライアウトに、直近 24 時間または 7 日間のセッションと週間の使用率の推移を表示します。</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>ウィンドウの拡大率</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>フライアウト全体の大きさを変えます。フライアウトの端をドラッグしても変更できます。</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>ウィンドウの不透明度</value></data>

@@ -1,6 +1,7 @@
 using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.ViewModels;
+using ClaudeUsageTracker.Core.History;
 using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Core.Notifications;
 using ClaudeUsageTracker.Core.Status;
@@ -10,17 +11,18 @@ namespace ClaudeUsageTracker.App.Services;
 
 /// <summary>
 /// Orchestrates a single refresh cycle: fetch usage (<see cref="UsageFetcher"/>),
-/// update the flyout view model, evaluate threshold/reset notifications, and report
+/// update the flyout view model, record the sample for the history chart, evaluate
+/// threshold/reset notifications, and report
 /// the session status/percentage back to the caller so it can repaint the tray icon.
 /// </summary>
 public sealed class UsageRefreshCoordinator
 {
-    private static readonly int[] NotificationThresholds = [75, 90, 95];
     private const string SessionKeyPrefix = "session_";
 
     private readonly UsageFetcher _fetcher;
     private readonly AppSettingsStore _settingsStore;
     private readonly FlyoutViewModel _flyoutViewModel;
+    private readonly UsageHistoryStore _history;
     private readonly IToastNotificationService _toastService;
     private readonly Action<double, UsageStatusLevel> _onIconUpdate;
     private readonly NotificationDedupTracker _dedupTracker;
@@ -31,12 +33,14 @@ public sealed class UsageRefreshCoordinator
         UsageFetcher fetcher,
         AppSettingsStore settingsStore,
         FlyoutViewModel flyoutViewModel,
+        UsageHistoryStore history,
         IToastNotificationService toastService,
         Action<double, UsageStatusLevel> onIconUpdate)
     {
         _fetcher = fetcher;
         _settingsStore = settingsStore;
         _flyoutViewModel = flyoutViewModel;
+        _history = history;
         _toastService = toastService;
         _onIconUpdate = onIconUpdate;
         _dedupTracker = new NotificationDedupTracker(settingsStore.Current.NotifiedThresholdKeys);
@@ -98,12 +102,13 @@ public sealed class UsageRefreshCoordinator
             usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
         var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
 
+        _history.Record(new UsageSample(now, effectiveSession, usage.WeeklyPercentage));
         EvaluateNotifications(effectiveSession);
         _onIconUpdate(effectiveSession, status);
     }
 
     /// <summary>
-    /// Fires threshold (75/90/95%) and session-reset toasts, deduped so the same
+    /// Fires threshold (the user's, 75/90/95% by default) and session-reset toasts, deduped so the same
     /// threshold doesn't re-notify every refresh cycle. Dedup state is only
     /// persisted when it actually changes.
     /// </summary>
@@ -125,7 +130,7 @@ public sealed class UsageRefreshCoordinator
             stateChanged = true;
         }
 
-        foreach (var threshold in NotificationThresholds)
+        foreach (var threshold in _settingsStore.Current.EffectiveNotificationThresholds)
         {
             if (effectiveSessionPercentage < threshold || !_dedupTracker.ShouldNotify($"{SessionKeyPrefix}{threshold}"))
                 continue;

@@ -63,6 +63,11 @@ public partial class SettingsViewModel : ObservableObject
         AlwaysOnTop = settings.AlwaysOnTop;
         ShowTaskbarBar = settings.ShowTaskbarBar;
         ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
+        TaskbarBarRows = settings.TaskbarBarRows;
+        TaskbarBarShowLabels = settings.TaskbarBarShowLabels;
+        TaskbarBarShowResetTime = settings.TaskbarBarShowResetTime;
+        ShowHistoryChart = settings.ShowHistoryChart;
+        _notificationThresholdsText = FormatThresholds(settings.EffectiveNotificationThresholds);
         TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
         FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
         FlyoutScalePercent = ToScalePercent(settings.FlyoutScale);
@@ -87,6 +92,13 @@ public partial class SettingsViewModel : ObservableObject
         new(AppLanguage.System, "Settings_LanguageSystem"),
         new(AppLanguage.English, Text: "English"),
         new(AppLanguage.Japanese, Text: "日本語"),
+    ];
+
+    public static IReadOnlyList<ChoiceOption> TaskbarBarRowsOptions { get; } =
+    [
+        new(TaskbarBarRows.Both, "Settings_TaskbarBarRowsBoth"),
+        new(TaskbarBarRows.SessionOnly, "Settings_TaskbarBarRowsSession"),
+        new(TaskbarBarRows.WeeklyOnly, "Settings_TaskbarBarRowsWeekly"),
     ];
 
     /// <summary>Raised after a change has been written to disk.</summary>
@@ -171,6 +183,64 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showTaskbarBarOverFullScreen;
+
+    [ObservableProperty]
+    private TaskbarBarRows _taskbarBarRows;
+
+    [ObservableProperty]
+    private bool _taskbarBarShowLabels;
+
+    [ObservableProperty]
+    private bool _taskbarBarShowResetTime;
+
+    [ObservableProperty]
+    private bool _showHistoryChart;
+
+    private string _notificationThresholdsText;
+
+    /// <summary>
+    /// The notification thresholds as typed: percentages separated by commas or spaces, e.g.
+    /// "75, 90, 95". Committed when focus leaves the box; text that isn't a usable list (nothing
+    /// in 1–100, or too many) is put back to what was saved.
+    /// </summary>
+    public string NotificationThresholdsText
+    {
+        get => _notificationThresholdsText;
+        set
+        {
+            var settings = _settingsStore.Current;
+            if (ParseThresholds(value) is { } thresholds && !thresholds.SequenceEqual(settings.EffectiveNotificationThresholds))
+            {
+                settings.NotificationThresholds = thresholds;
+                Apply();
+            }
+
+            // Always re-published: the box shows the saved list in its tidy form, whatever was typed.
+            _notificationThresholdsText = FormatThresholds(settings.EffectiveNotificationThresholds);
+            OnPropertyChanged();
+        }
+    }
+
+    public string NotificationThresholdsHint => Loc.Format("Settings_ThresholdsDescription", AppSettings.MaxNotificationThresholds);
+
+    private static string FormatThresholds(IEnumerable<int> thresholds) => string.Join(", ", thresholds);
+
+    // Null when the text has no usable list in it. Full-width digits and commas (an IME left on) are accepted.
+    private static List<int>? ParseThresholds(string text)
+    {
+        var parts = text.Normalize(System.Text.NormalizationForm.FormKC)
+            .Split([',', '、', ' ', '%', ';', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var thresholds = new List<int>();
+        foreach (var part in parts)
+        {
+            if (!int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out var threshold) || threshold is < 1 or > 100)
+                return null;
+            thresholds.Add(threshold);
+        }
+
+        thresholds = [.. thresholds.Distinct().Order()];
+        return thresholds.Count is 0 or > AppSettings.MaxNotificationThresholds ? null : thresholds;
+    }
 
     /// <summary>One row per connected monitor: whether its taskbar gets the bars, and where on it.</summary>
     public IReadOnlyList<TaskbarBarDisplayViewModel> TaskbarBarDisplays { get; }
@@ -270,6 +340,14 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnShowTaskbarBarOverFullScreenChanged(bool value) => Apply();
 
+    partial void OnTaskbarBarRowsChanged(TaskbarBarRows value) => Apply();
+
+    partial void OnTaskbarBarShowLabelsChanged(bool value) => Apply();
+
+    partial void OnTaskbarBarShowResetTimeChanged(bool value) => Apply();
+
+    partial void OnShowHistoryChartChanged(bool value) => Apply();
+
     partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
 
     // Written here rather than in Apply: a drag saves a finer scale than the slider's whole
@@ -300,6 +378,7 @@ public partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(TokensPerHourText));
         OnPropertyChanged(nameof(RefreshIntervalToolTip));
         OnPropertyChanged(nameof(ProbeModelText));
+        OnPropertyChanged(nameof(NotificationThresholdsHint));
         foreach (var display in TaskbarBarDisplays)
             display.RefreshLanguage();
         StatusMessage = null;
@@ -335,6 +414,10 @@ public partial class SettingsViewModel : ObservableObject
         settings.AlwaysOnTop = AlwaysOnTop;
         settings.ShowTaskbarBar = ShowTaskbarBar;
         settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
+        settings.TaskbarBarRows = TaskbarBarRows;
+        settings.TaskbarBarShowLabels = TaskbarBarShowLabels;
+        settings.TaskbarBarShowResetTime = TaskbarBarShowResetTime;
+        settings.ShowHistoryChart = ShowHistoryChart;
         settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;

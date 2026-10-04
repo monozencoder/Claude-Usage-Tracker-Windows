@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views"
         xmlns:loc="clr-namespace:ClaudeUsageTracker.App.Localization"
+        xmlns:settings="clr-namespace:ClaudeUsageTracker.App.Settings"
         TextOptions.TextFormattingMode="Display"
         FontSize="{StaticResource BodyFontSize}"
         Title="Claude Usage Tracker"
@@ -60,6 +61,59 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <!-- Past usage: both percentages over the last day or week. The two words on the right
+                 pick the range; the one in use is the darker one. -->
+            <StackPanel Margin="0,0,0,8" Visibility="{Binding ShowHistory, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel.Resources>
+                    <Style x:Key="RangeButtonStyle" TargetType="Button">
+                        <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+                        <Setter Property="FontFamily" Value="{StaticResource UIFontFamily}" />
+                        <Setter Property="FontSize" Value="{StaticResource CaptionFontSize}" />
+                        <Setter Property="Cursor" Value="Hand" />
+                        <Setter Property="Margin" Value="4,0,0,0" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="6,2">
+                                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                                                   FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <!-- Tag = whether this button's range is the one shown. -->
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Resources>
+                <DockPanel LastChildFill="False">
+                    <TextBlock Text="{loc:Tr History_Title}" Foreground="{DynamicResource TextSecondaryBrush}"
+                               Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" DockPanel.Dock="Left" />
+                    <Button DockPanel.Dock="Right" Content="{loc:Tr History_Week}" Style="{StaticResource RangeButtonStyle}"
+                            Command="{Binding PickHistoryRangeCommand}" CommandParameter="{x:Static settings:HistoryRange.Week}"
+                            Tag="{Binding IsWeekHistory}" Margin="4,0,-6,0" />
+                    <Button DockPanel.Dock="Right" Content="{loc:Tr History_Day}" Style="{StaticResource RangeButtonStyle}"
+                            Command="{Binding PickHistoryRangeCommand}" CommandParameter="{x:Static settings:HistoryRange.Day}"
+                            Tag="{Binding IsDayHistory}" />
+                </DockPanel>
+                <views:UsageHistoryChart Height="112" Margin="0,6,0,0"
+                                         Samples="{Binding HistorySamples}" Span="{Binding HistorySpan}"
+                                         SessionBrush="{DynamicResource ChartSeries1Brush}" WeeklyBrush="{DynamicResource ChartSeries2Brush}"
+                                         GridBrush="{DynamicResource BorderBrush}" SurfaceBrush="{DynamicResource WindowBackgroundBrush}"
+                                         TextBrush="{DynamicResource TextPrimaryBrush}" MutedTextBrush="{DynamicResource TextTertiaryBrush}"
+                                         SessionLabel="{loc:Tr History_Session}" WeeklyLabel="{loc:Tr History_Weekly}"
+                                         EmptyText="{loc:Tr History_Empty}" />
+            </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
                 <TextBlock Text="{Binding LastUpdatedText}" ToolTip="{Binding LastUpdatedToolTip}"

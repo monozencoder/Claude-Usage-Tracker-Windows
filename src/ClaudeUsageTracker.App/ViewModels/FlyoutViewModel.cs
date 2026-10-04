@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using ClaudeUsageTracker.App.Localization;
+using ClaudeUsageTracker.App.Settings;
+using ClaudeUsageTracker.Core.History;
 using ClaudeUsageTracker.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -35,6 +37,28 @@ public partial class FlyoutViewModel : ObservableObject
 
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
 
+    /// <summary>Whether the history chart is shown at all (a setting).</summary>
+    [ObservableProperty]
+    private bool _showHistory;
+
+    /// <summary>The recorded samples the history chart draws, oldest first; replaced (not mutated) when one is added.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<UsageSample> _historySamples = [];
+
+    /// <summary>How far back the history chart goes; switched by the two buttons above it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HistorySpan), nameof(IsDayHistory), nameof(IsWeekHistory))]
+    private HistoryRange _historyRange;
+
+    public TimeSpan HistorySpan => HistoryRange == HistoryRange.Week ? TimeSpan.FromDays(7) : TimeSpan.FromDays(1);
+
+    public bool IsDayHistory => HistoryRange == HistoryRange.Day;
+
+    public bool IsWeekHistory => HistoryRange == HistoryRange.Week;
+
+    /// <summary>Raised when the user picks another range for the history chart, so it can be saved.</summary>
+    public event Action<HistoryRange>? HistoryRangePicked;
+
     public event Action? RefreshRequested;
     public event Action? SettingsRequested;
     public event Action? SignInRequested;
@@ -47,6 +71,15 @@ public partial class FlyoutViewModel : ObservableObject
 
     [RelayCommand]
     private void SignIn() => SignInRequested?.Invoke();
+
+    [RelayCommand]
+    private void PickHistoryRange(HistoryRange range)
+    {
+        if (HistoryRange == range)
+            return;
+        HistoryRange = range;
+        HistoryRangePicked?.Invoke(range);
+    }
 
     public void SetBanner(string message, bool canSignIn = false)
     {
@@ -79,12 +112,22 @@ public partial class FlyoutViewModel : ObservableObject
         RenderUsage(DateTimeOffset.Now);
     }
 
+    /// <summary>
+    /// Rebuilds the rows as of now. The numbers only change with a refresh, which can be minutes
+    /// apart, but the time left until a reset runs down in between.
+    /// </summary>
+    public void RefreshTimes()
+    {
+        if (_lastUsage is not null)
+            RenderUsage(DateTimeOffset.Now);
+    }
+
     private void RenderUsage(DateTimeOffset now)
     {
         var usage = _lastUsage!;
         Rows.Clear();
-        Rows.Add(UsageRowViewModel.For(Loc.Get("Usage_Session"), usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now));
-        Rows.Add(UsageRowViewModel.For(Loc.Get("Usage_Weekly"), usage.WeeklyPercentage, usage.WeeklyResetTime, now));
+        Rows.Add(UsageRowViewModel.For(UsageRowKind.Session, usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now));
+        Rows.Add(UsageRowViewModel.For(UsageRowKind.Weekly, usage.WeeklyPercentage, usage.WeeklyResetTime, now));
         RefreshLastUpdatedText(now);
     }
 

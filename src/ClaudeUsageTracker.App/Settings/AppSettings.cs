@@ -28,6 +28,8 @@ public sealed class AppSettings
     /// </summary>
     public const int TokenFreeRateLimitedRetrySeconds = 600;
 
+    public const int MaxNotificationThresholds = 5;
+
     /// <summary>Lower bound of <see cref="FlyoutOpacityPercent"/>: below this the flyout is too faint to read or find.</summary>
     public const int MinFlyoutOpacityPercent = 20;
     public const int MaxFlyoutOpacityPercent = 100;
@@ -40,6 +42,9 @@ public sealed class AppSettings
     public int RefreshIntervalSeconds { get; set; } = 60;
 
     public bool NotificationsEnabled { get; set; } = true;
+
+    /// <summary>Session usage percentages a notification is sent at. Use <see cref="EffectiveNotificationThresholds"/>.</summary>
+    public List<int> NotificationThresholds { get; set; } = [75, 90, 95];
     public bool ShowFlyoutOnStartup { get; set; } = true;
 
     /// <summary>Keeps the flyout above other windows (Topmost).</summary>
@@ -53,6 +58,23 @@ public sealed class AppSettings
     /// drawn over that app where the taskbar would be. Off: they're hidden along with the taskbar.
     /// </summary>
     public bool ShowTaskbarBarOverFullScreen { get; set; }
+
+    /// <summary>Which usage rows the taskbar bars show.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarRows>))]
+    public TaskbarBarRows TaskbarBarRows { get; set; } = TaskbarBarRows.Both;
+
+    /// <summary>Shows each row's name ("Session (5h)") left of its bar on the taskbar.</summary>
+    public bool TaskbarBarShowLabels { get; set; } = true;
+
+    /// <summary>Shows the time left until each row resets, right of its percentage on the taskbar.</summary>
+    public bool TaskbarBarShowResetTime { get; set; }
+
+    /// <summary>Shows the chart of past usage in the flyout.</summary>
+    public bool ShowHistoryChart { get; set; } = true;
+
+    /// <summary>How far back the flyout's history chart goes.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<HistoryRange>))]
+    public HistoryRange HistoryRange { get; set; } = HistoryRange.Day;
 
     /// <summary>
     /// Per-monitor placement of the taskbar bars, by the monitor's device name (e.g. "\\.\DISPLAY2").
@@ -97,10 +119,22 @@ public sealed class AppSettings
         ? TimeSpan.FromSeconds(TokenFreeRefreshIntervalSeconds)
         : TimeSpan.FromSeconds(Math.Clamp(RefreshIntervalSeconds, MinRefreshIntervalSeconds, MaxRefreshIntervalSeconds));
 
+    /// <summary>
+    /// <see cref="NotificationThresholds"/> as usable values: within 1–100, each once, ascending,
+    /// at most <see cref="MaxNotificationThresholds"/> (the file may have been hand-edited).
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<int> EffectiveNotificationThresholds =>
+        [.. NotificationThresholds.Where(threshold => threshold is >= 1 and <= 100).Distinct().Order().Take(MaxNotificationThresholds)];
+
     /// <summary><see cref="FlyoutOpacityPercent"/> as a WPF opacity (clamped: the file may have been hand-edited).</summary>
     [JsonIgnore]
     public double FlyoutOpacity => Math.Clamp(FlyoutOpacityPercent, MinFlyoutOpacityPercent, MaxFlyoutOpacityPercent) / 100.0;
 }
+
+public enum TaskbarBarRows { Both, SessionOnly, WeeklyOnly }
+
+public enum HistoryRange { Day, Week }
 
 /// <summary>Whether one monitor's taskbar gets the usage bars, and where on it.</summary>
 public sealed class TaskbarBarDisplaySettings

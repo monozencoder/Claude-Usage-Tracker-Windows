@@ -54,4 +54,9 @@
     <SolidColorBrush x:Key="UsageCriticalBrush" Color="#FFFB464C" />
     <SolidColorBrush x:Key="ProgressTrackBrush" Color="#FF333333" />
 
+    <!-- History chart series (session, weekly): a pair checked for color-vision-deficiency
+         separation against this palette's surface, and kept clear of the status colors above. -->
+    <SolidColorBrush x:Key="ChartSeries1Brush" Color="#FF3987E5" />
+    <SolidColorBrush x:Key="ChartSeries2Brush" Color="#FFD55181" />
+
 </ResourceDictionary>

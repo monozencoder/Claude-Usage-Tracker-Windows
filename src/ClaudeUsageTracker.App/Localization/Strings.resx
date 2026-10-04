@@ -61,7 +61,7 @@
   <data name="Settings_TestButton" xml:space="preserve"><value>Check</value></data>
   <data name="Settings_ThemeDescription" xml:space="preserve"><value>Choose the app's colors.</value></data>
   <data name="Settings_LanguageDescription" xml:space="preserve"><value>Choose the display language.</value></data>
-  <data name="Settings_NotificationsDescription" xml:space="preserve"><value>Notifies you at 75%, 90% and 95% usage, and when the session window resets.</value></data>
+  <data name="Settings_NotificationsDescription" xml:space="preserve"><value>Notifies you when session usage reaches the percentages below, and when the session window resets.</value></data>
   <data name="Settings_LaunchAtLoginDescription" xml:space="preserve"><value>Starts automatically when you sign in to Windows.</value></data>
   <data name="Settings_ShowOnStartupDescription" xml:space="preserve"><value>Opens the flyout when the app starts.</value></data>
   <data name="Settings_AlwaysOnTopDescription" xml:space="preserve"><value>Keeps the flyout above other windows.</value></data>
@@ -90,6 +90,26 @@
   <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>Keeps the bars visible, on a dark backdrop, while a full-screen game or video covers the taskbar.</value></data>
   <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>Reset to 0px (the automatic place)</value></data>
   <data name="Settings_ResetTo100" xml:space="preserve"><value>Reset to 100%</value></data>
+  <data name="Usage_ShortDaysHours" xml:space="preserve"><value>{0}d {1}h</value></data>
+  <data name="History_Title" xml:space="preserve"><value>History</value></data>
+  <data name="History_Day" xml:space="preserve"><value>24 hours</value></data>
+  <data name="History_Week" xml:space="preserve"><value>7 days</value></data>
+  <data name="History_Session" xml:space="preserve"><value>Session</value></data>
+  <data name="History_Weekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="History_Empty" xml:space="preserve"><value>Collecting data…</value></data>
+  <data name="Settings_Thresholds" xml:space="preserve"><value>Notify at</value></data>
+  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>Session usage percentages to notify at, separated by commas (up to {0}), e.g. 75, 90, 95.</value></data>
+  <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>Rows on the taskbar</value></data>
+  <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>Which usage the taskbar bars show.</value></data>
+  <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>Session and weekly</value></data>
+  <data name="Settings_TaskbarBarRowsSession" xml:space="preserve"><value>Session only</value></data>
+  <data name="Settings_TaskbarBarRowsWeekly" xml:space="preserve"><value>Weekly only</value></data>
+  <data name="Settings_TaskbarBarLabels" xml:space="preserve"><value>Show names on the taskbar bars</value></data>
+  <data name="Settings_TaskbarBarLabelsDescription" xml:space="preserve"><value>Shows “Session (5h)” and “Weekly (7d)” left of the bars. Turn off for a narrower strip; pointing at it still tells them apart.</value></data>
+  <data name="Settings_TaskbarBarResetTime" xml:space="preserve"><value>Show the time left on the taskbar bars</value></data>
+  <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>Shows the time until each reset right of its percentage, e.g. 2:15 or 3d 4h.</value></data>
+  <data name="Settings_HistoryChart" xml:space="preserve"><value>Show the history chart</value></data>
+  <data name="Settings_HistoryChartDescription" xml:space="preserve"><value>Shows how session and weekly usage moved over the last 24 hours or 7 days, in the flyout.</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>Window size</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>Scales the whole flyout. Dragging its edges changes the same setting.</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>
