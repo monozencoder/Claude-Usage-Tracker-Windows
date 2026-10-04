@@ -41,6 +41,7 @@
   <data name="Tray_ResetPosition" xml:space="preserve"><value>Reset position</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Settings - Claude Usage Tracker</value></data>
+  <data name="Settings_NavOptions" xml:space="preserve"><value>Options</value></data>
   <data name="Settings_Account" xml:space="preserve"><value>Account</value></data>
   <data name="Settings_SignInToolTip" xml:space="preserve"><value>Opens Claude Code's sign-in (claude auth login) in your browser. This also changes the account Claude Code itself uses.</value></data>
   <data name="Settings_TestConnection" xml:space="preserve"><value>Test connection</value></data>
@@ -75,6 +76,8 @@
   <data name="Settings_LaunchAtLogin" xml:space="preserve"><value>Launch at Windows login</value></data>
   <data name="Settings_ShowOnStartup" xml:space="preserve"><value>Show window on startup</value></data>
   <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Keep window on top of other windows</value></data>
+  <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>
+  <data name="Settings_OpacityDescription" xml:space="preserve"><value>Lower values let what's behind the flyout show through.</value></data>
   <data name="Settings_IntervalEnter" xml:space="preserve"><value>Enter {0}–{1} seconds</value></data>
   <data name="Settings_IntervalMin" xml:space="preserve"><value>Minimum is {0} seconds</value></data>
   <data name="Settings_IntervalMax" xml:space="preserve"><value>Maximum is {0} seconds</value></data>

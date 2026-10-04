@@ -13,7 +13,8 @@
          slide-in animation; without it the shadow is clipped to the window's square bounds and
          shows as a faint rectangle behind the rounded corners. Width = 300 card + 2 x 24. -->
     <!-- The whole panel is a drag handle (buttons excluded), so the header can stay minimal. -->
-    <Border x:Name="RootPanel" Margin="24,24,24,28" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="10"
+    <Grid>
+    <Border x:Name="RootPanel" Margin="24,24,24,28" Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="12"
             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16,8,16,16"
             Effect="{StaticResource FlyoutShadowEffect}" RenderTransformOrigin="0.5,0"
             MouseLeftButtonDown="OnPanelMouseLeftButtonDown">
@@ -37,7 +38,7 @@
                 </Button>
             </StackPanel>
 
-            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="4" Padding="10,8" Margin="0,0,0,12"
+            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,12"
                     BorderThickness="0,0,0,0" BorderBrush="{DynamicResource WarningBrush}"
                     Visibility="{Binding BannerText, Converter={StaticResource StringToVisibility}}">
                 <DockPanel LastChildFill="True">
@@ -73,4 +74,28 @@
             </StackPanel>
         </StackPanel>
     </Border>
+    <!-- Invisible resize grips along the panel's edges and corners (the borderless window has no
+         frame of its own). Dragging one scales the whole flyout, text included, keeping its
+         proportions. Kept over the panel by code-behind, which gives it the panel's margin. -->
+    <Grid x:Name="ResizeGrips" Margin="24,24,24,28">
+        <Grid.Resources>
+            <Style TargetType="Rectangle">
+                <Setter Property="Fill" Value="Transparent" />
+                <EventSetter Event="MouseLeftButtonDown" Handler="OnGripMouseLeftButtonDown" />
+                <EventSetter Event="MouseMove" Handler="OnGripMouseMove" />
+                <EventSetter Event="MouseLeftButtonUp" Handler="OnGripMouseLeftButtonUp" />
+                <EventSetter Event="LostMouseCapture" Handler="OnGripLostMouseCapture" />
+            </Style>
+        </Grid.Resources>
+        <!-- Tag = which way the edge moves: horizontal, vertical (-1 left/up, 1 right/down, 0 fixed). -->
+        <Rectangle Tag="-1,0" Width="5" Margin="0,10" HorizontalAlignment="Left" Cursor="SizeWE" />
+        <Rectangle Tag="1,0" Width="5" Margin="0,10" HorizontalAlignment="Right" Cursor="SizeWE" />
+        <Rectangle Tag="0,-1" Height="5" Margin="10,0" VerticalAlignment="Top" Cursor="SizeNS" />
+        <Rectangle Tag="0,1" Height="5" Margin="10,0" VerticalAlignment="Bottom" Cursor="SizeNS" />
+        <Rectangle Tag="-1,-1" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Cursor="SizeNWSE" />
+        <Rectangle Tag="1,-1" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Cursor="SizeNESW" />
+        <Rectangle Tag="-1,1" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Cursor="SizeNESW" />
+        <Rectangle Tag="1,1" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Cursor="SizeNWSE" />
+    </Grid>
+    </Grid>
 </Window>

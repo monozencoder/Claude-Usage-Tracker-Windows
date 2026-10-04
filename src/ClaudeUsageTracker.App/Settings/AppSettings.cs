@@ -28,6 +28,10 @@ public sealed class AppSettings
     /// </summary>
     public const int TokenFreeRateLimitedRetrySeconds = 600;
 
+    /// <summary>Lower bound of <see cref="FlyoutOpacityPercent"/>: below this the flyout is too faint to read or find.</summary>
+    public const int MinFlyoutOpacityPercent = 20;
+    public const int MaxFlyoutOpacityPercent = 100;
+
     /// <summary>Used in the default (token-using) mode; ignored while <see cref="AvoidTokenUsage"/> is on.</summary>
     public int RefreshIntervalSeconds { get; set; } = 60;
 
@@ -36,6 +40,9 @@ public sealed class AppSettings
 
     /// <summary>Keeps the flyout above other windows (Topmost).</summary>
     public bool AlwaysOnTop { get; set; } = true;
+
+    /// <summary>How opaque the flyout is, in percent: 100 is solid, lower lets what's behind it show through.</summary>
+    public int FlyoutOpacityPercent { get; set; } = MaxFlyoutOpacityPercent;
 
     /// <summary>
     /// On (default): only the free usage endpoint is used (no usage consumed), every 5 minutes —
@@ -59,6 +66,9 @@ public sealed class AppSettings
     /// </summary>
     public ScreenPoint? FlyoutPosition { get; set; }
 
+    /// <summary>Size the flyout was last dragged to, relative to its designed size (1 = 100%). Clamped when applied.</summary>
+    public double FlyoutScale { get; set; } = 1;
+
     /// <summary>Threshold-notification dedup state (e.g. "session_75"), so the same threshold doesn't re-notify every refresh.</summary>
     public List<string> NotifiedThresholdKeys { get; set; } = [];
 
@@ -67,6 +77,10 @@ public sealed class AppSettings
     public TimeSpan RefreshInterval => AvoidTokenUsage
         ? TimeSpan.FromSeconds(TokenFreeRefreshIntervalSeconds)
         : TimeSpan.FromSeconds(Math.Clamp(RefreshIntervalSeconds, MinRefreshIntervalSeconds, MaxRefreshIntervalSeconds));
+
+    /// <summary><see cref="FlyoutOpacityPercent"/> as a WPF opacity (clamped: the file may have been hand-edited).</summary>
+    [JsonIgnore]
+    public double FlyoutOpacity => Math.Clamp(FlyoutOpacityPercent, MinFlyoutOpacityPercent, MaxFlyoutOpacityPercent) / 100.0;
 }
 
 /// <summary>A point in screen (device) pixels.</summary>

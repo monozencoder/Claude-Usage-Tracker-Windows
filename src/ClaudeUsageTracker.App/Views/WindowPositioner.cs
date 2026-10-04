@@ -62,6 +62,11 @@ public static class WindowPositioner
         return new ScreenPoint(rect.Left, rect.Top);
     }
 
+    /// <summary>Moves the window's top-left to <paramref name="position"/> (screen pixels) as-is, on screen or not.</summary>
+    public static void MoveTo(Window window, ScreenPoint position)
+        => SetWindowPos(new WindowInteropHelper(window).Handle, IntPtr.Zero, position.X, position.Y,
+            0, 0, SwpNoSize | SwpNoZOrder | SwpNoActivate);
+
     /// <summary>
     /// Moves the window's top-left to <paramref name="position"/> (screen pixels), then keeps its
     /// visible content fully on screen: if that spot is off every monitor — say the monitor it was

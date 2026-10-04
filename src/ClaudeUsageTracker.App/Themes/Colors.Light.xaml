@@ -1,26 +1,57 @@
 <!--
-    Light palette. Exactly one Colors.*.xaml is merged into Application.Resources at a time;
-    ThemeManager swaps it at runtime, so every palette brush must be referenced via DynamicResource.
+    Light palette, modeled on Obsidian's default light theme (base-00 … base-100, accent
+    hsl(258, 88%, 66%)). Exactly one Colors.*.xaml is merged into Application.Resources at a
+    time; ThemeManager swaps it at runtime, so every palette brush must be referenced via
+    DynamicResource.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Text colors are opaque, not black-with-alpha: semi-transparent text renders washed out
-         on light backgrounds. Tertiary (#6B6B6B) still meets WCAG AA (~4.9:1) on #F3F3F3. -->
-    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFF3F3F3" />
-    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="BorderBrush" Color="#1F000000" />
-    <SolidColorBrush x:Key="SubtleBorderBrush" Color="#33000000" />
-    <SolidColorBrush x:Key="AccentBrush" Color="#FF0067C0" />
-    <SolidColorBrush x:Key="AccentHoverBrush" Color="#FF1975C5" />
-    <SolidColorBrush x:Key="AccentPressedBrush" Color="#FF005A9E" />
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FF1A1A1A" />
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FF4D4D4D" />
-    <SolidColorBrush x:Key="TextTertiaryBrush" Color="#FF6B6B6B" />
-    <SolidColorBrush x:Key="HoverOverlayBrush" Color="#0A000000" />
-    <SolidColorBrush x:Key="PressedOverlayBrush" Color="#14000000" />
-    <SolidColorBrush x:Key="DangerBrush" Color="#FFC42B1C" />
-    <SolidColorBrush x:Key="SuccessBrush" Color="#FF0F7B0F" />
-    <SolidColorBrush x:Key="WarningBrush" Color="#FF9D5D00" />
+    <!-- Surfaces: page = background-primary, sidebar = background-secondary,
+         setting group = background-primary-alt. -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#FFF6F6F6" />
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFAFAFA" />
+    <!-- Popups (menus, drop-downs, tooltips) sit on the page, so they use the page color. -->
+    <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="BorderBrush" Color="#FFE4E4E4" />
+    <SolidColorBrush x:Key="SubtleBorderBrush" Color="#FFDADADA" />
+
+    <!-- Accent: Obsidian light uses color-accent-1 for interactive-accent and -2 for its hover. -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#FF9873F7" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#FFA68AF9" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#FF8A5CF5" />
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFFFF" />
+    <!-- Links and accent-colored text need a darker shade to stay readable on white. -->
+    <SolidColorBrush x:Key="AccentTextBrush" Color="#FF7040E0" />
+
+    <!-- Text: text-normal / text-muted / a slightly darker text-faint (Obsidian's #ABABAB is too
+         pale for reset times and timestamps). -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FF222222" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FF5C5C5C" />
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="#FF7E7E7E" />
+
+    <!-- Interactive surfaces: buttons and drop-downs (interactive-normal / -hover). -->
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ControlHoverBrush" Color="#FFFAFAFA" />
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#1F000000" />
+    <SolidColorBrush x:Key="ControlBorderHoverBrush" Color="#2B000000" />
+    <SolidColorBrush x:Key="ToggleOffBrush" Color="#FFDADADA" />
+    <SolidColorBrush x:Key="FocusRingBrush" Color="#FFBDBDBD" />
+    <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#E6000000" />
+    <SolidColorBrush x:Key="HoverOverlayBrush" Color="#11000000" />
+    <SolidColorBrush x:Key="PressedOverlayBrush" Color="#1C000000" />
+    <SolidColorBrush x:Key="NavSelectedBrush" Color="#11000000" />
+
+    <!-- Status: text shades (readable on white) and the brighter usage-bar colors
+         (Obsidian's color-green / color-orange / color-red). -->
+    <SolidColorBrush x:Key="DangerBrush" Color="#FFD7263D" />
+    <SolidColorBrush x:Key="DangerBackgroundBrush" Color="#1AE93147" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#FF0A8A3E" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#FFC25F00" />
+    <SolidColorBrush x:Key="UsageSafeBrush" Color="#FF08B94E" />
+    <SolidColorBrush x:Key="UsageModerateBrush" Color="#FFEC7500" />
+    <SolidColorBrush x:Key="UsageCriticalBrush" Color="#FFE93147" />
+    <SolidColorBrush x:Key="ProgressTrackBrush" Color="#FFEFEFEF" />
 
 </ResourceDictionary>

@@ -7,8 +7,7 @@
         FontSize="{StaticResource BodyFontSize}"
         Title="{loc:Tr Settings_Title}"
         Icon="/Assets/AppIcon.ico"
-        Width="560" SizeToContent="Height" ResizeMode="NoResize"
-        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
+        Width="800" Height="560" MinWidth="640" MinHeight="400"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}">
     <Window.Resources>
@@ -25,7 +24,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="3">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -44,12 +43,79 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Rounded card holding related rows, like the Windows 11 Settings app. -->
+
+        <!-- ===== Obsidian-style settings navigation =====
+             A TabControl drawn as Obsidian's settings modal: a sidebar (background-secondary,
+             hairline on its right edge) with a small group label and icon + label items, and
+             the selected page on the right, scrolling on its own. -->
+        <Style x:Key="NavTabItemStyle" TargetType="TabItem">
+            <!-- Pages inherit this, so it must be the theme's text color, not the system default. -->
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Height="30" Margin="0,0,0,2" Padding="8,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Tag carries the Segoe Fluent glyph for the item. -->
+                                <TextBlock x:Name="Glyph" Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource IconFontFamily}" FontSize="14" Width="16"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock x:Name="Label" Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}"
+                                           Style="{StaticResource BodyTextStyle}" Margin="10,0,0,0"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NavSelectedBrush}" />
+                                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="NavTabControlStyle" TargetType="TabControl">
+            <Setter Property="ItemContainerStyle" Value="{StaticResource NavTabItemStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="216" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Background="{DynamicResource SidebarBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                                <StackPanel Margin="12,20,12,12">
+                                    <TextBlock Text="{loc:Tr Settings_NavOptions}" Style="{StaticResource CaptionTextStyle}"
+                                               Foreground="{DynamicResource TextTertiaryBrush}" FontWeight="SemiBold" Margin="8,0,0,6" />
+                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                </StackPanel>
+                            </Border>
+                            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Focusable="False">
+                                <!-- Obsidian centers the page in a readable column. -->
+                                <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"
+                                                  MaxWidth="680" Margin="32,24,32,32" />
+                            </ScrollViewer>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Setting group ("setting-group" in Obsidian): a softly tinted, rounded block of rows
+             with no outline. -->
         <Style x:Key="SettingsCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="CornerRadius" Value="10" />
         </Style>
         <!-- Drop-down item label, re-evaluated on every language switch (see ChoiceLabelConverter). -->
         <DataTemplate x:Key="ChoiceTemplate">
@@ -62,17 +128,17 @@
                 </TextBlock.Text>
             </TextBlock>
         </DataTemplate>
-        <!-- Group heading above a card, as in Windows 11 Settings. -->
+        <!-- Page heading above its group, like Obsidian's setting headings. -->
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextStyle}">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="Margin" Value="4,28,0,10" />
+            <Setter Property="Margin" Value="4,0,0,12" />
         </Style>
         <!-- Common padding of a card row. -->
         <Style x:Key="CardRowStyle" TargetType="FrameworkElement">
-            <Setter Property="Margin" Value="20,16" />
+            <Setter Property="Margin" Value="16,14" />
         </Style>
-        <!-- Row title and the description under it. -->
+        <!-- Row title (setting-item-name) and the description under it (setting-item-description). -->
         <Style x:Key="RowTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
@@ -82,259 +148,291 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Margin" Value="0,3,0,0" />
         </Style>
-        <!-- Hairline between the rows of a card. -->
+        <!-- Hairline between the rows of a group, inset from its edges. -->
         <Style x:Key="CardDividerStyle" TargetType="Border">
             <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="16,0" />
             <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
         </Style>
         <!-- A card row that is a toggle: label on the left, switch on the right, whole row clickable. -->
         <Style x:Key="ToggleRowStyle" TargetType="CheckBox" BasedOn="{StaticResource ToggleSwitchStyle}">
-            <Setter Property="Margin" Value="20,16" />
+            <Setter Property="Margin" Value="16,14" />
         </Style>
     </Window.Resources>
-    <!-- Settings layout modeled on Obsidian / Windows 11: a heading per group, each group one
-         card of rows; every row has a title and a description on the left and its control on
-         the right. Scrolls when taller than the screen. -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
-    <StackPanel Margin="24,0,24,24">
-        <TextBlock Text="{loc:Tr Settings_Account}" Style="{StaticResource SectionHeaderStyle}" Margin="4,20,0,10" />
-        <Border Style="{StaticResource SettingsCardStyle}">
+    <!-- Settings layout modeled on Obsidian's settings: a sidebar of pages on the left, and on
+         the right the selected page as a heading and one group of rows; every row has a title
+         and a description on the left and its control on the right. -->
+    <TabControl Style="{StaticResource NavTabControlStyle}" Background="Transparent" BorderThickness="0">
+        <TabItem Header="{loc:Tr Settings_Account}" Tag="&#xE77B;">
             <StackPanel>
-                <DockPanel Style="{StaticResource CardRowStyle}">
-                    <!-- Runs the CLI's own browser sign-in; the app never handles OAuth itself. -->
-                    <Button DockPanel.Dock="Right" Content="{Binding AccountActionText}" Command="{Binding SignInCommand}"
-                            Height="32" Padding="14,0" Margin="16,0,0,0" VerticalAlignment="Center"
-                            ToolTip="{loc:Tr Settings_SignInToolTip}"
-                            Visibility="{Binding AccountActionText, Converter={StaticResource StringToVisibility}}" />
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{loc:Tr Settings_AccountRow}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{Binding AccountSummary}" Style="{StaticResource RowDescriptionStyle}" />
-                        <TextBlock Style="{StaticResource RowDescriptionStyle}"
-                                   Visibility="{Binding ShowInstallLink, Converter={StaticResource BoolToVisibility}}">
-                            <Hyperlink NavigateUri="https://docs.anthropic.com/en/docs/claude-code/setup" RequestNavigate="OnInstallLinkNavigate"
-                                       Foreground="{DynamicResource AccentBrush}"><Run Text="{loc:Tr Settings_InstallLink}" /></Hyperlink>
-                        </TextBlock>
+                <TextBlock Text="{loc:Tr Settings_Account}" Style="{StaticResource SectionHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <!-- Runs the CLI's own browser sign-in; the app never handles OAuth itself. -->
+                            <Button DockPanel.Dock="Right" Content="{Binding AccountActionText}" Command="{Binding SignInCommand}"
+                                    Height="30" Padding="14,0" Margin="16,0,0,0" VerticalAlignment="Center"
+                                    ToolTip="{loc:Tr Settings_SignInToolTip}"
+                                    Visibility="{Binding AccountActionText, Converter={StaticResource StringToVisibility}}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_AccountRow}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{Binding AccountSummary}" Style="{StaticResource RowDescriptionStyle}" />
+                                <TextBlock Style="{StaticResource RowDescriptionStyle}"
+                                           Visibility="{Binding ShowInstallLink, Converter={StaticResource BoolToVisibility}}">
+                                    <Hyperlink NavigateUri="https://docs.anthropic.com/en/docs/claude-code/setup" RequestNavigate="OnInstallLinkNavigate"
+                                               Foreground="{DynamicResource AccentTextBrush}"><Run Text="{loc:Tr Settings_InstallLink}" /></Hyperlink>
+                                </TextBlock>
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <Button DockPanel.Dock="Right" Content="{loc:Tr Settings_TestButton}" Command="{Binding TestConnectionCommand}"
+                                    Height="30" Padding="14,0" Margin="16,0,0,0" VerticalAlignment="Center"
+                                    ToolTip="{loc:Tr Settings_TestConnectionToolTip}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_TestConnection}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TestConnectionDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <!-- Test connection / sign-in result, right under the buttons that produce it. -->
+                        <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="6" Padding="10,8" Margin="16,0,16,14"
+                                Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibility}}">
+                            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
                     </StackPanel>
-                </DockPanel>
-                <Border Style="{StaticResource CardDividerStyle}" />
-                <DockPanel Style="{StaticResource CardRowStyle}">
-                    <Button DockPanel.Dock="Right" Content="{loc:Tr Settings_TestButton}" Command="{Binding TestConnectionCommand}"
-                            Height="32" Padding="14,0" Margin="16,0,0,0" VerticalAlignment="Center"
-                            ToolTip="{loc:Tr Settings_TestConnectionToolTip}" />
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{loc:Tr Settings_TestConnection}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_TestConnectionDescription}" Style="{StaticResource RowDescriptionStyle}" />
-                    </StackPanel>
-                </DockPanel>
-                <!-- Test connection / sign-in result, right under the buttons that produce it. -->
-                <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="4" Padding="10,8" Margin="20,0,20,16"
-                        Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibility}}">
-                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
-                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding StatusIsError}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
                 </Border>
             </StackPanel>
-        </Border>
-
-        <!-- The mode comes first: the interval below only applies when token-free mode is off. -->
-        <TextBlock Text="{loc:Tr Settings_SectionUsage}" Style="{StaticResource SectionHeaderStyle}" />
-        <Border Style="{StaticResource SettingsCardStyle}">
+        </TabItem>
+        <TabItem Header="{loc:Tr Settings_SectionUsage}" Tag="&#xE9D2;">
             <StackPanel>
-                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding AvoidTokenUsage}"
-                          AutomationProperties.Name="{loc:Tr Settings_AvoidTokens}">
+                <!-- The mode comes first: the interval below only applies when token-free mode is off. -->
+                <TextBlock Text="{loc:Tr Settings_SectionUsage}" Style="{StaticResource SectionHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
                     <StackPanel>
-                        <TextBlock Text="{loc:Tr Settings_AvoidTokens}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_AvoidTokensDescription}" Style="{StaticResource RowDescriptionStyle}" />
-                    </StackPanel>
-                </CheckBox>
-                <Border Style="{StaticResource CardDividerStyle}" />
-                <Grid Style="{StaticResource CardRowStyle}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <!-- Dimmed with the box in token-free mode: the interval and its cost only apply when it's off. -->
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
-                                        <Setter Property="Opacity" Value="0.45" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="{loc:Tr Settings_RefreshInterval}" Style="{StaticResource BodyTextStyle}"
-                                   Foreground="{DynamicResource TextPrimaryBrush}" />
-                        <!-- Always visible: the per-refresh cost, or the error in red while the typed
-                             value can't be used. The model line below is hidden (not collapsed) in
-                             token-free mode, which prompts no model, so the row keeps its height. -->
-                        <TextBlock Text="{Binding RefreshIntervalHint}" TextWrapping="Wrap" Margin="0,2,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
-                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasRefreshIntervalError}" Value="True">
-                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="{Binding ProbeModelText}" TextWrapping="Wrap" Margin="0,2,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
-                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <!-- NumberBox-style field. Disabled in token-free mode, which always refreshes every 5 minutes. -->
-                        <Border Height="32" CornerRadius="4" BorderThickness="1"
-                                Background="{DynamicResource WindowBackgroundBrush}"
-                                IsEnabled="{Binding IsRefreshIntervalEditable}">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}" />
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                        </Trigger>
-                                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                        </Trigger>
-                                        <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value="0.45" />
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <StackPanel Orientation="Horizontal">
-                                <!-- Digits only: IME is disabled so full-width input can't sneak in, and
-                                     typing/pasting is filtered in code-behind. Up/Down and the wheel step the value. -->
-                                <TextBox x:Name="RefreshIntervalBox" Width="48" MaxLength="4" TextAlignment="Right"
-                                         Background="Transparent" BorderThickness="0" Padding="4,0,2,0" VerticalContentAlignment="Center"
-                                         Text="{Binding RefreshIntervalText, UpdateSourceTrigger=PropertyChanged}"
-                                         InputMethod.IsInputMethodEnabled="False"
-                                         ToolTip="{Binding RefreshIntervalToolTip}"
-                                         PreviewTextInput="OnRefreshIntervalPreviewTextInput"
-                                         PreviewKeyDown="OnRefreshIntervalPreviewKeyDown"
-                                         PreviewMouseWheel="OnRefreshIntervalPreviewMouseWheel"
-                                         LostKeyboardFocus="OnRefreshIntervalLostFocus"
-                                         DataObject.Pasting="OnRefreshIntervalPasting" />
-                                <TextBlock Text="{loc:Tr Settings_Seconds}" Style="{StaticResource CaptionTextStyle}"
-                                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,6,0" />
-                                <!-- Glyphs need an explicit FontFamily: the implicit TextBlock style would
-                                     otherwise swap in the UI font and render them as boxes. -->
-                                <Button Style="{StaticResource SpinButtonStyle}"
-                                        Command="{Binding IncreaseRefreshIntervalCommand}" ToolTip="{loc:Tr Settings_Increase}">
-                                    <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Style="{StaticResource SpinButtonStyle}" Margin="0,0,3,0"
-                                        Command="{Binding DecreaseRefreshIntervalCommand}" ToolTip="{loc:Tr Settings_Decrease}">
-                                    <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding AvoidTokenUsage}"
+                                  AutomationProperties.Name="{loc:Tr Settings_AvoidTokens}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_AvoidTokens}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_AvoidTokensDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
-                        </Border>
-                        <!-- Live estimate for the typed interval. Hidden (not collapsed) in token-free
-                             mode, where no tokens are used, so the row keeps its height. -->
-                        <TextBlock Text="{Binding TokensPerHourText}" HorizontalAlignment="Right" Margin="0,4,2,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
-                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <Grid Style="{StaticResource CardRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <!-- Dimmed with the box in token-free mode: the interval and its cost only apply when it's off. -->
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                                <Setter Property="Opacity" Value="0.45" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="{loc:Tr Settings_RefreshInterval}" Style="{StaticResource BodyTextStyle}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                <!-- Always visible: the per-refresh cost, or the error in red while the typed
+                                     value can't be used. The model line below is hidden (not collapsed) in
+                                     token-free mode, which prompts no model, so the row keeps its height. -->
+                                <TextBlock Text="{Binding RefreshIntervalHint}" TextWrapping="Wrap" Margin="0,2,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasRefreshIntervalError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding ProbeModelText}" TextWrapping="Wrap" Margin="0,2,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                                    <Setter Property="Visibility" Value="Hidden" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <!-- NumberBox-style field. Disabled in token-free mode, which always refreshes every 5 minutes. -->
+                                <Border Height="30" CornerRadius="6" BorderThickness="1"
+                                        Background="{DynamicResource ControlBackgroundBrush}"
+                                        IsEnabled="{Binding IsRefreshIntervalEditable}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.45" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Digits only: IME is disabled so full-width input can't sneak in, and
+                                             typing/pasting is filtered in code-behind. Up/Down and the wheel step the value. -->
+                                        <TextBox x:Name="RefreshIntervalBox" Width="48" MaxLength="4" TextAlignment="Right"
+                                                 Background="Transparent" BorderThickness="0" Padding="4,0,2,0" VerticalContentAlignment="Center"
+                                                 Text="{Binding RefreshIntervalText, UpdateSourceTrigger=PropertyChanged}"
+                                                 InputMethod.IsInputMethodEnabled="False"
+                                                 ToolTip="{Binding RefreshIntervalToolTip}"
+                                                 PreviewTextInput="OnRefreshIntervalPreviewTextInput"
+                                                 PreviewKeyDown="OnRefreshIntervalPreviewKeyDown"
+                                                 PreviewMouseWheel="OnRefreshIntervalPreviewMouseWheel"
+                                                 LostKeyboardFocus="OnRefreshIntervalLostFocus"
+                                                 DataObject.Pasting="OnRefreshIntervalPasting" />
+                                        <TextBlock Text="{loc:Tr Settings_Seconds}" Style="{StaticResource CaptionTextStyle}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,6,0" />
+                                        <!-- Glyphs need an explicit FontFamily: the implicit TextBlock style would
+                                             otherwise swap in the UI font and render them as boxes. -->
+                                        <Button Style="{StaticResource SpinButtonStyle}"
+                                                Command="{Binding IncreaseRefreshIntervalCommand}" ToolTip="{loc:Tr Settings_Increase}">
+                                            <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" />
+                                        </Button>
+                                        <Button Style="{StaticResource SpinButtonStyle}" Margin="0,0,3,0"
+                                                Command="{Binding DecreaseRefreshIntervalCommand}" ToolTip="{loc:Tr Settings_Decrease}">
+                                            <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                                <!-- Live estimate for the typed interval. Hidden (not collapsed) in token-free
+                                     mode, where no tokens are used, so the row keeps its height. -->
+                                <TextBlock Text="{Binding TokensPerHourText}" HorizontalAlignment="Right" Margin="0,4,2,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                                    <Setter Property="Visibility" Value="Hidden" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
-                </Grid>
+                </Border>
             </StackPanel>
-        </Border>
-
-        <TextBlock Text="{loc:Tr Settings_Appearance}" Style="{StaticResource SectionHeaderStyle}" />
-        <Border Style="{StaticResource SettingsCardStyle}">
+        </TabItem>
+        <TabItem Header="{loc:Tr Settings_Appearance}" Tag="&#xE790;">
             <StackPanel>
-                <DockPanel Style="{StaticResource CardRowStyle}">
-                    <ComboBox DockPanel.Dock="Right" Width="150" Margin="16,0,0,0" VerticalAlignment="Center"
-                              ItemsSource="{x:Static vm:SettingsViewModel.ThemeOptions}"
-                              SelectedValuePath="Value" SelectedValue="{Binding Theme}"
-                              ItemTemplate="{StaticResource ChoiceTemplate}"
-                              AutomationProperties.Name="{loc:Tr Settings_Theme}" />
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{loc:Tr Settings_Theme}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_ThemeDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                <TextBlock Text="{loc:Tr Settings_Appearance}" Style="{StaticResource SectionHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <ComboBox DockPanel.Dock="Right" Width="150" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.ThemeOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding Theme}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_Theme}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_Theme}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_ThemeDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <ComboBox DockPanel.Dock="Right" Width="150" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.LanguageOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding Language}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_Language}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_Language}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_LanguageDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <!-- Applied as it's dragged, so an open flyout previews the value. -->
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding FlyoutOpacityPercent, StringFormat={}{0}%}" Style="{StaticResource CaptionTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" Width="36" TextAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <Slider Style="{StaticResource SliderStyle}" Width="150" VerticalAlignment="Center"
+                                        Minimum="{Binding MinFlyoutOpacityPercent, Mode=OneTime}"
+                                        Maximum="{Binding MaxFlyoutOpacityPercent, Mode=OneTime}"
+                                        Value="{Binding FlyoutOpacityPercent}"
+                                        TickFrequency="1" IsSnapToTickEnabled="True" SmallChange="1" LargeChange="10"
+                                        IsMoveToPointEnabled="True"
+                                        AutomationProperties.Name="{loc:Tr Settings_Opacity}" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_Opacity}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_OpacityDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
                     </StackPanel>
-                </DockPanel>
-                <Border Style="{StaticResource CardDividerStyle}" />
-                <DockPanel Style="{StaticResource CardRowStyle}">
-                    <ComboBox DockPanel.Dock="Right" Width="150" Margin="16,0,0,0" VerticalAlignment="Center"
-                              ItemsSource="{x:Static vm:SettingsViewModel.LanguageOptions}"
-                              SelectedValuePath="Value" SelectedValue="{Binding Language}"
-                              ItemTemplate="{StaticResource ChoiceTemplate}"
-                              AutomationProperties.Name="{loc:Tr Settings_Language}" />
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{loc:Tr Settings_Language}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_LanguageDescription}" Style="{StaticResource RowDescriptionStyle}" />
-                    </StackPanel>
-                </DockPanel>
+                </Border>
             </StackPanel>
-        </Border>
-
-        <TextBlock Text="{loc:Tr Settings_SectionGeneral}" Style="{StaticResource SectionHeaderStyle}" />
-        <Border Style="{StaticResource SettingsCardStyle}">
+        </TabItem>
+        <TabItem Header="{loc:Tr Settings_SectionGeneral}" Tag="&#xE713;">
             <StackPanel>
-                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding NotificationsEnabled}"
-                          AutomationProperties.Name="{loc:Tr Settings_Notifications}">
+                <TextBlock Text="{loc:Tr Settings_SectionGeneral}" Style="{StaticResource SectionHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
                     <StackPanel>
-                        <TextBlock Text="{loc:Tr Settings_Notifications}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_NotificationsDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding NotificationsEnabled}"
+                                  AutomationProperties.Name="{loc:Tr Settings_Notifications}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_Notifications}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_NotificationsDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
+                                  AutomationProperties.Name="{loc:Tr Settings_LaunchAtLogin}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_LaunchAtLogin}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_LaunchAtLoginDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowFlyoutOnStartup}"
+                                  AutomationProperties.Name="{loc:Tr Settings_ShowOnStartup}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_ShowOnStartup}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_ShowOnStartupDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding AlwaysOnTop}"
+                                  AutomationProperties.Name="{loc:Tr Settings_AlwaysOnTop}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_AlwaysOnTop}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_AlwaysOnTopDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
                     </StackPanel>
-                </CheckBox>
-                <Border Style="{StaticResource CardDividerStyle}" />
-                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
-                          AutomationProperties.Name="{loc:Tr Settings_LaunchAtLogin}">
-                    <StackPanel>
-                        <TextBlock Text="{loc:Tr Settings_LaunchAtLogin}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_LaunchAtLoginDescription}" Style="{StaticResource RowDescriptionStyle}" />
-                    </StackPanel>
-                </CheckBox>
-                <Border Style="{StaticResource CardDividerStyle}" />
-                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowFlyoutOnStartup}"
-                          AutomationProperties.Name="{loc:Tr Settings_ShowOnStartup}">
-                    <StackPanel>
-                        <TextBlock Text="{loc:Tr Settings_ShowOnStartup}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_ShowOnStartupDescription}" Style="{StaticResource RowDescriptionStyle}" />
-                    </StackPanel>
-                </CheckBox>
-                <Border Style="{StaticResource CardDividerStyle}" />
-                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding AlwaysOnTop}"
-                          AutomationProperties.Name="{loc:Tr Settings_AlwaysOnTop}">
-                    <StackPanel>
-                        <TextBlock Text="{loc:Tr Settings_AlwaysOnTop}" Style="{StaticResource RowTitleStyle}" />
-                        <TextBlock Text="{loc:Tr Settings_AlwaysOnTopDescription}" Style="{StaticResource RowDescriptionStyle}" />
-                    </StackPanel>
-                </CheckBox>
+                </Border>
             </StackPanel>
-        </Border>
-    </StackPanel>
-    </ScrollViewer>
+        </TabItem>
+    </TabControl>
 </Window>

@@ -22,6 +22,8 @@ public partial class FlyoutWindow : Window
     public FlyoutWindow()
     {
         InitializeComponent();
+        _baseInset = RootPanel.Margin;
+        _basePanelWidth = Width - _baseInset.Left - _baseInset.Right;
         _elapsedTimer.Tick += (_, _) =>
         {
             if (DataContext is FlyoutViewModel viewModel)
@@ -45,6 +47,7 @@ public partial class FlyoutWindow : Window
         // corner, it has to be re-placed so it grows away from the taskbar instead of under it.
         SizeChanged += (_, _) =>
         {
+            // Also what keeps it in the tray corner while it's being resized there.
             if (IsVisible && SavedPosition is null)
                 Place();
         };
@@ -69,6 +72,26 @@ public partial class FlyoutWindow : Window
     /// saved spot if the monitor it was on comes back.
     /// </summary>
     public ScreenPoint? SavedPosition { get; set; }
+
+    private double _restingOpacity = 1;
+
+    /// <summary>
+    /// How opaque the flyout is once shown (1 = solid); the fade-in ends here. Applied to the
+    /// whole window, so the shadow fades with the panel instead of showing through it.
+    /// </summary>
+    public double RestingOpacity
+    {
+        get => _restingOpacity;
+        set
+        {
+            _restingOpacity = value;
+            if (!IsVisible || _hidePending)
+                return;
+            // Drop the fade-in (running or finished), which would otherwise override the local value.
+            BeginAnimation(OpacityProperty, null);
+            Opacity = value;
+        }
+    }
 
     /// <summary>Raised after the user drags the flyout somewhere new.</summary>
     public event Action<ScreenPoint>? PositionSaved;
@@ -152,12 +175,12 @@ public partial class FlyoutWindow : Window
     {
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)) { EasingFunction = ease });
+        BeginAnimation(OpacityProperty, new DoubleAnimation(0, _restingOpacity, TimeSpan.FromMilliseconds(140)) { EasingFunction = ease });
         RootTranslate.BeginAnimation(TranslateTransform.YProperty,
             new DoubleAnimation(_slideFrom, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = ease });
     }
 
-    // A finished animation keeps holding its end value (Opacity 1, offset 0), which
+    // A finished animation keeps holding its end value (resting opacity, offset 0), which
     // overrides any local value. Without clearing it, the next Show() would flash the
     // window fully visible at its old spot before the animation snaps it back to the start.
     private void ResetToAnimationStart()
@@ -184,6 +207,135 @@ public partial class FlyoutWindow : Window
 
         SavedPosition = after;
         PositionSaved?.Invoke(after);
+    }
+
+    public const double MinScale = 0.75;
+    public const double MaxScale = 2.0;
+
+    // Dragging lands exactly on 100% when it gets this close, so the original size is easy to get back to.
+    private const double ScaleSnapDistance = 0.04;
+
+    // The XAML layout at 100%: the shadow room around the panel, and the panel's width.
+    private readonly Thickness _baseInset;
+    private readonly double _basePanelWidth;
+
+    private double _scale = 1;
+
+    /// <summary>
+    /// Size of the flyout relative to its designed size (1 = 100%). Everything scales together —
+    /// text, bars, spacing — so the layout keeps its proportions; the height still follows the content.
+    /// </summary>
+    public double Scale
+    {
+        get => _scale;
+        set
+        {
+            _scale = Math.Clamp(value, MinScale, MaxScale);
+            var inset = InsetAt(_scale);
+            RootPanel.LayoutTransform = _scale == 1 ? Transform.Identity : new ScaleTransform(_scale, _scale);
+            RootPanel.Margin = ResizeGrips.Margin = inset;
+            Width = _basePanelWidth * _scale + inset.Left + inset.Right;
+            // Display mode snaps glyphs to pixels for the unscaled size and looks uneven once scaled.
+            TextOptions.SetTextFormattingMode(this, _scale == 1 ? TextFormattingMode.Display : TextFormattingMode.Ideal);
+        }
+    }
+
+    /// <summary>Raised with the new <see cref="Scale"/> after the user finishes resizing the flyout.</summary>
+    public event Action<double>? ScaleSaved;
+
+    // Shadow room grows with the panel, but never shrinks below what the shadow needs at 100%.
+    private Thickness InsetAt(double scale)
+    {
+        var factor = Math.Max(scale, 1);
+        return new Thickness(_baseInset.Left * factor, _baseInset.Top * factor, _baseInset.Right * factor, _baseInset.Bottom * factor);
+    }
+
+    // State of a grip drag. Everything is measured from where the drag started (cursor in screen
+    // pixels, not relative to the window, which moves and resizes under it), so errors don't add up.
+    private bool _resizing;
+    private int _resizeHorizontal;
+    private int _resizeVertical;
+    private System.Drawing.Point _resizeStartCursor;
+    private double _resizeStartScale;
+    private ScreenPoint _resizeStartPosition = new(0, 0);
+    private Size _resizeStartSize;
+
+    private void OnGripMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var grip = (FrameworkElement)sender;
+        var directions = ((string)grip.Tag).Split(',');
+        _resizeHorizontal = int.Parse(directions[0]);
+        _resizeVertical = int.Parse(directions[1]);
+        _resizeStartCursor = System.Windows.Forms.Cursor.Position;
+        _resizeStartScale = _scale;
+        _resizeStartPosition = WindowPositioner.GetPosition(this);
+        _resizeStartSize = new Size(ActualWidth, ActualHeight);
+        _resizing = grip.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnGripMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_resizing)
+            return;
+
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var cursor = System.Windows.Forms.Cursor.Position;
+        var startInset = InsetAt(_resizeStartScale);
+
+        // How far the dragged edge moved outward, as a change in scale. A corner follows
+        // whichever direction was dragged further, like an aspect-locked resize elsewhere.
+        var basePanelHeight = (_resizeStartSize.Height - startInset.Top - startInset.Bottom) / _resizeStartScale;
+        var byWidth = (cursor.X - _resizeStartCursor.X) / dpi.DpiScaleX * _resizeHorizontal / _basePanelWidth;
+        var byHeight = (cursor.Y - _resizeStartCursor.Y) / dpi.DpiScaleY * _resizeVertical / basePanelHeight;
+        var change = _resizeVertical == 0 || (_resizeHorizontal != 0 && Math.Abs(byWidth) > Math.Abs(byHeight)) ? byWidth : byHeight;
+
+        var scale = Math.Clamp(_resizeStartScale + change, MinScale, MaxScale);
+        if (Math.Abs(scale - 1) < ScaleSnapDistance)
+            scale = 1;
+        if (scale == _scale)
+            return;
+
+        Scale = scale;
+        UpdateLayout(); // the new height is only known after layout
+
+        // In the tray corner SizeChanged re-places it. Elsewhere, hold the edges opposite the
+        // dragged one where they were (the panel's edges, not the window's: the inset changes too).
+        if (SavedPosition is null)
+            return;
+        var inset = InsetAt(scale);
+        var x = _resizeHorizontal < 0
+            ? _resizeStartSize.Width - startInset.Right - (ActualWidth - inset.Right)
+            : startInset.Left - inset.Left;
+        var y = _resizeVertical < 0
+            ? _resizeStartSize.Height - startInset.Bottom - (ActualHeight - inset.Bottom)
+            : startInset.Top - inset.Top;
+        WindowPositioner.MoveTo(this, new ScreenPoint(
+            _resizeStartPosition.X + (int)Math.Round(x * dpi.DpiScaleX),
+            _resizeStartPosition.Y + (int)Math.Round(y * dpi.DpiScaleY)));
+    }
+
+    private void OnGripMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => ((UIElement)sender).ReleaseMouseCapture();
+
+    // Ends the drag however it ended (button released, or capture taken away).
+    private void OnGripLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (!_resizing)
+            return;
+        _resizing = false;
+
+        if (_scale != _resizeStartScale)
+            ScaleSaved?.Invoke(_scale);
+
+        // Resizing from a left/top edge moves the window, and growing can push it off screen.
+        if (SavedPosition is null)
+            return;
+        WindowPositioner.KeepOnScreen(this, RootPanel.Margin);
+        var position = WindowPositioner.GetPosition(this);
+        if (position == SavedPosition)
+            return;
+        SavedPosition = position;
+        PositionSaved?.Invoke(position);
     }
 
     private static bool IsWithinButton(DependencyObject element)

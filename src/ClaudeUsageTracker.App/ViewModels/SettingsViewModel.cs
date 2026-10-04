@@ -60,6 +60,7 @@ public partial class SettingsViewModel : ObservableObject
         NotificationsEnabled = settings.NotificationsEnabled;
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
+        FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
         LaunchAtLoginEnabled = launchAtLoginService.IsEnabled;
         Theme = settings.Theme;
         Language = settings.Language;
@@ -160,6 +161,14 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _alwaysOnTop;
 
+    // Slider range (as doubles: Slider.Minimum/Maximum don't take an int).
+    public double MinFlyoutOpacityPercent => AppSettings.MinFlyoutOpacityPercent;
+    public double MaxFlyoutOpacityPercent => AppSettings.MaxFlyoutOpacityPercent;
+
+    /// <summary>Flyout opacity in percent; the slider previews it live on an open flyout.</summary>
+    [ObservableProperty]
+    private int _flyoutOpacityPercent;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RefreshIntervalError), nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(IsRefreshIntervalEditable))]
     private bool _avoidTokenUsage;
@@ -227,6 +236,8 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnAlwaysOnTopChanged(bool value) => Apply();
 
+    partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
+
     partial void OnAvoidTokenUsageChanged(bool value) => Apply();
 
     partial void OnLaunchAtLoginEnabledChanged(bool value)
@@ -276,6 +287,7 @@ public partial class SettingsViewModel : ObservableObject
         settings.NotificationsEnabled = NotificationsEnabled;
         settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
         settings.AlwaysOnTop = AlwaysOnTop;
+        settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;
         settings.Language = Language;

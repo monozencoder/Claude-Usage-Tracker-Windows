@@ -63,7 +63,14 @@ public partial class App : System.Windows.Application
         {
             DataContext = _flyoutViewModel,
             Topmost = settings.AlwaysOnTop,
+            RestingOpacity = settings.FlyoutOpacity,
+            Scale = settings.FlyoutScale,
             SavedPosition = settings.FlyoutPosition
+        };
+        _flyoutWindow.ScaleSaved += scale =>
+        {
+            _settingsStore.Current.FlyoutScale = scale;
+            _settingsStore.Save();
         };
         _flyoutWindow.PositionSaved += position =>
         {
@@ -149,21 +156,23 @@ public partial class App : System.Windows.Application
             if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
                 _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
             _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
+            if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
+                _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
         };
         viewModel.ConnectionTested += result => _coordinator.ApplyResult(result);
         _settingsWindow = new SettingsWindow(viewModel);
-        try
-        {
-            _settingsWindow.ShowDialog();
-        }
-        finally
+        // Modeless, like Obsidian's settings: the flyout and tray menu stay usable while it's open.
+        _settingsWindow.Closed += (_, _) =>
         {
             _settingsWindow = null;
-        }
 
-        // Settings apply as they're changed; fetching with a new mode/interval waits until the
-        // window closes so stepping the interval or flipping the mode doesn't send a prompt each click.
-        if (viewModel.FetchSettingsChanged)
-            RefreshNow();
+            // Settings apply as they're changed; fetching with a new mode/interval waits until the
+            // window closes so stepping the interval or flipping the mode doesn't send a prompt each click.
+            // Skipped when the app is exiting (tray "Exit" closes this window during shutdown).
+            if (viewModel.FetchSettingsChanged && !Dispatcher.HasShutdownStarted)
+                RefreshNow();
+        };
+        _settingsWindow.Show();
+        _settingsWindow.Activate();
     }
 }

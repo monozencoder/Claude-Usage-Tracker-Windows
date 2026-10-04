@@ -7,9 +7,23 @@
             <TextBlock Text="{Binding PercentageText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        Style="{StaticResource BodyStrongTextStyle}" DockPanel.Dock="Right" />
         </DockPanel>
+        <!-- Bar colors come from the palette (Obsidian's green / orange / red), so they follow the theme live. -->
         <ProgressBar Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100" Height="6" Margin="0,6,0,4"
-                     Style="{StaticResource PillProgressBarStyle}" Background="{DynamicResource HoverOverlayBrush}"
-                     Foreground="{Binding Status, Converter={StaticResource StatusToBrush}}" />
+                     Background="{DynamicResource ProgressTrackBrush}">
+            <ProgressBar.Style>
+                <Style TargetType="ProgressBar" BasedOn="{StaticResource PillProgressBarStyle}">
+                    <Setter Property="Foreground" Value="{DynamicResource UsageSafeBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Status}" Value="Moderate">
+                            <Setter Property="Foreground" Value="{DynamicResource UsageModerateBrush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Status}" Value="Critical">
+                            <Setter Property="Foreground" Value="{DynamicResource UsageCriticalBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ProgressBar.Style>
+        </ProgressBar>
         <TextBlock Text="{Binding ResetText}" Foreground="{DynamicResource TextTertiaryBrush}" Style="{StaticResource CaptionTextStyle}" />
     </StackPanel>
 </UserControl>
