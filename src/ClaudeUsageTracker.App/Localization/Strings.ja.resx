@@ -89,6 +89,7 @@
   <data name="Settings_TaskbarBarOverFullScreen" xml:space="preserve"><value>全画面表示のアプリの上にも使用率バーを表示する</value></data>
   <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>全画面のゲームや動画がタスクバーを覆っている間も、暗い背景を付けてバーを表示します。</value></data>
   <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>0px(自動の位置)に戻す</value></data>
+  <data name="Settings_ResetTo100" xml:space="preserve"><value>100% に戻す</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>ウィンドウの拡大率</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>フライアウト全体の大きさを変えます。フライアウトの端をドラッグしても変更できます。</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>ウィンドウの不透明度</value></data>

@@ -89,6 +89,7 @@
   <data name="Settings_TaskbarBarOverFullScreen" xml:space="preserve"><value>Show the usage bars over full-screen apps</value></data>
   <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>Keeps the bars visible, on a dark backdrop, while a full-screen game or video covers the taskbar.</value></data>
   <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>Reset to 0px (the automatic place)</value></data>
+  <data name="Settings_ResetTo100" xml:space="preserve"><value>Reset to 100%</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>Window size</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>Scales the whole flyout. Dragging its edges changes the same setting.</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>

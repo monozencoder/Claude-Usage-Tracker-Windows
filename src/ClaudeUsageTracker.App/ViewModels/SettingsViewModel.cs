@@ -181,6 +181,7 @@ public partial class SettingsViewModel : ObservableObject
 
     /// <summary>Flyout opacity in percent; the slider previews it live on an open flyout.</summary>
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ResetFlyoutOpacityCommand))]
     private int _flyoutOpacityPercent;
 
     public double MinFlyoutScalePercent => FlyoutWindow.MinScale * 100;
@@ -191,6 +192,7 @@ public partial class SettingsViewModel : ObservableObject
     /// caller when the flyout is resized by dragging while this window is open.
     /// </summary>
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ResetFlyoutScaleCommand))]
     private int _flyoutScalePercent;
 
     /// <summary>A saved scale as the slider shows it (clamped: the file may have been hand-edited).</summary>
@@ -404,6 +406,16 @@ public partial class SettingsViewModel : ObservableObject
             ? Loc.Get("Settings_FinishSignIn")
             : Loc.Get("Error_CouldNotStartClaude");
     }
+
+    [RelayCommand(CanExecute = nameof(CanResetFlyoutOpacity))]
+    private void ResetFlyoutOpacity() => FlyoutOpacityPercent = 100;
+
+    private bool CanResetFlyoutOpacity() => FlyoutOpacityPercent != 100;
+
+    [RelayCommand(CanExecute = nameof(CanResetFlyoutScale))]
+    private void ResetFlyoutScale() => FlyoutScalePercent = 100;
+
+    private bool CanResetFlyoutScale() => FlyoutScalePercent != 100;
 
     [RelayCommand]
     private void IncreaseRefreshInterval() =>

@@ -209,8 +209,8 @@ public partial class FlyoutWindow : Window
         PositionSaved?.Invoke(after);
     }
 
-    public const double MinScale = 0.75;
-    public const double MaxScale = 2.0;
+    public const double MinScale = 0.5;
+    public const double MaxScale = 1.5;
 
     // Dragging lands exactly on 100% when it gets this close, so the original size is easy to get back to.
     private const double ScaleSnapDistance = 0.04;

@@ -372,8 +372,14 @@
                         </DockPanel>
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <DockPanel Style="{StaticResource CardRowStyle}">
-                            <!-- Applied as it's dragged, so an open flyout previews the value. -->
+                            <!-- Applied as it's dragged, so an open flyout previews the value. The button
+                                 puts it back to 100% in one click; disabled while already there. -->
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <Button Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center"
+                                        Command="{Binding ResetFlyoutOpacityCommand}" ToolTip="{loc:Tr Settings_ResetTo100}"
+                                        AutomationProperties.Name="{loc:Tr Settings_ResetTo100}">
+                                    <TextBlock Text="&#xE777;" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBlock Text="{Binding FlyoutOpacityPercent, StringFormat={}{0}%}" Style="{StaticResource CaptionTextStyle}"
                                            Foreground="{DynamicResource TextSecondaryBrush}" Width="36" TextAlignment="Right"
                                            VerticalAlignment="Center" Margin="0,0,10,0" />
@@ -394,6 +400,11 @@
                         <DockPanel Style="{StaticResource CardRowStyle}">
                             <!-- Same scale as dragging the flyout's edges; applied as it's dragged, like the opacity. -->
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <Button Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center"
+                                        Command="{Binding ResetFlyoutScaleCommand}" ToolTip="{loc:Tr Settings_ResetTo100}"
+                                        AutomationProperties.Name="{loc:Tr Settings_ResetTo100}">
+                                    <TextBlock Text="&#xE777;" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBlock Text="{Binding FlyoutScalePercent, StringFormat={}{0}%}" Style="{StaticResource CaptionTextStyle}"
                                            Foreground="{DynamicResource TextSecondaryBrush}" Width="36" TextAlignment="Right"
                                            VerticalAlignment="Center" Margin="0,0,10,0" />
