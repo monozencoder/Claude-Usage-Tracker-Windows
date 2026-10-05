@@ -402,8 +402,8 @@
     </Style>
 
     <!-- ===== Slider =====
-         Horizontal only. A 4px pill track, accent-filled up to a 16px white knob (the toggle's
-         knob); clicking the track jumps there (set IsMoveToPointEnabled on the Slider). -->
+         Horizontal only. A 4px pill track, accent-filled up to a 16px white
+         knob (the toggle's knob); clicking the track jumps there (set IsMoveToPointEnabled on the Slider). -->
     <Style x:Key="SliderTrackButtonStyle" TargetType="RepeatButton">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />

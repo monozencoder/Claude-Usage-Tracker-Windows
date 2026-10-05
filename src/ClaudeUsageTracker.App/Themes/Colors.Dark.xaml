@@ -1,6 +1,6 @@
 <!--
-    Dark palette, modeled on Obsidian's default dark theme (base-00 … base-100, accent
-    hsl(258, 88%, 66%)). Exactly one Colors.*.xaml is merged into Application.Resources at a
+    Dark palette, modeled on Obsidian's default dark theme (base-00 … base-100), with
+    Claude's orange as the accent. Exactly one Colors.*.xaml is merged into Application.Resources at a
     time; ThemeManager swaps it at runtime, so every palette brush must be referenced via
     DynamicResource.
 -->
@@ -20,12 +20,13 @@
     <SolidColorBrush x:Key="BorderBrush" Color="#FF333333" />
     <SolidColorBrush x:Key="SubtleBorderBrush" Color="#FF3F3F3F" />
 
-    <!-- Accent: Obsidian dark uses color-accent for interactive-accent and -1 for its hover. -->
-    <SolidColorBrush x:Key="AccentBrush" Color="#FF8A5CF5" />
-    <SolidColorBrush x:Key="AccentHoverBrush" Color="#FFA68AF9" />
-    <SolidColorBrush x:Key="AccentPressedBrush" Color="#FF7A48F0" />
+    <!-- Accent: Claude's brand orange in place of Obsidian's purple, with a lighter hover and a
+         darker pressed shade. -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#FFD97757" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#FFE28D70" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#FFC6613F" />
     <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="AccentTextBrush" Color="#FFA88BFA" />
+    <SolidColorBrush x:Key="AccentTextBrush" Color="#FFE8956F" />
 
     <!-- Text: text-normal / text-muted / text-faint (slightly lifted for readability). -->
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFDADADA" />
@@ -37,8 +38,7 @@
     <SolidColorBrush x:Key="ControlHoverBrush" Color="#FF3F3F3F" />
     <SolidColorBrush x:Key="ControlBorderBrush" Color="#17FFFFFF" />
     <SolidColorBrush x:Key="ControlBorderHoverBrush" Color="#29FFFFFF" />
-    <SolidColorBrush x:Key="ToggleOffBrush" Color="#FF3F3F3F" />
-    <SolidColorBrush x:Key="FocusRingBrush" Color="#FF555555" />
+    <SolidColorBrush x:Key="ToggleOffBrush" Color="#FF3F3F3F" />    <SolidColorBrush x:Key="FocusRingBrush" Color="#FF555555" />
     <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#E6000000" />
     <SolidColorBrush x:Key="HoverOverlayBrush" Color="#14FFFFFF" />
     <SolidColorBrush x:Key="PressedOverlayBrush" Color="#22FFFFFF" />
