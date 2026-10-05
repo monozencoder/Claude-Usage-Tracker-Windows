@@ -123,7 +123,12 @@
   <data name="Usage_ShortHoursMinutes" xml:space="preserve"><value>{0}h {1}m</value></data>
   <data name="Usage_ShortMinutes" xml:space="preserve"><value>{0}m</value></data>
   <data name="Settings_Thresholds" xml:space="preserve"><value>通知する使用率</value></data>
-  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>通知する使用率を、カンマ区切りで指定します({0} 個まで)。例: 75, 90, 95</value></data>
+  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>使用率がこの値に達したときに通知します。{0} 個まで追加できます。</value></data>
+  <data name="Settings_ThresholdsReset" xml:space="preserve"><value>既定 ({0}) に戻す</value></data>
+  <data name="Settings_ListSeparator" xml:space="preserve"><value>、</value></data>
+  <data name="Settings_ThresholdAdd" xml:space="preserve"><value>追加</value></data>
+  <data name="Settings_ThresholdRemove" xml:space="preserve"><value>削除</value></data>
+  <data name="Settings_ThresholdNew" xml:space="preserve"><value>追加する使用率 (1〜100)</value></data>
   <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>タスクバーに表示する項目</value></data>
   <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>タスクバーの使用率バーに、どの使用率を表示するかを選びます。</value></data>
   <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>セッションと週間</value></data>

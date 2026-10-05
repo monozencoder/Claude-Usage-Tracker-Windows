@@ -123,7 +123,12 @@
   <data name="Usage_ShortHoursMinutes" xml:space="preserve"><value>{0}h {1}m</value></data>
   <data name="Usage_ShortMinutes" xml:space="preserve"><value>{0}m</value></data>
   <data name="Settings_Thresholds" xml:space="preserve"><value>Notify at</value></data>
-  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>Usage percentages to notify at, separated by commas (up to {0}), e.g. 75, 90, 95.</value></data>
+  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>Notifies you when usage reaches these percentages. You can add up to {0}.</value></data>
+  <data name="Settings_ThresholdsReset" xml:space="preserve"><value>Reset to the defaults ({0})</value></data>
+  <data name="Settings_ListSeparator" xml:space="preserve"><value>, </value></data>
+  <data name="Settings_ThresholdAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="Settings_ThresholdRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Settings_ThresholdNew" xml:space="preserve"><value>Percentage to add (1–100)</value></data>
   <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>Rows on the taskbar</value></data>
   <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>Which usage the taskbar bars show.</value></data>
   <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>Session and weekly</value></data>

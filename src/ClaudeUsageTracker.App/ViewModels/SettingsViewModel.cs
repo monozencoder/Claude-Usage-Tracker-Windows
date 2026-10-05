@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Services;
@@ -73,7 +74,8 @@ public partial class SettingsViewModel : ObservableObject
         TaskbarBarRows = settings.TaskbarBarRows;
         TaskbarBarLabels = settings.TaskbarBarLabels;
         TaskbarBarShowResetTime = settings.TaskbarBarShowResetTime;
-        _notificationThresholdsText = FormatThresholds(settings.EffectiveNotificationThresholds);
+        foreach (var threshold in settings.EffectiveNotificationThresholds)
+            NotificationThresholds.Add(threshold);
         TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
         FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
         FlyoutScalePercent = ToScalePercent(settings.FlyoutScale);
@@ -237,50 +239,65 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _taskbarBarShowResetTime;
 
-    private string _notificationThresholdsText;
+    /// <summary>The usage percentages a notification is sent at, ascending; each is a chip that can be removed.</summary>
+    public ObservableCollection<int> NotificationThresholds { get; } = [];
 
-    /// <summary>
-    /// The notification thresholds as typed: percentages separated by commas or spaces, e.g.
-    /// "75, 90, 95". Committed when focus leaves the box; text that isn't a usable list (nothing
-    /// in 1–100, or too many) is put back to what was saved.
-    /// </summary>
-    public string NotificationThresholdsText
-    {
-        get => _notificationThresholdsText;
-        set
-        {
-            var settings = _settingsStore.Current;
-            if (ParseThresholds(value) is { } thresholds && !thresholds.SequenceEqual(settings.EffectiveNotificationThresholds))
-            {
-                settings.NotificationThresholds = thresholds;
-                Apply();
-            }
+    /// <summary>What's typed in the box that adds a threshold.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddThresholdCommand))]
+    private string _newThresholdText = string.Empty;
 
-            // Always re-published: the box shows the saved list in its tidy form, whatever was typed.
-            _notificationThresholdsText = FormatThresholds(settings.EffectiveNotificationThresholds);
-            OnPropertyChanged();
-        }
-    }
+    /// <summary>Whether there's room for another threshold; the box that adds one is hidden when there isn't.</summary>
+    public bool CanAddMoreThresholds => NotificationThresholds.Count < AppSettings.MaxNotificationThresholds;
 
     public string NotificationThresholdsHint => Loc.Format("Settings_ThresholdsDescription", AppSettings.MaxNotificationThresholds);
 
-    private static string FormatThresholds(IEnumerable<int> thresholds) => string.Join(", ", thresholds);
-
-    // Null when the text has no usable list in it. Full-width digits and commas (an IME left on) are accepted.
-    private static List<int>? ParseThresholds(string text)
+    [RelayCommand(CanExecute = nameof(CanAddThreshold))]
+    private void AddThreshold()
     {
-        var parts = text.Normalize(System.Text.NormalizationForm.FormKC)
-            .Split([',', '、', ' ', '%', ';', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var thresholds = new List<int>();
-        foreach (var part in parts)
-        {
-            if (!int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out var threshold) || threshold is < 1 or > 100)
-                return null;
-            thresholds.Add(threshold);
-        }
+        var added = ParsedNewThreshold!.Value;
+        NewThresholdText = string.Empty;
+        SetThresholds(NotificationThresholds.Append(added));
+    }
 
-        thresholds = [.. thresholds.Distinct().Order()];
-        return thresholds.Count is 0 or > AppSettings.MaxNotificationThresholds ? null : thresholds;
+    private bool CanAddThreshold() =>
+        CanAddMoreThresholds && ParsedNewThreshold is { } threshold && !NotificationThresholds.Contains(threshold);
+
+    // At least one stays: with none there would be nothing to notify about but the resets.
+    [RelayCommand(CanExecute = nameof(CanRemoveThreshold))]
+    private void RemoveThreshold(int threshold) => SetThresholds(NotificationThresholds.Where(existing => existing != threshold));
+
+    private bool CanRemoveThreshold(int threshold) => NotificationThresholds.Count > 1;
+
+    [RelayCommand(CanExecute = nameof(CanResetThresholds))]
+    private void ResetThresholds() => SetThresholds(AppSettings.DefaultNotificationThresholds);
+
+    private bool CanResetThresholds() => !NotificationThresholds.SequenceEqual(AppSettings.DefaultNotificationThresholds);
+
+    /// <summary>Tooltip of the reset button, naming the defaults, e.g. "Reset to 75%, 90%, 95%".</summary>
+    public string ResetThresholdsToolTip => Loc.Format("Settings_ThresholdsReset",
+        string.Join(Loc.Get("Settings_ListSeparator"), AppSettings.DefaultNotificationThresholds.Select(threshold => $"{threshold}%")));
+
+    // The typed percentage if it's a whole number within 1-100. A full-width number (an IME left on) is accepted.
+    private int? ParsedNewThreshold =>
+        int.TryParse(NewThresholdText.Normalize(System.Text.NormalizationForm.FormKC).Trim().TrimEnd('%'),
+            NumberStyles.None, CultureInfo.InvariantCulture, out var threshold) && threshold is >= 1 and <= 100
+            ? threshold
+            : null;
+
+    private void SetThresholds(IEnumerable<int> thresholds)
+    {
+        List<int> sorted = [.. thresholds.Order()];
+        NotificationThresholds.Clear();
+        foreach (var threshold in sorted)
+            NotificationThresholds.Add(threshold);
+
+        _settingsStore.Current.NotificationThresholds = sorted;
+        Apply();
+        OnPropertyChanged(nameof(CanAddMoreThresholds));
+        AddThresholdCommand.NotifyCanExecuteChanged();
+        RemoveThresholdCommand.NotifyCanExecuteChanged();
+        ResetThresholdsCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>One row per connected monitor: whether its taskbar gets the bars, and where on it.</summary>
@@ -430,6 +447,7 @@ public partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(RefreshIntervalToolTip));
         OnPropertyChanged(nameof(ProbeModelText));
         OnPropertyChanged(nameof(NotificationThresholdsHint));
+        OnPropertyChanged(nameof(ResetThresholdsToolTip));
         foreach (var display in TaskbarBarDisplays)
             display.RefreshLanguage();
         StatusMessage = null;

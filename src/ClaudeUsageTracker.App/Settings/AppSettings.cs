@@ -45,7 +45,10 @@ public sealed class AppSettings
     public bool NotificationsEnabled { get; set; } = true;
 
     /// <summary>Session usage percentages a notification is sent at. Use <see cref="EffectiveNotificationThresholds"/>.</summary>
-    public List<int> NotificationThresholds { get; set; } = [75, 90, 95];
+    public List<int> NotificationThresholds { get; set; } = [.. DefaultNotificationThresholds];
+
+    /// <summary>What <see cref="NotificationThresholds"/> starts as, and what resetting it restores.</summary>
+    public static IReadOnlyList<int> DefaultNotificationThresholds { get; } = [75, 90, 95];
 
     /// <summary>
     /// Also notifies for the weekly window: at the same <see cref="NotificationThresholds"/>, and
