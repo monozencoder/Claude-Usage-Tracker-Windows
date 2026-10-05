@@ -46,8 +46,7 @@
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
                             <ColumnDefinition Width="56" />
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Value" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="ResetLead" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="ResetTail" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Reset" />
                         </Grid.ColumnDefinitions>
                         <!-- The row's short name, if the user wants names (the tooltip always has it in full). -->
                         <TextBlock Text="{Binding ShortLabel}" FontSize="11" Opacity="0.8" VerticalAlignment="Center" Margin="0,0,6,0"
@@ -58,14 +57,11 @@
                                      Background="{DynamicResource TaskbarBarTrackBrush}"
                                      Style="{StaticResource UsageProgressBarStyle}" />
                         <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
-                                   VerticalAlignment="Center" Foreground="{DynamicResource TaskbarBarTextBrush}" />
-                        <!-- Time left until this row resets, in two columns ("4d" "10h" over "4h" "2m")
-                             each starting at the same place in every row. -->
-                        <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11" Opacity="0.8"
+                                   VerticalAlignment="Center" Foreground="{DynamicResource TaskbarBarTextBrush}"
+                                   Visibility="{Binding DataContext.CompactShowPercentage, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
+                        <!-- When this row resets. Which edge the rows line up on depends on what it is (see ShortResetAlignment). -->
+                        <TextBlock Grid.Column="3" Text="{Binding ShortResetText}" TextAlignment="{Binding ShortResetAlignment}" FontSize="11" Opacity="0.8"
                                    VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TaskbarBarTextBrush}"
-                                   Visibility="{Binding DataContext.CompactShowResetTime, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
-                        <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11" Opacity="0.8"
-                                   VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TaskbarBarTextBrush}"
                                    Visibility="{Binding DataContext.CompactShowResetTime, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>
                 </DataTemplate>

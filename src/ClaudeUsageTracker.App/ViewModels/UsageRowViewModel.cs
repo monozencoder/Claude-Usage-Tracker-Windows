@@ -23,10 +23,12 @@ public sealed class UsageRowViewModel
     /// <summary>Time left until the reset, short enough for the taskbar: "45m", "2h 15m", or "3d 4h" from a day up.</summary>
     public required string ShortResetText { get; init; }
 
-    // ShortResetText in its two parts ("4d" + "10h", "4h" + "2m", "" + "45m", "Thu" + "18:30"), so that rows of
-    // different lengths can be lined up part by part instead of only at one edge.
-    public string ShortResetLead => ShortResetText.LastIndexOf(' ') is var space and >= 0 ? ShortResetText[..space] : string.Empty;
-    public string ShortResetTail => ShortResetText[(ShortResetText.LastIndexOf(' ') + 1)..];
+    /// <summary>
+    /// Which edge the rows' <see cref="ShortResetText"/>s line up on, one under the other. Times
+    /// left read from their left ("57m" over "4d 7h": the larger unit first); times of day from
+    /// their right ("2:30" over "Sat 8:43": the times under each other, the weekday out in front).
+    /// </summary>
+    public required System.Windows.TextAlignment ShortResetAlignment { get; init; }
 
     public required UsageStatusLevel Status { get; init; }
 
@@ -45,6 +47,7 @@ public sealed class UsageRowViewModel
                 : clockTime ? FormatResetClock(reset, now) : FormatReset(reset - now),
             ShortResetText = resetTime is not { } shortReset ? string.Empty
                 : clockTime ? FormatShortResetClock(shortReset, now) : FormatShortReset(shortReset - now),
+            ShortResetAlignment = clockTime ? System.Windows.TextAlignment.Right : System.Windows.TextAlignment.Left,
             Status = status
         };
     }
