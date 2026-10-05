@@ -8,8 +8,8 @@ namespace ClaudeUsageTracker.App.Views;
 
 /// <summary>
 /// The pixel-art creature that sits beside the taskbar bars and acts out how much usage is left:
-/// hopping after a reset, blinking while there's room, sweating as it runs short, flailing near
-/// the limit, slumped once it's used up.
+/// hopping among sparkles after a reset, blinking while there's room, sweating as it runs short, flailing near
+/// the limit, asleep once it's used up.
 /// <para>
 /// Drawn in code, block by block, on a grid of <see cref="Columns"/> x <see cref="Rows"/> blocks
 /// of <see cref="Block"/> units each. The body starts <see cref="BodyTop"/> rows down, leaving
@@ -41,6 +41,8 @@ public sealed class MascotView : FrameworkElement
     private static readonly Brush Body = Frozen(Color.FromRgb(217, 119, 87));
     private static readonly Brush Dark = Frozen(Color.FromRgb(30, 20, 18));
     private static readonly Brush Sweat = Frozen(Color.FromRgb(110, 190, 255));
+    private static readonly Brush Sparkle = Frozen(Color.FromRgb(255, 200, 60));
+    private static readonly Brush Sleep = Frozen(Color.FromRgb(150, 150, 160));
 
     public static readonly DependencyProperty MoodProperty = DependencyProperty.Register(
         nameof(Mood), typeof(MascotMood), typeof(MascotView),
@@ -148,6 +150,10 @@ public sealed class MascotView : FrameworkElement
         void Draw(Brush brush, int x, int y, int width, int height) =>
             drawingContext.DrawRectangle(brush, null, new Rect((x + dx) * Block, (y + dy) * Block, width * Block, height * Block));
 
+        // For what's around it rather than part of it, which stays put while it hops.
+        void DrawStill(Brush brush, int x, int y, int width, int height) =>
+            drawingContext.DrawRectangle(brush, null, new Rect((x + 1) * Block, y * Block, width * Block, height * Block));
+
         Draw(Body, 3, BodyTop, 18, 12);
         foreach (var x in (int[])[3, 8, 14, 19])
             Draw(Body, x, BodyTop + 12, 2, 4 - Math.Max(dy, 0)); // legs: a pair under each side; they give when it sags
@@ -167,16 +173,21 @@ public sealed class MascotView : FrameworkElement
         var eyes = BodyTop + 2;
         switch (mood)
         {
-            case MascotMood.Happy: // eyes closed in a smile, and a smile
-                foreach (var x in (int[])[5, 15])
+            case MascotMood.Happy: // its own plain face — the hop says it — with sparkles twinkling either side
+                Draw(Dark, 6, eyes, 2, 2);
+                Draw(Dark, 16, eyes, 2, 2);
+                if (f % 4 < 2)
                 {
-                    Draw(Dark, x, eyes + 1, 1, 1);
-                    Draw(Dark, x + 1, eyes, 2, 1);
-                    Draw(Dark, x + 3, eyes + 1, 1, 1);
+                    DrawStill(Sparkle, 0, 2, 1, 3);
+                    DrawStill(Sparkle, -1, 3, 3, 1);
+                    DrawStill(Sparkle, 23, 0, 1, 3);
+                    DrawStill(Sparkle, 22, 1, 3, 1);
                 }
-                Draw(Dark, 10, eyes + 4, 1, 1);
-                Draw(Dark, 11, eyes + 5, 2, 1);
-                Draw(Dark, 13, eyes + 4, 1, 1);
+                else
+                {
+                    DrawStill(Sparkle, 0, 0, 1, 1);
+                    DrawStill(Sparkle, 22, 2, 1, 1);
+                }
                 break;
 
             case MascotMood.Worried: // eyes darting under knitted brows, a bead of sweat running down
@@ -213,16 +224,23 @@ public sealed class MascotView : FrameworkElement
                 }
                 break;
 
-            case MascotMood.Tired: // crosses for eyes, a flat mouth
-                foreach (var x in (int[])[5, 15])
+            case MascotMood.Tired: // asleep: eyes shut, and a z rising off it — small, then large, then gone
+                Draw(Dark, 6, eyes + 1, 2, 1);
+                Draw(Dark, 16, eyes + 1, 2, 1);
+                switch (f / 4)
                 {
-                    for (var i = 0; i < 3; i++)
-                    {
-                        Draw(Dark, x + i, eyes + i, 1, 1);
-                        Draw(Dark, x + 2 - i, eyes + i, 1, 1);
-                    }
+                    case 0:
+                        DrawStill(Sleep, 16, 1, 3, 1);
+                        DrawStill(Sleep, 17, 2, 1, 1);
+                        DrawStill(Sleep, 16, 3, 3, 1);
+                        break;
+                    case 1 or 2:
+                        DrawStill(Sleep, 19, 0, 4, 1);
+                        DrawStill(Sleep, 21, 1, 1, 1);
+                        DrawStill(Sleep, 20, 2, 1, 1);
+                        DrawStill(Sleep, 19, 3, 4, 1);
+                        break;
                 }
-                Draw(Dark, 10, eyes + 6, 4, 1);
                 break;
 
             default: // calm: square eyes, shut for the one frame of a blink, glancing left then right
