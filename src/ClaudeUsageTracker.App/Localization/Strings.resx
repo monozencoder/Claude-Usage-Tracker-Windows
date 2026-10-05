@@ -42,13 +42,13 @@
   <data name="Tray_Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Tray_ResetPosition" xml:space="preserve"><value>Reset position</value></data>
   <data name="Tray_FlyoutCompact" xml:space="preserve"><value>Compact window</value></data>
-  <data name="Settings_FlyoutCompact" xml:space="preserve"><value>Compact window</value></data>
+  <data name="Settings_FlyoutCompact" xml:space="preserve"><value>Compact</value></data>
   <data name="Settings_FlyoutCompactDescription" xml:space="preserve"><value>Shrinks the flyout to about the size of the taskbar bars: one line per row. Double-clicking the flyout switches too.</value></data>
   <data name="Tray_FlyoutClickThrough" xml:space="preserve"><value>Click through the window</value></data>
   <data name="Tray_TaskbarBarClickThrough" xml:space="preserve"><value>Click through the taskbar bars</value></data>
-  <data name="Settings_FlyoutClickThrough" xml:space="preserve"><value>Click through the window</value></data>
+  <data name="Settings_FlyoutClickThrough" xml:space="preserve"><value>Click-through</value></data>
   <data name="Settings_FlyoutClickThroughDescription" xml:space="preserve"><value>Passes mouse input on the flyout to the window behind it. Hold Ctrl to use the flyout itself.</value></data>
-  <data name="Settings_TaskbarBarClickThrough" xml:space="preserve"><value>Click through the taskbar bars</value></data>
+  <data name="Settings_TaskbarBarClickThrough" xml:space="preserve"><value>Click-through</value></data>
   <data name="Settings_TaskbarBarClickThroughDescription" xml:space="preserve"><value>Passes mouse input on the bars to the taskbar or full-screen app under them. Hold Ctrl to click or drag them.</value></data>
   <data name="Usage_ResetsAtTime" xml:space="preserve"><value>Resets at {0:t}</value></data>
   <data name="Usage_ResetsAtDayTime" xml:space="preserve"><value>Resets {0:ddd} {0:M/d} at {0:t}</value></data>
@@ -57,7 +57,7 @@
   <data name="Toast_WeeklyResetTitle" xml:space="preserve"><value>Claude weekly reset</value></data>
   <data name="Toast_WeeklyResetBody" xml:space="preserve"><value>Your 7-day weekly window has reset.</value></data>
   <data name="Toast_WeeklyAlertBody" xml:space="preserve"><value>Weekly usage has reached {0}%.</value></data>
-  <data name="Settings_WeeklyNotifications" xml:space="preserve"><value>Notify for the weekly window too</value></data>
+  <data name="Settings_WeeklyNotifications" xml:space="preserve"><value>Weekly notifications</value></data>
   <data name="Settings_WeeklyNotificationsDescription" xml:space="preserve"><value>Also notifies you when weekly usage reaches the same percentages, and when the weekly window resets.</value></data>
   <data name="Settings_ResetTime" xml:space="preserve"><value>Reset display</value></data>
   <data name="Settings_ResetTimeDescription" xml:space="preserve"><value>Show a reset as the time left until it, or as the time of day it happens.</value></data>
@@ -102,21 +102,21 @@
   <data name="Settings_ThemeDark" xml:space="preserve"><value>Dark</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings_LanguageSystem" xml:space="preserve"><value>System</value></data>
-  <data name="Settings_Notifications" xml:space="preserve"><value>Enable threshold notifications</value></data>
+  <data name="Settings_Notifications" xml:space="preserve"><value>Usage notifications</value></data>
   <data name="Settings_LaunchAtLogin" xml:space="preserve"><value>Launch at Windows login</value></data>
-  <data name="Settings_ShowOnStartup" xml:space="preserve"><value>Show window on startup</value></data>
-  <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Keep window on top of other windows</value></data>
-  <data name="Settings_TaskbarBar" xml:space="preserve"><value>Show usage bars on the taskbar</value></data>
+  <data name="Settings_ShowOnStartup" xml:space="preserve"><value>Show on startup</value></data>
+  <data name="Settings_AlwaysOnTop" xml:space="preserve"><value>Always on top</value></data>
+  <data name="Settings_TaskbarBar" xml:space="preserve"><value>Show bars on the taskbar</value></data>
   <data name="Settings_TaskbarBarDescription" xml:space="preserve"><value>Keeps the usage bars on the taskbar, left of the notification area. Click them to open the flyout; drag them sideways to move them.</value></data>
-  <data name="Settings_TaskbarBarDisplay" xml:space="preserve"><value>Taskbar bars on display {0}</value></data>
-  <data name="Settings_TaskbarBarDisplayMain" xml:space="preserve"><value>Taskbar bars on display {0} (main)</value></data>
+  <data name="Settings_TaskbarBarDisplay" xml:space="preserve"><value>Display {0}</value></data>
+  <data name="Settings_TaskbarBarDisplayMain" xml:space="preserve"><value>Display {0} (main)</value></data>
   <data name="Settings_TaskbarBarDisplayDescription" xml:space="preserve"><value>{0} × {1}, {2}. The slider shifts the bars, like dragging them on the taskbar.</value></data>
   <data name="Settings_TaskbarBarOffsetToolTip" xml:space="preserve"><value>Shifts the bars left (negative) or right (positive) of their automatic place</value></data>
   <data name="Settings_DisplayPositionLeft" xml:space="preserve"><value>leftmost</value></data>
   <data name="Settings_DisplayPositionRight" xml:space="preserve"><value>rightmost</value></data>
   <data name="Settings_DisplayPositionMiddle" xml:space="preserve"><value>no. {0} from the left</value></data>
   <data name="Settings_DisplayPositionOnly" xml:space="preserve"><value>the only display</value></data>
-  <data name="Settings_TaskbarBarOverFullScreen" xml:space="preserve"><value>Show the usage bars over full-screen apps</value></data>
+  <data name="Settings_TaskbarBarOverFullScreen" xml:space="preserve"><value>Show over full-screen apps</value></data>
   <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>Keeps the bars visible, on a dark backdrop, while a full-screen game or video covers the taskbar.</value></data>
   <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>Reset to 0px (the automatic place)</value></data>
   <data name="Settings_ResetTo100" xml:space="preserve"><value>Reset to 100%</value></data>
@@ -136,24 +136,28 @@
   <data name="Settings_VisibleRowsSession" xml:space="preserve"><value>Session only</value></data>
   <data name="Settings_VisibleRowsWeekly" xml:space="preserve"><value>Weekly only</value></data>
   <data name="Settings_SectionCompact" xml:space="preserve"><value>Compact window and taskbar bars</value></data>
+  <data name="Settings_SectionWindow" xml:space="preserve"><value>Window</value></data>
+  <data name="Settings_SectionWindowBehavior" xml:space="preserve"><value>Window behavior</value></data>
+  <data name="Settings_SectionTaskbarBar" xml:space="preserve"><value>Taskbar bars</value></data>
+  <data name="Settings_SectionNotifications" xml:space="preserve"><value>Notifications</value></data>
   <data name="Settings_CompactLabels" xml:space="preserve"><value>Names</value></data>
   <data name="Settings_CompactLabelsDescription" xml:space="preserve"><value>Shows “5h” and “7d” left of the bars. Off makes them narrower; pointing at them still tells the rows apart.</value></data>
   <data name="Settings_CompactPercentage" xml:space="preserve"><value>Percentages</value></data>
   <data name="Settings_CompactPercentageDescription" xml:space="preserve"><value>Shows the number, like “80%”, right of each bar. Off leaves the bar's length and color to say it.</value></data>
   <data name="Settings_CompactResetTime" xml:space="preserve"><value>Resets</value></data>
   <data name="Settings_CompactResetTimeDescription" xml:space="preserve"><value>Shows the time until each reset (or its time of day) right of its percentage, e.g. 2h 15m or 3d 4h.</value></data>
-  <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>Show a creature on the taskbar bars</value></data>
+  <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>Creature</value></data>
   <data name="Settings_TaskbarBarMascotDescription" xml:space="preserve"><value>Shows a small creature left of the bars whose face changes with the usage. It reacts to whichever of the session and the week is fuller.</value></data>
-  <data name="Settings_FlyoutMascot" xml:space="preserve"><value>Show a creature in the window</value></data>
+  <data name="Settings_FlyoutMascot" xml:space="preserve"><value>Creature</value></data>
   <data name="Settings_FlyoutMascotDescription" xml:space="preserve"><value>Shows a small creature in the bottom-left corner of the flyout whose face changes with the usage; left of the rows when the flyout is compact.</value></data>
   <data name="Settings_MascotAnimation" xml:space="preserve"><value>Creature animation</value></data>
   <data name="Settings_MascotAnimationDescription" xml:space="preserve"><value>Subtle moves a little when its face changes and once a minute. Lively keeps moving all the time.</value></data>
   <data name="Settings_MascotAnimationOff" xml:space="preserve"><value>Off</value></data>
   <data name="Settings_MascotAnimationSubtle" xml:space="preserve"><value>Subtle</value></data>
   <data name="Settings_MascotAnimationLively" xml:space="preserve"><value>Lively</value></data>
-  <data name="Settings_Scale" xml:space="preserve"><value>Window size</value></data>
+  <data name="Settings_Scale" xml:space="preserve"><value>Size</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>Scales the whole flyout. Dragging its edges changes the same setting.</value></data>
-  <data name="Settings_Opacity" xml:space="preserve"><value>Window opacity</value></data>
+  <data name="Settings_Opacity" xml:space="preserve"><value>Opacity</value></data>
   <data name="Settings_OpacityDescription" xml:space="preserve"><value>Lower values let what's behind the flyout show through.</value></data>
   <data name="Settings_IntervalEnter" xml:space="preserve"><value>Enter {0}–{1} seconds</value></data>
   <data name="Settings_IntervalMin" xml:space="preserve"><value>Minimum is {0} seconds</value></data>

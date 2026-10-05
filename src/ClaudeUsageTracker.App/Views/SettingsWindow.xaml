@@ -136,6 +136,12 @@
             <Setter Property="FontSize" Value="16" />
             <Setter Property="Margin" Value="4,0,0,12" />
         </Style>
+        <!-- Heading of a further group on the same page. It says what the group's rows are about,
+             so their titles don't each have to. -->
+        <Style x:Key="GroupHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextStyle}">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Margin" Value="4,22,0,8" />
+        </Style>
         <!-- Common padding of a card row. -->
         <Style x:Key="CardRowStyle" TargetType="FrameworkElement">
             <Setter Property="Margin" Value="16,14" />
@@ -405,6 +411,15 @@
                                       ItemsSource="{x:Static vm:SettingsViewModel.TrayIconStyleOptions}" SelectedValue="{Binding TrayIconStyle}" />
                         </views:SettingRow>
                         <Border Style="{StaticResource CardDividerStyle}" />
+                        <views:SettingRow Title="{loc:Tr Settings_MascotAnimation}" Description="{loc:Tr Settings_MascotAnimationDescription}" IsEnabled="{Binding CanAnimateMascot}">
+                            <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.MascotAnimationOptions}" SelectedValue="{Binding MascotAnimation}" />
+                        </views:SettingRow>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{loc:Tr Settings_SectionWindow}" Style="{StaticResource GroupHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
                         <views:SettingRow Title="{loc:Tr Settings_Opacity}" Description="{loc:Tr Settings_OpacityDescription}">
                             <!-- Applied as it's dragged, so an open flyout previews the value. The button
                                  puts it back to 100% in one click; disabled while already there. -->
@@ -453,16 +468,10 @@
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutShowMascot}"
                                   views:SettingRow.Title="{loc:Tr Settings_FlyoutMascot}" views:SettingRow.Description="{loc:Tr Settings_FlyoutMascotDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <views:SettingRow Title="{loc:Tr Settings_MascotAnimation}" Description="{loc:Tr Settings_MascotAnimationDescription}" IsEnabled="{Binding CanAnimateMascot}">
-                            <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
-                                      ItemsSource="{x:Static vm:SettingsViewModel.MascotAnimationOptions}" SelectedValue="{Binding MascotAnimation}" />
-                        </views:SettingRow>
                     </StackPanel>
                 </Border>
-                <!-- What each one-line row is made of, in the two places that have them; the heading
-                     says where, so the rows only name the part. -->
-                <TextBlock Text="{loc:Tr Settings_SectionCompact}" Style="{StaticResource SectionHeaderStyle}" Margin="4,24,0,12" />
+                <!-- What each one-line row is made of, in the two places that have them. -->
+                <TextBlock Text="{loc:Tr Settings_SectionCompact}" Style="{StaticResource GroupHeaderStyle}" />
                 <Border Style="{StaticResource SettingsCardStyle}">
                     <StackPanel>
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowLabels}"
@@ -480,6 +489,11 @@
         <TabItem Header="{loc:Tr Settings_SectionGeneral}" Tag="&#xE713;">
             <StackPanel>
                 <TextBlock Text="{loc:Tr Settings_SectionGeneral}" Style="{StaticResource SectionHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
+                              views:SettingRow.Title="{loc:Tr Settings_LaunchAtLogin}" views:SettingRow.Description="{loc:Tr Settings_LaunchAtLoginDescription}" />
+                </Border>
+                <TextBlock Text="{loc:Tr Settings_SectionNotifications}" Style="{StaticResource GroupHeaderStyle}" />
                 <Border Style="{StaticResource SettingsCardStyle}">
                     <StackPanel>
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding NotificationsEnabled}"
@@ -565,10 +579,11 @@
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding WeeklyNotificationsEnabled}" IsEnabled="{Binding NotificationsEnabled}"
                                   views:SettingRow.Title="{loc:Tr Settings_WeeklyNotifications}" views:SettingRow.Description="{loc:Tr Settings_WeeklyNotificationsDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
-                                  views:SettingRow.Title="{loc:Tr Settings_LaunchAtLogin}" views:SettingRow.Description="{loc:Tr Settings_LaunchAtLoginDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{loc:Tr Settings_SectionWindowBehavior}" Style="{StaticResource GroupHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowFlyoutOnStartup}"
                                   views:SettingRow.Title="{loc:Tr Settings_ShowOnStartup}" views:SettingRow.Description="{loc:Tr Settings_ShowOnStartupDescription}" />
                         <Border Style="{StaticResource CardDividerStyle}" />
@@ -577,7 +592,11 @@
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutClickThrough}"
                                   views:SettingRow.Title="{loc:Tr Settings_FlyoutClickThrough}" views:SettingRow.Description="{loc:Tr Settings_FlyoutClickThroughDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{loc:Tr Settings_SectionTaskbarBar}" Style="{StaticResource GroupHeaderStyle}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowTaskbarBar}"
                                   views:SettingRow.Title="{loc:Tr Settings_TaskbarBar}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarDescription}" />
                         <Border Style="{StaticResource CardDividerStyle}" />
