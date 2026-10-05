@@ -8,6 +8,7 @@
                 <!-- Must stay first: ThemeManager replaces MergedDictionaries[0] to switch palettes. -->
                 <ResourceDictionary Source="Themes/Colors.Dark.xaml" />
                 <ResourceDictionary Source="Themes/Styles.xaml" />
+                <ResourceDictionary Source="Themes/SettingsStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <converters:StringToVisibilityConverter x:Key="StringToVisibility" />
@@ -15,7 +16,6 @@
             <converters:BooleanInverter x:Key="BooleanInverter" />
             <converters:EnumEqualsConverter x:Key="EnumEquals" />
             <converters:UsageStatusToBrushConverter x:Key="StatusToBrush" />
-            <converters:ChoiceLabelConverter x:Key="ChoiceLabel" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

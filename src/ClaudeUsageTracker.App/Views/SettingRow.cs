@@ -5,7 +5,7 @@ namespace ClaudeUsageTracker.App.Views;
 
 /// <summary>
 /// One row of a settings group: a title and a description on the left, and the row's control —
-/// this element's content — on the right. The layout is its style's, in SettingsWindow.
+/// this element's content — on the right. The layout is its style's, in Themes/SettingsStyles.xaml.
 /// <para>
 /// <see cref="TitleProperty"/> and <see cref="DescriptionProperty"/> are attached properties so
 /// that a toggle row, which is a CheckBox drawn as the whole row rather than a control inside

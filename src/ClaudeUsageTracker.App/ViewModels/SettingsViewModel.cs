@@ -1,13 +1,9 @@
-using System.Collections.ObjectModel;
-using System.Globalization;
 using ClaudeUsageTracker.App.Localization;
-using ClaudeUsageTracker.App.Services;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.Themes;
 using ClaudeUsageTracker.App.Views;
-using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.ClaudeCode;
-using ClaudeUsageTracker.Platform.ClaudeCode;
+using ClaudeUsageTracker.Core.Usage;
 using ClaudeUsageTracker.Platform.Startup;
 using ClaudeUsageTracker.Platform.TrayIcon;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,70 +21,50 @@ public sealed record ChoiceOption(object Value, string? TextKey = null, string? 
 }
 
 /// <summary>
-/// State and actions for SettingsWindow. Every change is written to
-/// <see cref="AppSettingsStore.Current"/> as soon as it's made (Windows 11 Settings style);
+/// State and actions for SettingsWindow. Every change is written to the
+/// <see cref="AppSettingsStore"/> as soon as it's made (Windows 11 Settings style);
 /// there is no Save/Cancel. The interval is the exception: it's written when stepped or
 /// committed (focus leaves the box / the window closes), not on every keystroke.
+/// A setting changed elsewhere while the window is open (the tray menu, a drag on the flyout
+/// or the taskbar bars) is taken over from the store, so the window never shows a stale value.
+/// <para>
+/// One class per window, in a file per page: this one holds what the pages share and the
+/// plain settings; the refresh interval, the notification thresholds and the account section
+/// each have their own.
+/// </para>
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
-    /// <summary>Amount the -/+ buttons, arrow keys and mouse wheel change the interval by.</summary>
-    public const int RefreshIntervalStep = 5;
-
-    private const int MinInterval = AppSettings.MinRefreshIntervalSeconds;
-    private const int MaxInterval = AppSettings.MaxRefreshIntervalSeconds;
-
-    // Rough cost of one token-using refresh: a "." prompt (~8 input tokens) with max_tokens = 1.
-    private const int ApproxTokensPerRefresh = 10;
-
     private readonly AppSettingsStore _settingsStore;
     private readonly ILaunchAtLoginService _launchAtLoginService;
     private readonly UsageFetcher _usageFetcher;
+    private readonly IClaudeCodeEnvironment _claudeCode;
     private readonly AppSettings _initialSettings;
-    private readonly bool _initializing = true;
 
-    // Last in-range value, restored if the box is left empty.
-    private int _lastValidRefreshInterval;
+    // Set while the properties are being filled in from the store, which must not write them back.
+    private bool _loading;
 
-    public SettingsViewModel(AppSettingsStore settingsStore, ILaunchAtLoginService launchAtLoginService, UsageFetcher usageFetcher)
+    // Set while this window's own change is being saved, which it needn't take over again.
+    private bool _applying;
+
+    public SettingsViewModel(
+        AppSettingsStore settingsStore,
+        ILaunchAtLoginService launchAtLoginService,
+        UsageFetcher usageFetcher,
+        IClaudeCodeEnvironment claudeCode)
     {
         _settingsStore = settingsStore;
         _launchAtLoginService = launchAtLoginService;
         _usageFetcher = usageFetcher;
+        _claudeCode = claudeCode;
 
         var settings = settingsStore.Current;
         _initialSettings = new AppSettings { AvoidTokenUsage = settings.AvoidTokenUsage, RefreshIntervalSeconds = settings.RefreshIntervalSeconds };
-        AvoidTokenUsage = settings.AvoidTokenUsage;
-        RefreshIntervalSeconds = _lastValidRefreshInterval = settings.RefreshIntervalSeconds;
-        NotificationsEnabled = settings.NotificationsEnabled;
-        WeeklyNotificationsEnabled = settings.WeeklyNotificationsEnabled;
-        ResetTimeDisplay = settings.ResetTimeDisplay;
-        TrayIconStyle = settings.TrayIconStyle;
-        ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
-        AlwaysOnTop = settings.AlwaysOnTop;
-        FlyoutClickThrough = settings.FlyoutClickThrough;
-        FlyoutCompact = settings.FlyoutCompact;
-        TaskbarBarClickThrough = settings.TaskbarBarClickThrough;
-        ShowTaskbarBar = settings.ShowTaskbarBar;
-        ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
-        VisibleRows = settings.VisibleRows;
-        CompactShowLabels = settings.CompactShowLabels;
-        CompactShowPercentage = settings.CompactShowPercentage;
-        CompactShowResetTime = settings.CompactShowResetTime;
-        TaskbarBarShowMascot = settings.TaskbarBarShowMascot;
-        FlyoutShowMascot = settings.FlyoutShowMascot;
-        MascotAnimation = settings.MascotAnimation;
-        foreach (var threshold in settings.EffectiveNotificationThresholds)
-            NotificationThresholds.Add(threshold);
         TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
-        FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
-        FlyoutScalePercent = ToScalePercent(settings.FlyoutScale);
-        LaunchAtLoginEnabled = launchAtLoginService.IsEnabled;
-        Theme = settings.Theme;
-        Language = settings.Language;
+        Load();
 
+        settingsStore.Changed += OnSettingsChanged;
         Loc.LanguageChanged += OnUiLanguageChanged;
-        _initializing = false;
     }
 
     public static IReadOnlyList<ChoiceOption> ThemeOptions { get; } =
@@ -134,9 +110,6 @@ public partial class SettingsViewModel : ObservableObject
         new(MascotAnimation.Lively, "Settings_MascotAnimationLively"),
     ];
 
-    /// <summary>Raised after a change has been written to disk.</summary>
-    public event Action? Applied;
-
     /// <summary>
     /// Whether how usage is fetched (mode or interval) differs from when the window opened,
     /// so the caller can refresh once on close rather than on every click.
@@ -144,60 +117,6 @@ public partial class SettingsViewModel : ObservableObject
     public bool FetchSettingsChanged =>
         _settingsStore.Current.AvoidTokenUsage != _initialSettings.AvoidTokenUsage
         || _settingsStore.Current.RefreshInterval != _initialSettings.RefreshInterval;
-
-    /// <summary>Raised with each Test connection result, so the flyout and tray can show it too.</summary>
-    public event Action<UsageFetchResult>? ConnectionTested;
-
-    /// <summary>Raw text of the interval box. Kept as a string so a half-typed or empty value doesn't fight the binding.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RefreshIntervalError), nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(TokensPerHourText))]
-    private string _refreshIntervalText = string.Empty;
-
-    /// <summary>Why the typed interval can't be saved, or null when it's fine (or not in use: token-free mode).</summary>
-    public string? RefreshIntervalError => AvoidTokenUsage ? null : ParsedRefreshInterval switch
-    {
-        null => Loc.Format("Settings_IntervalEnter", MinInterval, MaxInterval),
-        < MinInterval => Loc.Format("Settings_IntervalMin", MinInterval),
-        > MaxInterval => Loc.Format("Settings_IntervalMax", MaxInterval),
-        _ => null
-    };
-
-    public bool HasRefreshIntervalError => RefreshIntervalError is not null;
-
-    /// <summary>
-    /// Always shown beside the interval box: the error if there is one, otherwise the per-refresh
-    /// cost. Fixed text (it doesn't follow the value or the mode); the value-dependent estimate is
-    /// <see cref="TokensPerHourText"/>, shown under the box. The allowed range only surfaces in the
-    /// error and <see cref="RefreshIntervalToolTip"/>, since stepping can't leave it anyway.
-    /// </summary>
-    public string RefreshIntervalHint => RefreshIntervalError
-        ?? Loc.Format("Settings_IntervalTokensPerRefresh", ApproxTokensPerRefresh);
-
-    public string RefreshIntervalToolTip => Loc.Format("Settings_IntervalToolTip", MinInterval, MaxInterval);
-
-    /// <summary>Which model token-using refreshes prompt, e.g. "使用モデル: Claude Haiku 4.5 (自動選択)".</summary>
-    public string ProbeModelText => Loc.Format("Settings_ProbeModel", ModelNames.ToDisplayName(_usageFetcher.ProbeModel));
-
-    /// <summary>Rough tokens an hour at the typed interval, e.g. "約 600 トークン/時".</summary>
-    public string TokensPerHourText => Loc.Format("Settings_TokensPerHour",
-        Math.Round(3600.0 / RefreshIntervalSeconds * ApproxTokensPerRefresh).ToString("N0", Loc.Culture));
-
-    /// <summary>The interval box only applies in the default (token-using) mode.</summary>
-    public bool IsRefreshIntervalEditable => !AvoidTokenUsage;
-
-    /// <summary>
-    /// The typed value clamped to the allowed range. Setting it (step buttons, normalizing)
-    /// commits the interval; typing alone doesn't.
-    /// </summary>
-    public int RefreshIntervalSeconds
-    {
-        get => ParsedRefreshInterval is { } s ? Math.Clamp(s, MinInterval, MaxInterval) : _lastValidRefreshInterval;
-        set
-        {
-            RefreshIntervalText = Math.Clamp(value, MinInterval, MaxInterval).ToString(CultureInfo.InvariantCulture);
-            Apply();
-        }
-    }
 
     [ObservableProperty]
     private bool _notificationsEnabled;
@@ -262,67 +181,6 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Whether there is a creature to animate: in the flyout, or on taskbar bars that are shown.</summary>
     public bool CanAnimateMascot => FlyoutShowMascot || (ShowTaskbarBar && TaskbarBarShowMascot);
 
-    /// <summary>The usage percentages a notification is sent at, ascending; each is a chip that can be removed.</summary>
-    public ObservableCollection<int> NotificationThresholds { get; } = [];
-
-    /// <summary>What's typed in the box that adds a threshold.</summary>
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(AddThresholdCommand))]
-    private string _newThresholdText = string.Empty;
-
-    /// <summary>Whether there's room for another threshold; the box that adds one is hidden when there isn't.</summary>
-    public bool CanAddMoreThresholds => NotificationThresholds.Count < AppSettings.MaxNotificationThresholds;
-
-    public string NotificationThresholdsHint => Loc.Format("Settings_ThresholdsDescription", AppSettings.MaxNotificationThresholds);
-
-    [RelayCommand(CanExecute = nameof(CanAddThreshold))]
-    private void AddThreshold()
-    {
-        var added = ParsedNewThreshold!.Value;
-        NewThresholdText = string.Empty;
-        SetThresholds(NotificationThresholds.Append(added));
-    }
-
-    private bool CanAddThreshold() =>
-        CanAddMoreThresholds && ParsedNewThreshold is { } threshold && !NotificationThresholds.Contains(threshold);
-
-    // At least one stays: with none there would be nothing to notify about but the resets.
-    [RelayCommand(CanExecute = nameof(CanRemoveThreshold))]
-    private void RemoveThreshold(int threshold) => SetThresholds(NotificationThresholds.Where(existing => existing != threshold));
-
-    private bool CanRemoveThreshold(int threshold) => NotificationThresholds.Count > 1;
-
-    [RelayCommand(CanExecute = nameof(CanResetThresholds))]
-    private void ResetThresholds() => SetThresholds(AppSettings.DefaultNotificationThresholds);
-
-    private bool CanResetThresholds() => !NotificationThresholds.SequenceEqual(AppSettings.DefaultNotificationThresholds);
-
-    /// <summary>Tooltip of the reset button, naming the defaults, e.g. "Reset to 75%, 90%, 95%".</summary>
-    public string ResetThresholdsToolTip => Loc.Format("Settings_ThresholdsReset",
-        string.Join(Loc.Get("Settings_ListSeparator"), AppSettings.DefaultNotificationThresholds.Select(threshold => $"{threshold}%")));
-
-    // The typed percentage if it's a whole number within 1-100. A full-width number (an IME left on) is accepted.
-    private int? ParsedNewThreshold =>
-        int.TryParse(NewThresholdText.Normalize(System.Text.NormalizationForm.FormKC).Trim().TrimEnd('%'),
-            NumberStyles.None, CultureInfo.InvariantCulture, out var threshold) && threshold is >= 1 and <= 100
-            ? threshold
-            : null;
-
-    private void SetThresholds(IEnumerable<int> thresholds)
-    {
-        List<int> sorted = [.. thresholds.Order()];
-        NotificationThresholds.Clear();
-        foreach (var threshold in sorted)
-            NotificationThresholds.Add(threshold);
-
-        _settingsStore.Current.NotificationThresholds = sorted;
-        Apply();
-        OnPropertyChanged(nameof(CanAddMoreThresholds));
-        AddThresholdCommand.NotifyCanExecuteChanged();
-        RemoveThresholdCommand.NotifyCanExecuteChanged();
-        ResetThresholdsCommand.NotifyCanExecuteChanged();
-    }
-
     /// <summary>One row per connected monitor: whether its taskbar gets the bars, and where on it.</summary>
     public IReadOnlyList<TaskbarBarDisplayViewModel> TaskbarBarDisplays { get; }
 
@@ -339,8 +197,8 @@ public partial class SettingsViewModel : ObservableObject
     public double MaxFlyoutScalePercent => FlyoutWindow.MaxScale * 100;
 
     /// <summary>
-    /// Flyout size in percent; the slider previews it live on an open flyout. Also set by the
-    /// caller when the flyout is resized by dragging while this window is open.
+    /// Flyout size in percent; the slider previews it live on an open flyout. Follows the
+    /// flyout being resized by dragging while this window is open.
     /// </summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ResetFlyoutScaleCommand))]
@@ -351,53 +209,10 @@ public partial class SettingsViewModel : ObservableObject
         (int)Math.Round(Math.Clamp(scale, FlyoutWindow.MinScale, FlyoutWindow.MaxScale) * 100);
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RefreshIntervalError),nameof(RefreshIntervalHint), nameof(HasRefreshIntervalError), nameof(IsRefreshIntervalEditable))]
-    private bool _avoidTokenUsage;
-
-    [ObservableProperty]
     private AppTheme _theme;
 
     [ObservableProperty]
     private AppLanguage _language;
-
-    [ObservableProperty]
-    private string? _statusMessage;
-
-    [ObservableProperty]
-    private bool _statusIsError;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(TestConnectionCommand))]
-    private bool _isBusy;
-
-    /// <summary>Which Claude account is being tracked (or why none is).</summary>
-    [ObservableProperty]
-    private string _accountSummary = Loc.Get("Settings_CheckingSignIn");
-
-    /// <summary>"Sign in" / "Switch account", or null to hide the button (e.g. Claude Code isn't installed).</summary>
-    [ObservableProperty]
-    private string? _accountActionText;
-
-    [ObservableProperty]
-    private bool _showInstallLink;
-
-    private bool _loadingAccount;
-
-    // Result of the last account lookup, kept so a language switch can re-render it without the CLI.
-    private AccountInfo? _account;
-
-    private sealed record AccountInfo(ClaudeCredentialResolver.Result Resolution, bool Installed, ClaudeAuthStatus? Status);
-
-    private int? ParsedRefreshInterval =>
-        int.TryParse(RefreshIntervalText, NumberStyles.None, CultureInfo.InvariantCulture, out var s) ? s : null;
-
-    private bool IsRefreshIntervalValid => RefreshIntervalError is null;
-
-    partial void OnRefreshIntervalTextChanged(string value)
-    {
-        if (IsRefreshIntervalValid)
-            _lastValidRefreshInterval = ParsedRefreshInterval!.Value;
-    }
 
     partial void OnThemeChanged(AppTheme value)
     {
@@ -453,19 +268,27 @@ public partial class SettingsViewModel : ObservableObject
     // percent, which mustn't be rounded off by an unrelated setting being changed.
     partial void OnFlyoutScalePercentChanged(int value)
     {
-        if (_initializing || ToScalePercent(_settingsStore.Current.FlyoutScale) == value)
+        if (_loading || ToScalePercent(_settingsStore.Current.FlyoutScale) == value)
             return;
         _settingsStore.Current.FlyoutScale = value / 100.0;
         Apply();
     }
 
-    partial void OnAvoidTokenUsageChanged(bool value) => Apply();
-
     partial void OnLaunchAtLoginEnabledChanged(bool value)
     {
-        if (!_initializing)
+        if (!_loading)
             _launchAtLoginService.SetEnabled(value);
     }
+
+    [RelayCommand(CanExecute = nameof(CanResetFlyoutOpacity))]
+    private void ResetFlyoutOpacity() => FlyoutOpacityPercent = 100;
+
+    private bool CanResetFlyoutOpacity() => FlyoutOpacityPercent != 100;
+
+    [RelayCommand(CanExecute = nameof(CanResetFlyoutScale))]
+    private void ResetFlyoutScale() => FlyoutScalePercent = 100;
+
+    private bool CanResetFlyoutScale() => FlyoutScalePercent != 100;
 
     // XAML text follows Loc on its own; strings built here have to be rebuilt. The account
     // text is rebuilt from the last lookup rather than re-running the (slow) CLI, so it
@@ -482,170 +305,106 @@ public partial class SettingsViewModel : ObservableObject
         foreach (var display in TaskbarBarDisplays)
             display.RefreshLanguage();
         StatusMessage = null;
-        if (_account is { } account)
-            ApplyAccount(account);
-        else
-            AccountSummary = Loc.Get("Settings_CheckingSignIn");
+        RefreshAccountLanguage();
     }
-
-    /// <summary>
-    /// Snaps the typed value into range (or restores the last valid one if the box is empty)
-    /// and commits it. Called when focus leaves the box.
-    /// </summary>
-    public void NormalizeRefreshInterval() => RefreshIntervalSeconds = RefreshIntervalSeconds;
 
     /// <summary>Call when the window closes: commits a half-typed interval and detaches.</summary>
     public void Close()
     {
         NormalizeRefreshInterval();
+        _settingsStore.Changed -= OnSettingsChanged;
         Loc.LanguageChanged -= OnUiLanguageChanged;
     }
 
-    /// <summary>Writes the current state to disk.</summary>
+    // A change saved by someone else. This window's own are already what it shows.
+    private void OnSettingsChanged()
+    {
+        if (!_applying)
+            Load();
+    }
+
+    /// <summary>Fills the properties in from the store, without writing anything back.</summary>
+    private void Load()
+    {
+        _loading = true;
+        try
+        {
+            var settings = _settingsStore.Current;
+            AvoidTokenUsage = settings.AvoidTokenUsage;
+            RefreshIntervalSeconds = _lastValidRefreshInterval = settings.RefreshIntervalSeconds;
+            NotificationsEnabled = settings.NotificationsEnabled;
+            WeeklyNotificationsEnabled = settings.WeeklyNotificationsEnabled;
+            ResetTimeDisplay = settings.ResetTimeDisplay;
+            TrayIconStyle = settings.TrayIconStyle;
+            ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
+            AlwaysOnTop = settings.AlwaysOnTop;
+            FlyoutClickThrough = settings.FlyoutClickThrough;
+            FlyoutCompact = settings.FlyoutCompact;
+            TaskbarBarClickThrough = settings.TaskbarBarClickThrough;
+            ShowTaskbarBar = settings.ShowTaskbarBar;
+            ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
+            VisibleRows = settings.VisibleRows;
+            CompactShowLabels = settings.CompactShowLabels;
+            CompactShowPercentage = settings.CompactShowPercentage;
+            CompactShowResetTime = settings.CompactShowResetTime;
+            TaskbarBarShowMascot = settings.TaskbarBarShowMascot;
+            FlyoutShowMascot = settings.FlyoutShowMascot;
+            MascotAnimation = settings.MascotAnimation;
+            LoadThresholds(settings.EffectiveNotificationThresholds);
+            foreach (var display in TaskbarBarDisplays)
+                display.Reload();
+            FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
+            FlyoutScalePercent = ToScalePercent(settings.FlyoutScale);
+            LaunchAtLoginEnabled = _launchAtLoginService.IsEnabled;
+            Theme = settings.Theme;
+            Language = settings.Language;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    /// <summary>Writes the current state to the store, which saves it and puts it into effect.</summary>
     private void Apply()
     {
-        if (_initializing)
+        if (_loading)
             return;
 
-        var settings = _settingsStore.Current;
-        settings.RefreshIntervalSeconds = _lastValidRefreshInterval;
-        settings.NotificationsEnabled = NotificationsEnabled;
-        settings.WeeklyNotificationsEnabled = WeeklyNotificationsEnabled;
-        settings.ResetTimeDisplay = ResetTimeDisplay;
-        settings.TrayIconStyle = TrayIconStyle;
-        settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
-        settings.AlwaysOnTop = AlwaysOnTop;
-        settings.FlyoutClickThrough = FlyoutClickThrough;
-        settings.FlyoutCompact = FlyoutCompact;
-        settings.TaskbarBarClickThrough = TaskbarBarClickThrough;
-        settings.ShowTaskbarBar = ShowTaskbarBar;
-        settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
-        settings.VisibleRows = VisibleRows;
-        settings.CompactShowLabels = CompactShowLabels;
-        settings.CompactShowPercentage = CompactShowPercentage;
-        settings.CompactShowResetTime = CompactShowResetTime;
-        settings.TaskbarBarShowMascot = TaskbarBarShowMascot;
-        settings.FlyoutShowMascot = FlyoutShowMascot;
-        settings.MascotAnimation = MascotAnimation;
-        settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
-        settings.AvoidTokenUsage = AvoidTokenUsage;
-        settings.Theme = Theme;
-        settings.Language = Language;
-        _settingsStore.Save();
-        Applied?.Invoke();
-    }
-
-    /// <summary>
-    /// Refreshes the account section. Uses <c>claude auth status</c>, which only reads
-    /// Claude Code's local state (no prompt, no usage consumed). Resolving may shell out to
-    /// wsl.exe / the Claude CLI, so it runs off the UI thread.
-    /// </summary>
-    public async Task LoadAccountAsync()
-    {
-        if (_loadingAccount)
-            return;
-        _loadingAccount = true;
+        _applying = true;
         try
         {
-            _account = await Task.Run(() =>
+            _settingsStore.Update(settings =>
             {
-                var resolution = ClaudeCredentialResolver.Resolve();
-                var installed = ClaudeCli.IsInstalled;
-                return new AccountInfo(resolution, installed, installed ? ClaudeCli.GetAuthStatus() : null);
+                settings.RefreshIntervalSeconds = _lastValidRefreshInterval;
+                settings.NotificationsEnabled = NotificationsEnabled;
+                settings.NotificationThresholds = [.. NotificationThresholds];
+                settings.WeeklyNotificationsEnabled = WeeklyNotificationsEnabled;
+                settings.ResetTimeDisplay = ResetTimeDisplay;
+                settings.TrayIconStyle = TrayIconStyle;
+                settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
+                settings.AlwaysOnTop = AlwaysOnTop;
+                settings.FlyoutClickThrough = FlyoutClickThrough;
+                settings.FlyoutCompact = FlyoutCompact;
+                settings.TaskbarBarClickThrough = TaskbarBarClickThrough;
+                settings.ShowTaskbarBar = ShowTaskbarBar;
+                settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
+                settings.VisibleRows = VisibleRows;
+                settings.CompactShowLabels = CompactShowLabels;
+                settings.CompactShowPercentage = CompactShowPercentage;
+                settings.CompactShowResetTime = CompactShowResetTime;
+                settings.TaskbarBarShowMascot = TaskbarBarShowMascot;
+                settings.FlyoutShowMascot = FlyoutShowMascot;
+                settings.MascotAnimation = MascotAnimation;
+                settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
+                settings.AvoidTokenUsage = AvoidTokenUsage;
+                settings.Theme = Theme;
+                settings.Language = Language;
             });
-            ApplyAccount(_account);
         }
         finally
         {
-            _loadingAccount = false;
+            _applying = false;
         }
     }
-
-    /// <summary>Builds the account section's text from a lookup, in the current UI language.</summary>
-    private void ApplyAccount(AccountInfo account)
-    {
-        var (resolution, installed, status) = account;
-        var source = resolution.Source;
-        var signedIn = resolution.Credentials is not null;
-        AccountSummary = source switch
-        {
-            { IsWsl: true } when signedIn => Loc.Format("Settings_UsingWsl", source.DisplayName),
-            { IsWsl: true } => Loc.Format("Settings_WslExpired", source.DisplayName),
-            not null when signedIn => DescribeSignedIn(status),
-            not null => Loc.Get("Settings_Expired"),
-            null when installed => Loc.Get("Error_NotSignedIn"),
-            null => Loc.Get("Settings_NotInstalled")
-        };
-        AccountActionText = !installed ? null
-            : signedIn && source is { IsWsl: false } ? Loc.Get("Settings_SwitchAccount")
-            : Loc.Get("Settings_SignIn");
-        ShowInstallLink = !installed;
-    }
-
-    private static string DescribeSignedIn(ClaudeAuthStatus? status) => status switch
-    {
-        { Email: { } email, SubscriptionDisplayName: { } plan } => Loc.Format("Settings_SignedInAsWithPlan", email, plan),
-        { Email: { } email } => Loc.Format("Settings_SignedInAs", email),
-        _ => Loc.Get("Settings_SignedIn")
-    };
-
-    [RelayCommand]
-    private void SignIn()
-    {
-        var started = ClaudeCli.StartLogin();
-        StatusIsError = !started;
-        StatusMessage = started
-            ? Loc.Get("Settings_FinishSignIn")
-            : Loc.Get("Error_CouldNotStartClaude");
-    }
-
-    [RelayCommand(CanExecute = nameof(CanResetFlyoutOpacity))]
-    private void ResetFlyoutOpacity() => FlyoutOpacityPercent = 100;
-
-    private bool CanResetFlyoutOpacity() => FlyoutOpacityPercent != 100;
-
-    [RelayCommand(CanExecute = nameof(CanResetFlyoutScale))]
-    private void ResetFlyoutScale() => FlyoutScalePercent = 100;
-
-    private bool CanResetFlyoutScale() => FlyoutScalePercent != 100;
-
-    [RelayCommand]
-    private void IncreaseRefreshInterval() =>
-        RefreshIntervalSeconds = (RefreshIntervalSeconds / RefreshIntervalStep + 1) * RefreshIntervalStep;
-
-    [RelayCommand]
-    private void DecreaseRefreshInterval() =>
-        RefreshIntervalSeconds = (RefreshIntervalSeconds - 1) / RefreshIntervalStep * RefreshIntervalStep;
-
-    [RelayCommand(CanExecute = nameof(CanTestConnection))]
-    private async Task TestConnectionAsync()
-    {
-        IsBusy = true;
-        StatusMessage = Loc.Get("Settings_Testing");
-        StatusIsError = false;
-        try
-        {
-            // Tests the mode currently ticked here, even before it's saved.
-            var result = await _usageFetcher.FetchAsync(AvoidTokenUsage);
-            // Held back only because it was checked moments ago isn't a failure; everything else without usage is.
-            StatusIsError = result is { Usage: null } and not { RetryAfter: not null, UsageEndpointRateLimited: false };
-            StatusMessage = result switch
-            {
-                { RetryAfter: { } wait, UsageEndpointRateLimited: false } => Loc.Format("Settings_TestAvailableIn", (int)Math.Ceiling(wait.TotalMinutes)),
-                { Usage: { } usage } => Loc.Format("Settings_Connected", usage.SessionPercentage, usage.WeeklyPercentage),
-                { UsageEndpointRateLimited: true } => Loc.Get("Settings_ConnectedRateLimited"),
-                _ => result.Error
-            };
-            ConnectionTested?.Invoke(result);
-            OnPropertyChanged(nameof(ProbeModelText)); // the test may have switched away from a retired model
-
-            await LoadAccountAsync();
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private bool CanTestConnection() => !IsBusy;
 }

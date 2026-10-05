@@ -1,0 +1,52 @@
+<UserControl x:Class="ClaudeUsageTracker.App.Views.SettingsPages.AccountPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:ClaudeUsageTracker.App.Localization"
+             xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views">
+    <!-- The Account page of the settings window: who is signed in, and Test connection. -->
+    <StackPanel>
+        <TextBlock Text="{loc:Tr Settings_Account}" Style="{StaticResource SectionHeaderStyle}" />
+        <Border Style="{StaticResource SettingsCardStyle}">
+            <StackPanel>
+                <DockPanel Style="{StaticResource CardRowStyle}">
+                    <!-- Runs the CLI's own browser sign-in; the app never handles OAuth itself. -->
+                    <Button DockPanel.Dock="Right" Content="{Binding AccountActionText}" Command="{Binding SignInCommand}"
+                            Height="30" Padding="14,0" Margin="16,0,0,0" VerticalAlignment="Center"
+                            ToolTip="{loc:Tr Settings_SignInToolTip}"
+                            Visibility="{Binding AccountActionText, Converter={StaticResource StringToVisibility}}" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{loc:Tr Settings_AccountRow}" Style="{StaticResource RowTitleStyle}" />
+                        <TextBlock Text="{Binding AccountSummary}" Style="{StaticResource RowDescriptionStyle}" />
+                        <TextBlock Style="{StaticResource RowDescriptionStyle}"
+                                   Visibility="{Binding ShowInstallLink, Converter={StaticResource BoolToVisibility}}">
+                            <Hyperlink NavigateUri="https://docs.anthropic.com/en/docs/claude-code/setup" RequestNavigate="OnInstallLinkNavigate"
+                                       Foreground="{DynamicResource AccentTextBrush}"><Run Text="{loc:Tr Settings_InstallLink}" /></Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <views:SettingRow Title="{loc:Tr Settings_TestConnection}" Description="{loc:Tr Settings_TestConnectionDescription}">
+                    <Button Content="{loc:Tr Settings_TestButton}" Command="{Binding TestConnectionCommand}"
+                            Height="30" Padding="14,0"
+                            ToolTip="{loc:Tr Settings_TestConnectionToolTip}" />
+                </views:SettingRow>
+                <!-- Test connection / sign-in result, right under the buttons that produce it. -->
+                <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="6" Padding="10,8" Margin="16,0,16,14"
+                        Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibility}}">
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

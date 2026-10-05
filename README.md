@@ -280,19 +280,28 @@ Haiku 4.5 が廃止された場合は、使えるモデルの一覧 (取得に�
 | `FlyoutClickThrough` | フライアウトのクリック透過 | `false` |
 | `FlyoutShowMascot` | フライアウトにキャラクターを表示 | `false` |
 | `MascotAnimation` | キャラクターの動き (フライアウトとタスクバーの両方): `Off` / `Subtle` / `Lively` | `Subtle` |
-| `FlyoutPosition` | ドラッグで移動したフライアウトの位置 (画面のピクセル座標)。トレイメニューの **表示位置をリセット** で消去されます | なし |
 | `ShowTaskbarBar` | タスクバーのバーを表示 | `false` |
 | `ShowTaskbarBarOverFullScreen` | 全画面表示のアプリの上にもバーを表示 | `false` |
 | `TaskbarBarClickThrough` | タスクバーのバーのクリック透過 | `false` |
 | `TaskbarBarShowMascot` | バーにキャラクターを表示 | `false` |
 | `TaskbarBarDisplays` | モニターごとのバーの設定。キーはモニターのデバイス名 (JSON での表記例: `\\\\.\\DISPLAY2`)、値は `Show` (表示するか) と `Offset` (位置のずれ、-3000〜300) | なし (全モニターに、ずれなしで表示) |
 
+設定とは別に、アプリが自動で記録する状態は同じフォルダーの `state.json` に保存されます。手で編集する必要はありません。削除しても、次の起動時に作り直されます。
+
+| キー | 内容 |
+|---|---|
+| `FlyoutPosition` | ドラッグで移動したフライアウトの位置 (画面のピクセル座標)。トレイメニューの **表示位置をリセット** で消去されます |
+| `NotifiedThresholdKeys` | 通知済みの使用率。同じ通知を繰り返さないための記録です |
+| `LastUsageEndpointCall` / `UsageEndpointRateLimited` | 使用量 API を最後に呼んだ時刻と、そのとき制限されたかどうか。アプリを再起動しても呼び出し間隔を守るための記録です |
+
+以前のバージョンで `settings.json` に入っていた `FlyoutPosition` と `NotifiedThresholdKeys` は、初回起動時に `state.json` へ引き継がれます。
+
 ## 開発
 
 ```
 src/
   ClaudeUsageTracker.App/        WPF アプリ本体 (画面、ViewModel、テーマ、翻訳、トレイ)
-  ClaudeUsageTracker.Core/       Windows に依存しないロジック (API クライアント、状態判定)
+  ClaudeUsageTracker.Core/       Windows に依存しないロジック (API クライアント、使用量の取得、通知の判定、状態判定)
   ClaudeUsageTracker.Platform/   Windows 固有の処理 (CLI / WSL 呼び出し、通知、自動起動、アイコン描画)
 tests/
   ClaudeUsageTracker.Tests/      ユニットテスト (xUnit)

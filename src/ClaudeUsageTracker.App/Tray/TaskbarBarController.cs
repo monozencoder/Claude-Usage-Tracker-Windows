@@ -77,9 +77,6 @@ public sealed class TaskbarBarController : IDisposable
     /// <summary>The strips currently on the taskbars.</summary>
     public IEnumerable<TaskbarBarWindow> Strips => _strips.Values;
 
-    /// <summary>Raised with the monitor's device name and its new offset after a strip was dragged along its taskbar.</summary>
-    public event Action<string, int>? OffsetChanged;
-
     public bool Enabled
     {
         get => _enabled;
@@ -155,11 +152,8 @@ public sealed class TaskbarBarController : IDisposable
             var created = strip;
             strip.DragStarted += () => _dragStartOffset = Placement(taskbar).Offset;
             strip.DragMoved += pixels => Drag(taskbar, created, pixels);
-            strip.DragCompleted += () =>
-            {
-                _settingsStore.Save();
-                OffsetChanged?.Invoke(WinForms.Screen.FromHandle(taskbar).DeviceName, Placement(taskbar).Offset);
-            };
+            // The offset was set as the strip moved; this saves it and tells an open settings window.
+            strip.DragCompleted += _settingsStore.Commit;
             strip.Closed += (_, _) =>
             {
                 if (_strips.TryGetValue(taskbar, out var current) && current == created)

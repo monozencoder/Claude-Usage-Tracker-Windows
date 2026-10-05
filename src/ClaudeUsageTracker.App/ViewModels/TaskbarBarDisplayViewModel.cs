@@ -38,9 +38,27 @@ public sealed partial class TaskbarBarDisplayViewModel : ObservableObject
         _index = index;
         _count = count;
 
-        var saved = settings.TaskbarBarDisplays.GetValueOrDefault(DeviceName);
-        _show = saved?.Show ?? true;
-        _offset = Math.Clamp(saved?.Offset ?? 0, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset);
+        (_show, _offset) = Saved;
+    }
+
+    // What the settings hold for this monitor (clamped: the file may have been hand-edited), or the defaults.
+    private (bool Show, int Offset) Saved
+    {
+        get
+        {
+            var saved = _settings.TaskbarBarDisplays.GetValueOrDefault(DeviceName);
+            return (saved?.Show ?? true,
+                Math.Clamp(saved?.Offset ?? 0, AppSettings.MinTaskbarBarOffset, AppSettings.MaxTaskbarBarOffset));
+        }
+    }
+
+    /// <summary>Takes over the saved values after they changed elsewhere (the bars were dragged along the taskbar), without saving.</summary>
+    public void Reload()
+    {
+        var (show, offset) = Saved;
+        SetProperty(ref _show, show, nameof(Show));
+        if (SetProperty(ref _offset, offset, nameof(Offset)))
+            ResetOffsetCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>The monitors connected right now, in Windows' display-number order.</summary>
@@ -78,7 +96,7 @@ public sealed partial class TaskbarBarDisplayViewModel : ObservableObject
     }
 
     /// <summary>Horizontal shift of the bars on this monitor (negative is left); the slider moves them live.
-    /// Also set by the caller when the bars are dragged along the taskbar while this window is open.</summary>
+    /// Follows the bars being dragged along the taskbar while this window is open (see <see cref="Reload"/>).</summary>
     public int Offset
     {
         get => _offset;

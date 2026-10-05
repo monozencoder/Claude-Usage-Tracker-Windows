@@ -11,7 +11,7 @@ namespace ClaudeUsageTracker.Platform.ClaudeCode;
 /// Windows-native case. This lets the app find credentials for users who only run
 /// Claude Code from within WSL rather than Windows directly.
 /// </summary>
-public static class WslClaudeCli
+internal static class WslClaudeCli
 {
     private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(5);
 

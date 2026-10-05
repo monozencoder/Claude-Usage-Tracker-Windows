@@ -1,0 +1,166 @@
+<UserControl x:Class="ClaudeUsageTracker.App.Views.SettingsPages.GeneralPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:ClaudeUsageTracker.App.Localization"
+             xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views">
+    <!-- The General page of the settings window: startup, notifications, window behavior and the taskbar bars. -->
+    <StackPanel>
+        <TextBlock Text="{loc:Tr Settings_SectionGeneral}" Style="{StaticResource SectionHeaderStyle}" />
+        <Border Style="{StaticResource SettingsCardStyle}">
+            <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
+                      views:SettingRow.Title="{loc:Tr Settings_LaunchAtLogin}" views:SettingRow.Description="{loc:Tr Settings_LaunchAtLoginDescription}" />
+        </Border>
+        <TextBlock Text="{loc:Tr Settings_SectionNotifications}" Style="{StaticResource GroupHeaderStyle}" />
+        <Border Style="{StaticResource SettingsCardStyle}">
+            <StackPanel>
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding NotificationsEnabled}"
+                          views:SettingRow.Title="{loc:Tr Settings_Notifications}" views:SettingRow.Description="{loc:Tr Settings_NotificationsDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <StackPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding NotificationsEnabled}">
+                    <TextBlock Text="{loc:Tr Settings_Thresholds}" Style="{StaticResource RowTitleStyle}" />
+                    <TextBlock Text="{Binding NotificationThresholdsHint}" Style="{StaticResource RowDescriptionStyle}" />
+                    <!-- One chip per threshold, in ascending order, each with its own remove button;
+                         then a chip-shaped box to add another, until the list is full. -->
+                    <WrapPanel Margin="0,10,0,0">
+                        <WrapPanel.Resources>
+                            <Style x:Key="ChipStyle" TargetType="Border">
+                                <Setter Property="Height" Value="30" />
+                                <Setter Property="CornerRadius" Value="15" />
+                                <Setter Property="Margin" Value="0,0,8,0" />
+                                <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+                                <Setter Property="BorderThickness" Value="1" />
+                            </Style>
+                            <Style x:Key="ChipButtonStyle" TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                <Setter Property="Width" Value="22" />
+                                <Setter Property="Height" Value="22" />
+                                <Setter Property="FontSize" Value="9" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                        </WrapPanel.Resources>
+                        <ItemsControl ItemsSource="{Binding NotificationThresholds}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource ChipStyle}" Padding="12,0,4,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding StringFormat={}{0}%}" Style="{StaticResource BodyTextStyle}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                            <Button Style="{StaticResource ChipButtonStyle}" Margin="4,0,0,0"
+                                                    Command="{Binding DataContext.RemoveThresholdCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="{loc:Tr Settings_ThresholdRemove}" AutomationProperties.Name="{loc:Tr Settings_ThresholdRemove}">
+                                                <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFontFamily}" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Style="{StaticResource ChipStyle}" Padding="8,0,4,0"
+                                Visibility="{Binding CanAddMoreThresholds, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Digits only, as in the interval box on the Usage page: IME off, typing filtered. Enter adds. -->
+                                <TextBox Width="30" MaxLength="3" TextAlignment="Right" Background="Transparent" BorderThickness="0"
+                                         Padding="0" VerticalAlignment="Center"
+                                         Text="{Binding NewThresholdText, UpdateSourceTrigger=PropertyChanged}"
+                                         InputMethod.IsInputMethodEnabled="False"
+                                         PreviewTextInput="OnDigitsOnlyPreviewTextInput"
+                                         ToolTip="{loc:Tr Settings_ThresholdNew}" AutomationProperties.Name="{loc:Tr Settings_ThresholdNew}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddThresholdCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <TextBlock Text="%" Style="{StaticResource BodyTextStyle}" Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="2,0,0,0" />
+                                <Button Style="{StaticResource ChipButtonStyle}" FontSize="10" Margin="4,0,0,0"
+                                        Command="{Binding AddThresholdCommand}"
+                                        ToolTip="{loc:Tr Settings_ThresholdAdd}" AutomationProperties.Name="{loc:Tr Settings_ThresholdAdd}">
+                                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        <!-- Back to the defaults in one click, like the sliders' reset buttons; disabled while already there. -->
+                        <Button Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center"
+                                Command="{Binding ResetThresholdsCommand}" ToolTip="{Binding ResetThresholdsToolTip}"
+                                AutomationProperties.Name="{Binding ResetThresholdsToolTip}">
+                            <TextBlock Text="&#xE777;" FontFamily="{StaticResource IconFontFamily}" />
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding WeeklyNotificationsEnabled}" IsEnabled="{Binding NotificationsEnabled}"
+                          views:SettingRow.Title="{loc:Tr Settings_WeeklyNotifications}" views:SettingRow.Description="{loc:Tr Settings_WeeklyNotificationsDescription}" />
+            </StackPanel>
+        </Border>
+        <TextBlock Text="{loc:Tr Settings_SectionWindowBehavior}" Style="{StaticResource GroupHeaderStyle}" />
+        <Border Style="{StaticResource SettingsCardStyle}">
+            <StackPanel>
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowFlyoutOnStartup}"
+                          views:SettingRow.Title="{loc:Tr Settings_ShowOnStartup}" views:SettingRow.Description="{loc:Tr Settings_ShowOnStartupDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding AlwaysOnTop}"
+                          views:SettingRow.Title="{loc:Tr Settings_AlwaysOnTop}" views:SettingRow.Description="{loc:Tr Settings_AlwaysOnTopDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutClickThrough}"
+                          views:SettingRow.Title="{loc:Tr Settings_FlyoutClickThrough}" views:SettingRow.Description="{loc:Tr Settings_FlyoutClickThroughDescription}" />
+            </StackPanel>
+        </Border>
+        <TextBlock Text="{loc:Tr Settings_SectionTaskbarBar}" Style="{StaticResource GroupHeaderStyle}" />
+        <Border Style="{StaticResource SettingsCardStyle}">
+            <StackPanel>
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowTaskbarBar}"
+                          views:SettingRow.Title="{loc:Tr Settings_TaskbarBar}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowTaskbarBarOverFullScreen}" IsEnabled="{Binding ShowTaskbarBar}"
+                          views:SettingRow.Title="{loc:Tr Settings_TaskbarBarOverFullScreen}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarOverFullScreenDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarClickThrough}" IsEnabled="{Binding ShowTaskbarBar}"
+                          views:SettingRow.Title="{loc:Tr Settings_TaskbarBarClickThrough}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarClickThroughDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowMascot}" IsEnabled="{Binding ShowTaskbarBar}"
+                          views:SettingRow.Title="{loc:Tr Settings_TaskbarBarMascot}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarMascotDescription}" />
+                <!-- One row per connected monitor: the switch puts the bars on its taskbar, the slider
+                     shifts them. Only meaningful while the bars are shown at all. -->
+                <ItemsControl ItemsSource="{Binding TaskbarBarDisplays}" IsEnabled="{Binding ShowTaskbarBar}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <Border Style="{StaticResource CardDividerStyle}" />
+                                <views:SettingRow Title="{Binding Title}" Description="{Binding Description}">
+                                    <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                IsEnabled="{Binding Show}" ToolTip="{loc:Tr Settings_TaskbarBarOffsetToolTip}">
+                                        <!-- Back to the automatic place in one click; disabled while already there. -->
+                                        <Button Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center"
+                                                Command="{Binding ResetOffsetCommand}" ToolTip="{loc:Tr Settings_TaskbarBarOffsetReset}"
+                                                AutomationProperties.Name="{loc:Tr Settings_TaskbarBarOffsetReset}">
+                                            <TextBlock Text="&#xE777;" FontFamily="{StaticResource IconFontFamily}" />
+                                        </Button>
+                                        <TextBlock Text="{Binding Offset, StringFormat={}{0}px}" Style="{StaticResource CaptionTextStyle}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" Width="48" TextAlignment="Right"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <Slider Style="{StaticResource SliderStyle}" Width="150" VerticalAlignment="Center"
+                                                Minimum="{Binding MinOffset, Mode=OneTime}" Maximum="{Binding MaxOffset, Mode=OneTime}"
+                                                Value="{Binding Offset}"
+                                                TickFrequency="2" IsSnapToTickEnabled="True" SmallChange="2" LargeChange="20"
+                                                IsMoveToPointEnabled="True"
+                                                AutomationProperties.Name="{loc:Tr Settings_TaskbarBarOffsetToolTip}" />
+                                    </StackPanel>
+                                    <CheckBox Style="{StaticResource ToggleSwitchStyle}" VerticalAlignment="Center"
+                                              IsChecked="{Binding Show}" AutomationProperties.Name="{Binding Title}" />
+                                    </StackPanel>
+                                </views:SettingRow>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

@@ -8,22 +8,17 @@ namespace ClaudeUsageTracker.Platform.ClaudeCode;
 /// specific installed WSL distro. Claude Code CLI behaves identically from
 /// either environment, so the app checks both when looking for credentials.
 /// </summary>
-public sealed class ClaudeCredentialSource
+internal sealed class ClaudeCredentialSource
 {
     private readonly Func<ClaudeCodeCredentials?> _read;
 
     private ClaudeCredentialSource(string displayName, bool isWsl, Func<ClaudeCodeCredentials?> read)
     {
-        DisplayName = displayName;
-        IsWsl = isWsl;
+        Location = new ClaudeCredentialLocation(displayName, isWsl);
         _read = read;
     }
 
-    /// <summary>"Windows", or "WSL (Ubuntu)" etc.</summary>
-    public string DisplayName { get; }
-
-    /// <summary>True for a WSL distro: its CLI can't be driven from here (e.g. to sign in).</summary>
-    public bool IsWsl { get; }
+    public ClaudeCredentialLocation Location { get; }
 
     public static ClaudeCredentialSource Windows { get; } =
         new("Windows", isWsl: false, ClaudeCodeCredentialReader.TryRead);

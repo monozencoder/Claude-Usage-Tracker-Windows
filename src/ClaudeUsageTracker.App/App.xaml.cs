@@ -9,6 +9,8 @@ using ClaudeUsageTracker.App.Tray;
 using ClaudeUsageTracker.App.ViewModels;
 using ClaudeUsageTracker.App.Views;
 using ClaudeUsageTracker.Core.Api;
+using ClaudeUsageTracker.Core.ClaudeCode;
+using ClaudeUsageTracker.Core.Usage;
 using ClaudeUsageTracker.Platform.ClaudeCode;
 using ClaudeUsageTracker.Platform.Notifications;
 using ClaudeUsageTracker.Platform.Startup;
@@ -34,6 +36,8 @@ public partial class App : System.Windows.Application
 
     // Assigned in OnStartup, which WPF always runs before anything else here.
     private AppSettingsStore _settingsStore = null!;
+    private AppStateStore _stateStore = null!;
+    private IClaudeCodeEnvironment _claudeCode = null!;
     private UsageFetcher _usageFetcher = null!;
     private ILaunchAtLoginService _launchAtLoginService = null!;
     private TrayIconController _trayIconController = null!;
@@ -68,10 +72,12 @@ public partial class App : System.Windows.Application
 
         _settingsStore = new AppSettingsStore();
         var settings = _settingsStore.Current;
+        _stateStore = new AppStateStore(settings.LegacyState);
         ThemeManager.Apply(settings.Theme);
         Loc.Apply(settings.Language);
 
-        _usageFetcher = new UsageFetcher(new ClaudeCodeUsageClient(_httpClient), _settingsStore);
+        _claudeCode = new ClaudeCodeEnvironment();
+        _usageFetcher = new UsageFetcher(new ClaudeCodeUsageClient(_httpClient), _claudeCode, _stateStore);
         _launchAtLoginService = new RunKeyLaunchAtLoginService(
             appName: AppName,
             executablePathProvider: () => Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0]);
@@ -79,22 +85,11 @@ public partial class App : System.Windows.Application
         _flyoutWindow = new FlyoutWindow
         {
             DataContext = _flyoutViewModel,
-            SavedPosition = settings.FlyoutPosition
+            SavedPosition = _stateStore.Current.FlyoutPosition
         };
-        _flyoutWindow.ScaleSaved += scale =>
-        {
-            _settingsStore.Current.FlyoutScale = scale;
-            _settingsStore.Save();
-            // Keeps the slider of an open settings window in step with the drag.
-            if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
-                settingsViewModel.FlyoutScalePercent = SettingsViewModel.ToScalePercent(scale);
-        };
-        _flyoutWindow.CompactChanged += SetFlyoutCompact;
-        _flyoutWindow.PositionSaved += position =>
-        {
-            _settingsStore.Current.FlyoutPosition = position;
-            _settingsStore.Save();
-        };
+        _flyoutWindow.ScaleSaved += scale => _settingsStore.Update(s => s.FlyoutScale = scale);
+        _flyoutWindow.CompactChanged += compact => _settingsStore.Update(s => s.FlyoutCompact = compact);
+        _flyoutWindow.PositionSaved += SaveFlyoutPosition;
         _flyoutViewModel.RefreshRequested += RefreshNow;
         _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
         _flyoutViewModel.SignInRequested += StartSignIn;
@@ -110,35 +105,27 @@ public partial class App : System.Windows.Application
         _trayIconController.ResetPositionRequested += () =>
         {
             _flyoutWindow.ResetPosition();
-            _settingsStore.Current.FlyoutPosition = null;
-            _settingsStore.Save();
+            SaveFlyoutPosition(null);
         };
         _trayIconController.ExitRequested += () => Shutdown();
 
         _taskbarBarController = new TaskbarBarController(_flyoutViewModel, _settingsStore);
         _taskbarBarController.Clicked += _flyoutWindow.Toggle;
-        _taskbarBarController.OffsetChanged += (device, offset) =>
-        {
-            // Keeps the slider of an open settings window in step with the drag.
-            if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel
-                && settingsViewModel.TaskbarBarDisplays.FirstOrDefault(display => display.DeviceName == device) is { } row)
-                row.Offset = offset;
-        };
 
         _clickThroughController = new ClickThroughController();
         _clickThroughController.Add(() => _settingsStore.Current.FlyoutClickThrough, () => [_flyoutWindow]);
         _clickThroughController.Add(() => _settingsStore.Current.TaskbarBarClickThrough, () => _taskbarBarController.Strips);
         ApplyAppearance();
         _trayIconController.IsFlyoutCompact = () => _settingsStore.Current.FlyoutCompact;
-        _trayIconController.FlyoutCompactToggled += () => SetFlyoutCompact(!_settingsStore.Current.FlyoutCompact);
+        _trayIconController.FlyoutCompactToggled += () => _settingsStore.Update(s => s.FlyoutCompact = !s.FlyoutCompact);
         _trayIconController.IsFlyoutClickThrough = () => _settingsStore.Current.FlyoutClickThrough;
         _trayIconController.IsTaskbarBarClickThrough = () => _settingsStore.Current.TaskbarBarClickThrough;
         _trayIconController.IsTaskbarBarShown = () => _settingsStore.Current.ShowTaskbarBar;
-        _trayIconController.FlyoutClickThroughToggled += () => SetClickThrough(flyout: !_settingsStore.Current.FlyoutClickThrough);
-        _trayIconController.TaskbarBarClickThroughToggled += () => SetClickThrough(taskbarBar: !_settingsStore.Current.TaskbarBarClickThrough);
+        _trayIconController.FlyoutClickThroughToggled += () => _settingsStore.Update(s => s.FlyoutClickThrough = !s.FlyoutClickThrough);
+        _trayIconController.TaskbarBarClickThroughToggled += () => _settingsStore.Update(s => s.TaskbarBarClickThrough = !s.TaskbarBarClickThrough);
 
         _coordinator = new UsageRefreshCoordinator(
-            _usageFetcher, _settingsStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
+            _usageFetcher, _settingsStore, _stateStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
 
         // Refreshes can be minutes apart; the "resets in" times shown in between must still run down.
         _minuteTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
@@ -148,6 +135,16 @@ public partial class App : System.Windows.Application
         _refreshTimer = new DispatcherTimer { Interval = settings.RefreshInterval };
         _refreshTimer.Tick += (_, _) => RefreshNow();
         _refreshTimer.Start();
+
+        // Wherever a setting is changed (the settings window, the tray menu, a drag or a
+        // double-click on the flyout or the taskbar bars), this is what puts it into effect.
+        _settingsStore.Changed += () =>
+        {
+            // Setting Interval restarts the timer, so only touch it when it actually changed.
+            if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
+                _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
+            ApplyAppearance();
+        };
 
         // Picks up a finished sign-in (or Claude Code renewing its token) immediately.
         _credentialsWatcher = new CredentialsFileWatcher();
@@ -193,7 +190,7 @@ public partial class App : System.Windows.Application
 
     /// <summary>
     /// Puts the settings for how things look and behave onto the windows, the tray icon and the
-    /// taskbar bars: once at startup, and again whenever the settings window changes one.
+    /// taskbar bars: once at startup, and again whenever one changes.
     /// </summary>
     private void ApplyAppearance()
     {
@@ -222,41 +219,15 @@ public partial class App : System.Windows.Application
         _clickThroughController.Refresh();
     }
 
-    // From the tray menu or a double-click on the flyout; saved the same way as the click-through toggles below.
-    private void SetFlyoutCompact(bool compact)
+    private void SaveFlyoutPosition(ScreenPoint? position)
     {
-        if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
-        {
-            settingsViewModel.FlyoutCompact = compact;
-            return;
-        }
-
-        _settingsStore.Current.FlyoutCompact = compact;
-        _settingsStore.Save();
-        _flyoutWindow.Compact = compact;
-    }
-
-    // From the tray menu. With the settings window open the change goes through its view model,
-    // which saves and applies it like a flip of its own toggle; otherwise it's done here.
-    private void SetClickThrough(bool? flyout = null, bool? taskbarBar = null)
-    {
-        if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
-        {
-            settingsViewModel.FlyoutClickThrough = flyout ?? settingsViewModel.FlyoutClickThrough;
-            settingsViewModel.TaskbarBarClickThrough = taskbarBar ?? settingsViewModel.TaskbarBarClickThrough;
-            return;
-        }
-
-        var settings = _settingsStore.Current;
-        settings.FlyoutClickThrough = flyout ?? settings.FlyoutClickThrough;
-        settings.TaskbarBarClickThrough = taskbarBar ?? settings.TaskbarBarClickThrough;
-        _settingsStore.Save();
-        _clickThroughController.Refresh();
+        _stateStore.Current.FlyoutPosition = position;
+        _stateStore.Save();
     }
 
     private void StartSignIn()
     {
-        if (!ClaudeCli.StartLogin())
+        if (!_claudeCode.StartLogin())
             _flyoutViewModel.SetBanner(Loc.Get("Error_CouldNotStartClaude"));
     }
 
@@ -275,14 +246,7 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        var viewModel = new SettingsViewModel(_settingsStore, _launchAtLoginService, _usageFetcher);
-        viewModel.Applied += () =>
-        {
-            // Setting Interval restarts the timer, so only touch it when it actually changed.
-            if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
-                _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
-            ApplyAppearance();
-        };
+        var viewModel = new SettingsViewModel(_settingsStore, _launchAtLoginService, _usageFetcher, _claudeCode);
         viewModel.ConnectionTested += result => _coordinator.ApplyResult(result);
         _settingsWindow = new SettingsWindow(viewModel);
         // Modeless, like Obsidian's settings: the flyout and tray menu stay usable while it's open.

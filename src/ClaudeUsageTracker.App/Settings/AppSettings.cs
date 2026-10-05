@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Themes;
+using ClaudeUsageTracker.Core.Usage;
 using ClaudeUsageTracker.Platform.TrayIcon;
 
 namespace ClaudeUsageTracker.App.Settings;
@@ -8,26 +9,13 @@ namespace ClaudeUsageTracker.App.Settings;
 /// <summary>
 /// Non-secret app settings persisted as JSON under %APPDATA%. There are no
 /// secrets to store — usage data comes from Claude Code CLI's own credentials
-/// file, which this app only ever reads.
+/// file, which this app only ever reads. What the app merely remembers between
+/// runs, rather than what the user chose, is in <see cref="AppState"/>.
 /// </summary>
 public sealed class AppSettings
 {
     public const int MinRefreshIntervalSeconds = 10;
     public const int MaxRefreshIntervalSeconds = 3600;
-
-    /// <summary>
-    /// Fixed interval in token-free mode: the free usage endpoint rate-limits (HTTP 429)
-    /// frequent polling hard (and may take an hour or more to lift), so it's only asked every
-    /// 5 minutes — polling every 2 minutes has been seen to work, this leaves headroom.
-    /// </summary>
-    public const int TokenFreeRefreshIntervalSeconds = 300;
-
-    /// <summary>
-    /// After a 429 from the usage endpoint, the next attempt waits this long instead (regular
-    /// refreshes before then are skipped), and keeps doing so until a call succeeds. Never polls faster than the
-    /// old fixed 10-minute interval while limited, so it can't prolong a limit more than that did.
-    /// </summary>
-    public const int TokenFreeRateLimitedRetrySeconds = 600;
 
     public const int MaxNotificationThresholds = 5;
 
@@ -188,32 +176,33 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<AppLanguage>))]
     public AppLanguage Language { get; set; } = AppLanguage.System;
 
-    /// <summary>
-    /// Where the flyout was last dragged to (window top-left, screen pixels), or null if it never
-    /// has been — then it opens near the tray/cursor. Clamped onto a monitor when applied, since
-    /// the display it was saved on may be gone.
-    /// </summary>
-    public ScreenPoint? FlyoutPosition { get; set; }
-
     /// <summary>Size the flyout was last dragged to, relative to its designed size (1 = 100%). Clamped when applied.</summary>
     public double FlyoutScale { get; set; } = 1;
 
-    /// <summary>Threshold-notification dedup state (e.g. "session_75"), so the same threshold doesn't re-notify every refresh.</summary>
-    public List<string> NotifiedThresholdKeys { get; set; } = [];
+    // What moved to AppState (state.json). Read from older settings files so it carries over
+    // (see AppStateStore); never written back.
 
-    /// <summary>
-    /// When the free usage endpoint was last called (whatever the outcome), and whether it
-    /// answered 429 then. Kept here rather than in memory so restarting the app doesn't
-    /// forget to space its calls out, which is what trips the endpoint's rate limit.
-    /// </summary>
-    public DateTimeOffset? LastUsageEndpointCall { get; set; }
+    [JsonIgnore]
+    public AppState? LegacyState { get; private set; }
 
-    public bool UsageEndpointRateLimited { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ScreenPoint? FlyoutPosition
+    {
+        get => null;
+        set => (LegacyState ??= new AppState()).FlyoutPosition = value;
+    }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? NotifiedThresholdKeys
+    {
+        get => null;
+        set => (LegacyState ??= new AppState()).NotifiedThresholdKeys = value ?? [];
+    }
 
     /// <summary>The effective refresh interval for the current mode (clamped: the file may have been hand-edited).</summary>
     [JsonIgnore]
     public TimeSpan RefreshInterval => AvoidTokenUsage
-        ? TimeSpan.FromSeconds(TokenFreeRefreshIntervalSeconds)
+        ? TimeSpan.FromSeconds(UsagePolling.TokenFreeRefreshIntervalSeconds)
         : TimeSpan.FromSeconds(Math.Clamp(RefreshIntervalSeconds, MinRefreshIntervalSeconds, MaxRefreshIntervalSeconds));
 
     /// <summary>
@@ -258,6 +247,3 @@ public sealed class TaskbarBarDisplaySettings
     /// </summary>
     public int Offset { get; set; }
 }
-
-/// <summary>A point in screen (device) pixels.</summary>
-public sealed record ScreenPoint(int X, int Y);

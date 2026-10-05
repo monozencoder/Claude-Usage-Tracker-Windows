@@ -12,7 +12,7 @@ namespace ClaudeUsageTracker.Platform.ClaudeCode;
 /// local state, and <c>claude auth login</c> runs the CLI's own browser sign-in. This
 /// app never handles OAuth itself — the CLI writes its credentials file, the app reads it.
 /// </summary>
-public static class ClaudeCli
+internal static class ClaudeCli
 {
     private static readonly TimeSpan StatusTimeout = TimeSpan.FromSeconds(15);
 

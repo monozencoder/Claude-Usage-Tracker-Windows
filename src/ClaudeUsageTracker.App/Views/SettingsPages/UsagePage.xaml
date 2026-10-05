@@ -1,0 +1,162 @@
+<UserControl x:Class="ClaudeUsageTracker.App.Views.SettingsPages.UsagePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:ClaudeUsageTracker.App.Localization"
+             xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views">
+    <!-- The Usage page of the settings window: how usage is fetched, and how often. -->
+    <UserControl.Resources>
+        <!-- Inline spin buttons inside the NumberBox-style interval field. -->
+        <Style x:Key="SpinButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource IconFontFamily}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <StackPanel>
+        <!-- The mode comes first: the interval below only applies when token-free mode is off. -->
+        <TextBlock Text="{loc:Tr Settings_SectionUsage}" Style="{StaticResource SectionHeaderStyle}" />
+        <Border Style="{StaticResource SettingsCardStyle}">
+            <StackPanel>
+                <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding AvoidTokenUsage}"
+                          views:SettingRow.Title="{loc:Tr Settings_AvoidTokens}" views:SettingRow.Description="{loc:Tr Settings_AvoidTokensDescription}" />
+                <Border Style="{StaticResource CardDividerStyle}" />
+                <Grid Style="{StaticResource CardRowStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Dimmed with the box in token-free mode: the interval and its cost only apply when it's off. -->
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="{loc:Tr Settings_RefreshInterval}" Style="{StaticResource BodyTextStyle}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <!-- Always visible: the per-refresh cost, or the error in red while the typed
+                             value can't be used. The model line below is hidden (not collapsed) in
+                             token-free mode, which prompts no model, so the row keeps its height. -->
+                        <TextBlock Text="{Binding RefreshIntervalHint}" TextWrapping="Wrap" Margin="0,2,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasRefreshIntervalError}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding ProbeModelText}" TextWrapping="Wrap" Margin="0,2,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <!-- NumberBox-style field. Disabled in token-free mode, which always refreshes every 5 minutes. -->
+                        <Border Height="30" CornerRadius="6" BorderThickness="1"
+                                Background="{DynamicResource ControlBackgroundBrush}"
+                                IsEnabled="{Binding IsRefreshIntervalEditable}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.45" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Digits only: IME is disabled so full-width input can't sneak in, and
+                                     typing/pasting is filtered in code-behind. Up/Down and the wheel step the value. -->
+                                <TextBox x:Name="RefreshIntervalBox" Width="48" MaxLength="4" TextAlignment="Right"
+                                         Background="Transparent" BorderThickness="0" Padding="4,0,2,0" VerticalContentAlignment="Center"
+                                         Text="{Binding RefreshIntervalText, UpdateSourceTrigger=PropertyChanged}"
+                                         InputMethod.IsInputMethodEnabled="False"
+                                         ToolTip="{Binding RefreshIntervalToolTip}"
+                                         PreviewTextInput="OnRefreshIntervalPreviewTextInput"
+                                         PreviewKeyDown="OnRefreshIntervalPreviewKeyDown"
+                                         PreviewMouseWheel="OnRefreshIntervalPreviewMouseWheel"
+                                         LostKeyboardFocus="OnRefreshIntervalLostFocus"
+                                         DataObject.Pasting="OnRefreshIntervalPasting" />
+                                <TextBlock Text="{loc:Tr Settings_Seconds}" Style="{StaticResource CaptionTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="2,0,6,0" />
+                                <!-- Glyphs need an explicit FontFamily: the implicit TextBlock style would
+                                     otherwise swap in the UI font and render them as boxes. -->
+                                <Button Style="{StaticResource SpinButtonStyle}"
+                                        Command="{Binding IncreaseRefreshIntervalCommand}" ToolTip="{loc:Tr Settings_Increase}">
+                                    <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Style="{StaticResource SpinButtonStyle}" Margin="0,0,3,0"
+                                        Command="{Binding DecreaseRefreshIntervalCommand}" ToolTip="{loc:Tr Settings_Decrease}">
+                                    <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        <!-- Live estimate for the typed interval. Hidden (not collapsed) in token-free
+                             mode, where no tokens are used, so the row keeps its height. -->
+                        <TextBlock Text="{Binding TokensPerHourText}" HorizontalAlignment="Right" Margin="0,4,2,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRefreshIntervalEditable}" Value="False">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

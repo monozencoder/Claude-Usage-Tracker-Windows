@@ -1,4 +1,4 @@
-using ClaudeUsageTracker.Core.Models;
+using ClaudeUsageTracker.Core.ClaudeCode;
 
 namespace ClaudeUsageTracker.Platform.ClaudeCode;
 
@@ -9,17 +9,9 @@ namespace ClaudeUsageTracker.Platform.ClaudeCode;
 /// refreshed (refreshing via the CLI would run a prompt and consume usage). Claude
 /// Code refreshes it on its own the next time it's used.
 /// </summary>
-public static class ClaudeCredentialResolver
+internal static class ClaudeCredentialResolver
 {
-    /// <param name="Credentials">Usable (unexpired) credentials, or null.</param>
-    /// <param name="Source">Where <paramref name="Credentials"/> came from — or, if they're
-    /// null but a credentials file exists, where the expired one was found.</param>
-    public readonly record struct Result(ClaudeCodeCredentials? Credentials, ClaudeCredentialSource? Source)
-    {
-        public bool CredentialsFileFound => Source is not null;
-    }
-
-    public static Result Resolve()
+    public static ClaudeCredentialLookup Resolve()
     {
         ClaudeCredentialSource? firstExpired = null;
         foreach (var source in ClaudeCredentialSource.EnumerateAll())
@@ -27,10 +19,10 @@ public static class ClaudeCredentialResolver
             if (source.TryRead() is not { } credentials)
                 continue;
             if (!credentials.IsExpired(DateTimeOffset.Now))
-                return new Result(credentials, source);
+                return new ClaudeCredentialLookup(credentials, source.Location);
             firstExpired ??= source;
         }
 
-        return new Result(null, firstExpired);
+        return new ClaudeCredentialLookup(null, firstExpired?.Location);
     }
 }

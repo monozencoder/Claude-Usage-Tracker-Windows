@@ -1,48 +1,30 @@
-using System.IO;
-using System.Text.Json;
-
 namespace ClaudeUsageTracker.App.Settings;
 
 /// <summary>
-/// Owns the app's single <see cref="AppSettings"/> instance. Everything reads and
-/// mutates <see cref="Current"/> and then calls <see cref="Save"/>, so there are no
-/// stale copies that could overwrite each other's changes on disk.
+/// Owns the app's single <see cref="AppSettings"/> instance (settings.json). Everything reads
+/// <see cref="Current"/>, and changes it through <see cref="Update"/>, which saves it and raises
+/// <see cref="Changed"/> — so there are no stale copies that could overwrite each other's
+/// changes on disk, and whoever shows a setting hears of a change wherever it was made.
 /// </summary>
 public sealed class AppSettingsStore
 {
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ClaudeUsageTracker", "settings.json");
+    private const string FileName = "settings.json";
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    public AppSettings Current { get; } = JsonFile.Load<AppSettings>(FileName) ?? new AppSettings();
 
-    public AppSettings Current { get; } = Load();
+    /// <summary>Raised after a change to <see cref="Current"/> has been saved.</summary>
+    public event Action? Changed;
 
-    public void Save()
+    public void Update(Action<AppSettings> change)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-
-        // Written beside the real file and swapped in: a crash or power cut mid-write would
-        // otherwise leave a truncated file, which Load answers by resetting every setting.
-        var temporaryPath = SettingsPath + ".tmp";
-        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(Current, JsonOptions));
-        File.Move(temporaryPath, SettingsPath, overwrite: true);
+        change(Current);
+        Commit();
     }
 
-    private static AppSettings Load()
+    /// <summary>Saves <see cref="Current"/> after it was changed in place (e.g. step by step during a drag), and raises <see cref="Changed"/>.</summary>
+    public void Commit()
     {
-        try
-        {
-            if (!File.Exists(SettingsPath))
-                return new AppSettings();
-
-            var json = File.ReadAllText(SettingsPath);
-            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
-        }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            // Corrupt or unreadable settings file — start fresh rather than crashing the app.
-            return new AppSettings();
-        }
+        JsonFile.Save(FileName, Current);
+        Changed?.Invoke();
     }
 }
