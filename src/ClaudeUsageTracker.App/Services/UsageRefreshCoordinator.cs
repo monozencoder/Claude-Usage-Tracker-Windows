@@ -1,7 +1,6 @@
 using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.ViewModels;
-using ClaudeUsageTracker.Core.History;
 using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Core.Notifications;
 using ClaudeUsageTracker.Core.Status;
@@ -11,8 +10,7 @@ namespace ClaudeUsageTracker.App.Services;
 
 /// <summary>
 /// Orchestrates a single refresh cycle: fetch usage (<see cref="UsageFetcher"/>),
-/// update the flyout view model, record the sample for the history chart, evaluate
-/// threshold/reset notifications, and report
+/// update the flyout view model, evaluate threshold/reset notifications, and report
 /// the session status/percentage back to the caller so it can repaint the tray icon.
 /// </summary>
 public sealed class UsageRefreshCoordinator
@@ -22,7 +20,6 @@ public sealed class UsageRefreshCoordinator
     private readonly UsageFetcher _fetcher;
     private readonly AppSettingsStore _settingsStore;
     private readonly FlyoutViewModel _flyoutViewModel;
-    private readonly UsageHistoryStore _history;
     private readonly IToastNotificationService _toastService;
     private readonly Action<double, UsageStatusLevel> _onIconUpdate;
     private readonly NotificationDedupTracker _dedupTracker;
@@ -33,14 +30,12 @@ public sealed class UsageRefreshCoordinator
         UsageFetcher fetcher,
         AppSettingsStore settingsStore,
         FlyoutViewModel flyoutViewModel,
-        UsageHistoryStore history,
         IToastNotificationService toastService,
         Action<double, UsageStatusLevel> onIconUpdate)
     {
         _fetcher = fetcher;
         _settingsStore = settingsStore;
         _flyoutViewModel = flyoutViewModel;
-        _history = history;
         _toastService = toastService;
         _onIconUpdate = onIconUpdate;
         _dedupTracker = new NotificationDedupTracker(settingsStore.Current.NotifiedThresholdKeys);
@@ -102,7 +97,6 @@ public sealed class UsageRefreshCoordinator
             usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
         var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
 
-        _history.Record(new UsageSample(now, effectiveSession, usage.WeeklyPercentage));
         EvaluateNotifications(effectiveSession);
         _onIconUpdate(effectiveSession, status);
     }

@@ -18,6 +18,8 @@
   <data name="Flyout_LastUpdatedAt" xml:space="preserve"><value>最終更新: {0}</value></data>
   <data name="Usage_Session" xml:space="preserve"><value>セッション (5 時間)</value></data>
   <data name="Usage_Weekly" xml:space="preserve"><value>週間 (7 日)</value></data>
+  <data name="Usage_SessionShort" xml:space="preserve"><value>5h</value></data>
+  <data name="Usage_WeeklyShort" xml:space="preserve"><value>7d</value></data>
   <data name="Usage_ResetsSoon" xml:space="preserve"><value>まもなくリセット</value></data>
   <data name="Usage_ResetsInDaysHours" xml:space="preserve"><value>{0} 日 {1} 時間後にリセット</value></data>
   <data name="Usage_ResetsInHoursMinutes" xml:space="preserve"><value>{0} 時間 {1} 分後にリセット</value></data>
@@ -39,6 +41,15 @@
   <data name="Tray_Refresh" xml:space="preserve"><value>今すぐ更新</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>設定</value></data>
   <data name="Tray_ResetPosition" xml:space="preserve"><value>表示位置をリセット</value></data>
+  <data name="Tray_FlyoutCompact" xml:space="preserve"><value>ウィンドウをコンパクト表示</value></data>
+  <data name="Settings_FlyoutCompact" xml:space="preserve"><value>ウィンドウをコンパクト表示にする</value></data>
+  <data name="Settings_FlyoutCompactDescription" xml:space="preserve"><value>フライアウトを、タスクバーのバーと同じくらいの大きさ(項目ごとに 1 行)にします。フライアウトをダブルクリックしても切り替えられます。</value></data>
+  <data name="Tray_FlyoutClickThrough" xml:space="preserve"><value>ウィンドウのクリックを透過</value></data>
+  <data name="Tray_TaskbarBarClickThrough" xml:space="preserve"><value>タスクバーのバーのクリックを透過</value></data>
+  <data name="Settings_FlyoutClickThrough" xml:space="preserve"><value>ウィンドウのクリックを透過する</value></data>
+  <data name="Settings_FlyoutClickThroughDescription" xml:space="preserve"><value>フライアウト上のマウス操作を、後ろのウィンドウにそのまま通します。Ctrl を押している間だけ、フライアウトを操作できます。</value></data>
+  <data name="Settings_TaskbarBarClickThrough" xml:space="preserve"><value>タスクバーのバーのクリックを透過する</value></data>
+  <data name="Settings_TaskbarBarClickThroughDescription" xml:space="preserve"><value>バー上のマウス操作を、下のタスクバーや全画面のアプリにそのまま通します。Ctrl を押している間だけ、クリックやドラッグができます。</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>終了</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>設定 - Claude Usage Tracker</value></data>
   <data name="Settings_NavOptions" xml:space="preserve"><value>オプション</value></data>
@@ -90,13 +101,9 @@
   <data name="Settings_TaskbarBarOverFullScreenDescription" xml:space="preserve"><value>全画面のゲームや動画がタスクバーを覆っている間も、暗い背景を付けてバーを表示します。</value></data>
   <data name="Settings_TaskbarBarOffsetReset" xml:space="preserve"><value>0px(自動の位置)に戻す</value></data>
   <data name="Settings_ResetTo100" xml:space="preserve"><value>100% に戻す</value></data>
-  <data name="Usage_ShortDaysHours" xml:space="preserve"><value>{0}日{1}時間</value></data>
-  <data name="History_Title" xml:space="preserve"><value>履歴</value></data>
-  <data name="History_Day" xml:space="preserve"><value>24 時間</value></data>
-  <data name="History_Week" xml:space="preserve"><value>7 日</value></data>
-  <data name="History_Session" xml:space="preserve"><value>セッション</value></data>
-  <data name="History_Weekly" xml:space="preserve"><value>週間</value></data>
-  <data name="History_Empty" xml:space="preserve"><value>データを集めています…</value></data>
+  <data name="Usage_ShortDaysHours" xml:space="preserve"><value>{0}d {1}h</value></data>
+  <data name="Usage_ShortHoursMinutes" xml:space="preserve"><value>{0}h {1}m</value></data>
+  <data name="Usage_ShortMinutes" xml:space="preserve"><value>{0}m</value></data>
   <data name="Settings_Thresholds" xml:space="preserve"><value>通知する使用率</value></data>
   <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>通知するセッション使用率を、カンマ区切りで指定します({0} 個まで)。例: 75, 90, 95</value></data>
   <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>タスクバーに表示する項目</value></data>
@@ -104,12 +111,13 @@
   <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>セッションと週間</value></data>
   <data name="Settings_TaskbarBarRowsSession" xml:space="preserve"><value>セッションのみ</value></data>
   <data name="Settings_TaskbarBarRowsWeekly" xml:space="preserve"><value>週間のみ</value></data>
-  <data name="Settings_TaskbarBarLabels" xml:space="preserve"><value>タスクバーのバーに項目名を表示する</value></data>
-  <data name="Settings_TaskbarBarLabelsDescription" xml:space="preserve"><value>バーの左に「セッション (5 時間)」「週間 (7 日)」を表示します。オフにすると幅が狭くなります。カーソルを載せれば項目名を確認できます。</value></data>
+  <data name="Settings_TaskbarBarLabels" xml:space="preserve"><value>タスクバーのバーの項目名</value></data>
+  <data name="Settings_TaskbarBarLabelsDescription" xml:space="preserve"><value>バーの左に表示する名前を選びます。短いほど幅が狭くなります。どれを選んでも、カーソルを載せれば正式な項目名を確認できます。</value></data>
+  <data name="Settings_TaskbarBarLabelsFull" xml:space="preserve"><value>正式 (セッション (5 時間))</value></data>
+  <data name="Settings_TaskbarBarLabelsShort" xml:space="preserve"><value>短縮 (5h)</value></data>
+  <data name="Settings_TaskbarBarLabelsNone" xml:space="preserve"><value>なし</value></data>
   <data name="Settings_TaskbarBarResetTime" xml:space="preserve"><value>タスクバーのバーに残り時間を表示する</value></data>
-  <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間を表示します(例: 2:15、3日4時間)。</value></data>
-  <data name="Settings_HistoryChart" xml:space="preserve"><value>履歴グラフを表示する</value></data>
-  <data name="Settings_HistoryChartDescription" xml:space="preserve"><value>フライアウトに、直近 24 時間または 7 日間のセッションと週間の使用率の推移を表示します。</value></data>
+  <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間を表示します(例: 2h 15m、3d 4h)。</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>ウィンドウの拡大率</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>フライアウト全体の大きさを変えます。フライアウトの端をドラッグしても変更できます。</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>ウィンドウの不透明度</value></data>

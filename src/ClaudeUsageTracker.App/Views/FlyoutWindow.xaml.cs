@@ -24,6 +24,8 @@ public partial class FlyoutWindow : Window
         InitializeComponent();
         _baseInset = RootPanel.Margin;
         _basePanelWidth = Width - _baseInset.Left - _baseInset.Right;
+        _basePadding = RootPanel.Padding;
+        _baseCornerRadius = RootPanel.CornerRadius;
         _elapsedTimer.Tick += (_, _) =>
         {
             if (DataContext is FlyoutViewModel viewModel)
@@ -198,6 +200,14 @@ public partial class FlyoutWindow : Window
         if (e.OriginalSource is DependencyObject source && IsWithinButton(source))
             return;
 
+        // The compact flyout has no buttons, so this is its way back (and, for symmetry, the way in).
+        if (e.ClickCount == 2)
+        {
+            Compact = !Compact;
+            CompactChanged?.Invoke(Compact);
+            return;
+        }
+
         // DragMove blocks until the button is released, so the position after it is where it was dropped.
         var before = WindowPositioner.GetPosition(this);
         DragMove();
@@ -215,9 +225,11 @@ public partial class FlyoutWindow : Window
     // Dragging lands exactly on 100% when it gets this close, so the original size is easy to get back to.
     private const double ScaleSnapDistance = 0.04;
 
-    // The XAML layout at 100%: the shadow room around the panel, and the panel's width.
+    // The XAML layout at 100%: the shadow room around the panel, and the (full) panel's width and shape.
     private readonly Thickness _baseInset;
     private readonly double _basePanelWidth;
+    private readonly Thickness _basePadding;
+    private readonly CornerRadius _baseCornerRadius;
 
     private double _scale = 1;
 
@@ -234,11 +246,49 @@ public partial class FlyoutWindow : Window
             var inset = InsetAt(_scale);
             RootPanel.LayoutTransform = _scale == 1 ? Transform.Identity : new ScaleTransform(_scale, _scale);
             RootPanel.Margin = ResizeGrips.Margin = inset;
-            Width = _basePanelWidth * _scale + inset.Left + inset.Right;
+            // Compact, it's as wide as its lines take; otherwise the designed width, scaled.
+            SizeToContent = _compact ? SizeToContent.WidthAndHeight : SizeToContent.Height;
+            if (!_compact)
+                Width = _basePanelWidth * _scale + inset.Left + inset.Right;
             // Display mode snaps glyphs to pixels for the unscaled size and looks uneven once scaled.
             TextOptions.SetTextFormattingMode(this, _scale == 1 ? TextFormattingMode.Display : TextFormattingMode.Ideal);
         }
     }
+
+    private static readonly Thickness CompactPadding = new(10, 6, 10, 6);
+    private static readonly CornerRadius CompactCornerRadius = new(8);
+
+    private bool _compact;
+
+    /// <summary>
+    /// Shows the flyout cut down to one short line per usage row, about the size of the taskbar
+    /// bars, instead of the full panel. Double-clicking the flyout flips it (see <see cref="CompactChanged"/>).
+    /// </summary>
+    public bool Compact
+    {
+        get => _compact;
+        set
+        {
+            if (_compact == value)
+                return;
+            _compact = value;
+            FullContent.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            CompactContent.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            RootPanel.Padding = value ? CompactPadding : _basePadding;
+            RootPanel.CornerRadius = value ? CompactCornerRadius : _baseCornerRadius;
+            Scale = _scale; // re-applies the width rule for the mode
+
+            // In the tray corner SizeChanged re-places it; elsewhere the larger panel may not fit where the small one was.
+            if (IsVisible && SavedPosition is not null)
+            {
+                UpdateLayout();
+                WindowPositioner.KeepOnScreen(this, RootPanel.Margin);
+            }
+        }
+    }
+
+    /// <summary>Raised with the new <see cref="Compact"/> after the user flips it by double-clicking the flyout.</summary>
+    public event Action<bool>? CompactChanged;
 
     /// <summary>Raised with the new <see cref="Scale"/> after the user finishes resizing the flyout.</summary>
     public event Action<double>? ScaleSaved;
@@ -285,8 +335,10 @@ public partial class FlyoutWindow : Window
 
         // How far the dragged edge moved outward, as a change in scale. A corner follows
         // whichever direction was dragged further, like an aspect-locked resize elsewhere.
+        // The panel's size at 100% comes from its size when the drag started: compact, its width isn't the designed one.
+        var basePanelWidth = (_resizeStartSize.Width - startInset.Left - startInset.Right) / _resizeStartScale;
         var basePanelHeight = (_resizeStartSize.Height - startInset.Top - startInset.Bottom) / _resizeStartScale;
-        var byWidth = (cursor.X - _resizeStartCursor.X) / dpi.DpiScaleX * _resizeHorizontal / _basePanelWidth;
+        var byWidth = (cursor.X - _resizeStartCursor.X) / dpi.DpiScaleX * _resizeHorizontal / basePanelWidth;
         var byHeight = (cursor.Y - _resizeStartCursor.Y) / dpi.DpiScaleY * _resizeVertical / basePanelHeight;
         var change = _resizeVertical == 0 || (_resizeHorizontal != 0 && Math.Abs(byWidth) > Math.Abs(byHeight)) ? byWidth : byHeight;
 

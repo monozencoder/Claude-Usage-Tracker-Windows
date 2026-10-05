@@ -47,9 +47,34 @@ public sealed class TaskbarBarController : IDisposable
         _viewModel = viewModel;
         _settingsStore = settingsStore;
         _timer.Tick += (_, _) => Update();
+
+        // Using the taskbar puts it in front of the strips. A second until the next tick is a long
+        // time to have them gone, so they're put back as the foreground changes — and once more
+        // shortly after, as the taskbar may only come forward after the event.
+        _settleTimer.Tick += (_, _) =>
+        {
+            _settleTimer.Stop();
+            Refresh();
+        };
+        _onForegroundChanged = (_, _, _, _, _, _, _) =>
+        {
+            Refresh();
+            _settleTimer.Stop();
+            _settleTimer.Start();
+        };
+        _foregroundHook = SetWinEventHook(EventSystemForeground, EventSystemForeground, IntPtr.Zero, _onForegroundChanged, 0, 0, WineventOutOfContext);
     }
 
+    private readonly DispatcherTimer _settleTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
+
+    // Held in a field: the hook only has a function pointer to it, which doesn't keep it alive.
+    private readonly WinEventProc _onForegroundChanged;
+    private readonly IntPtr _foregroundHook;
+
     public event Action? Clicked;
+
+    /// <summary>The strips currently on the taskbars.</summary>
+    public IEnumerable<TaskbarBarWindow> Strips => _strips.Values;
 
     /// <summary>Raised with the monitor's device name and its new offset after a strip was dragged along its taskbar.</summary>
     public event Action<string, int>? OffsetChanged;
@@ -85,6 +110,8 @@ public sealed class TaskbarBarController : IDisposable
     public void Dispose()
     {
         _timer.Stop();
+        _settleTimer.Stop();
+        UnhookWinEvent(_foregroundHook);
         CloseAll();
     }
 
@@ -93,7 +120,7 @@ public sealed class TaskbarBarController : IDisposable
         var taskbars = FindTaskbars();
 
         // Taskbars that are gone: a monitor unplugged, or Explorer restarting (the strips come
-        // back with the new taskbars). An owned window is destroyed with its owner anyway.
+        // back with the new taskbars).
         foreach (var gone in _strips.Keys.Where(taskbar => !taskbars.Contains(taskbar)).ToList())
             Close(gone);
 
@@ -121,7 +148,7 @@ public sealed class TaskbarBarController : IDisposable
 
         if (!_strips.TryGetValue(taskbar, out var strip))
         {
-            strip = new TaskbarBarWindow(taskbar) { DataContext = _viewModel };
+            strip = new TaskbarBarWindow { DataContext = _viewModel };
             strip.UseLightTaskbar(_lightTaskbar);
             strip.Clicked += () => Clicked?.Invoke();
             var created = strip;
@@ -146,8 +173,8 @@ public sealed class TaskbarBarController : IDisposable
 
         // Only a horizontal taskbar has room for it. An auto-hidden one is parked almost entirely
         // off screen, and a full-screen app covers the taskbar: unless the user wants the strip
-        // over that app, it must not be left floating (it isn't hidden with its owner: an owned
-        // window can stay above what covers the taskbar).
+        // over that app, it must not be left floating (being topmost, it would stay above what
+        // covers the taskbar).
         var horizontal = bounds.Width > bounds.Height;
         var onScreen = Drawing.Rectangle.Intersect(bounds, screen).Height >= bounds.Height / 2;
         var covered = IsCoveredByFullScreenWindow(taskbar, new WindowInteropHelper(strip).Handle, bounds, screen);
@@ -160,7 +187,7 @@ public sealed class TaskbarBarController : IDisposable
         strip.OverFullScreen = covered;
         var settings = _settingsStore.Current;
         strip.RowsMode = settings.TaskbarBarRows;
-        strip.ShowLabels = settings.TaskbarBarShowLabels;
+        strip.LabelMode = settings.TaskbarBarLabels;
         strip.ShowResetTime = settings.TaskbarBarShowResetTime;
 
         // The strip takes the DPI of the monitor it's on, so right after it's first moved onto a
@@ -185,10 +212,25 @@ public sealed class TaskbarBarController : IDisposable
         var x = right - width + (int)Math.Round((offset - GapToNotificationArea) * dpi.DpiScaleX);
         // However far it's shifted, it stays on its taskbar.
         x = Math.Max(bounds.Left, Math.Min(x, bounds.Right - width));
-        // Over a full-screen app the taskbar has dropped behind that app and may take the strip
-        // with it, so there the strip is raised on its own.
-        SetWindowPos(new WindowInteropHelper(strip).Handle, covered ? HwndTopmost : IntPtr.Zero, x, bounds.Top, 0, 0,
-            SwpNoSize | SwpNoActivate | (covered ? 0 : SwpNoZOrder));
+        // The taskbar is topmost too and goes to the front of the topmost windows whenever it's
+        // used, over the strip, so the strip is put back in front of it. Only when it has to be:
+        // raising it every time would also put it over a menu or tooltip that overlaps it. Over a
+        // full-screen app there's no taskbar to be in front of, and it's raised regardless.
+        var handle = new WindowInteropHelper(strip).Handle;
+        var raise = covered || IsAbove(taskbar, handle);
+        SetWindowPos(handle, raise ? HwndTopmost : IntPtr.Zero, x, bounds.Top, 0, 0,
+            SwpNoSize | SwpNoActivate | (raise ? 0 : SwpNoZOrder));
+    }
+
+    /// <summary>Whether <paramref name="window"/> is in front of <paramref name="other"/> in the z-order.</summary>
+    private static bool IsAbove(IntPtr window, IntPtr other)
+    {
+        for (var above = GetWindow(other, GwHwndPrev); above != IntPtr.Zero; above = GetWindow(above, GwHwndPrev))
+        {
+            if (above == window)
+                return true;
+        }
+        return false;
     }
 
     // The offset the strip being dragged had when the drag started.
@@ -290,6 +332,22 @@ public sealed class TaskbarBarController : IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
+
+    private const uint EventSystemForeground = 0x0003;
+    private const uint WineventOutOfContext = 0x0000;
+
+    private delegate void WinEventProc(IntPtr hook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint thread, uint time);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr module, WinEventProc callback, uint processId, uint threadId, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool UnhookWinEvent(IntPtr hook);
+
+    private const uint GwHwndPrev = 3;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr hWnd, uint command);
 
     private const uint GaRoot = 2;
 

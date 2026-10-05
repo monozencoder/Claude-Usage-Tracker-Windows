@@ -23,6 +23,18 @@ public sealed class TrayIconController : IDisposable
     /// <summary>Whether "Reset position" has anything to reset; checked each time the menu opens.</summary>
     public Func<bool>? CanResetPosition { get; set; }
 
+    public event Action? FlyoutCompactToggled;
+    public event Action? FlyoutClickThroughToggled;
+    public event Action? TaskbarBarClickThroughToggled;
+
+    /// <summary>The toggles' current state; checked each time the menu opens.</summary>
+    public Func<bool>? IsFlyoutCompact { get; set; }
+    public Func<bool>? IsFlyoutClickThrough { get; set; }
+    public Func<bool>? IsTaskbarBarClickThrough { get; set; }
+
+    /// <summary>Whether the taskbar bars are on at all, i.e. whether their toggle applies.</summary>
+    public Func<bool>? IsTaskbarBarShown { get; set; }
+
     public TrayIconController(TrayIconRenderer renderer)
     {
         _renderer = renderer;
@@ -33,13 +45,29 @@ public sealed class TrayIconController : IDisposable
         var resetPositionItem = CreateItem("Tray_ResetPosition", "\uE7A7", () => ResetPositionRequested?.Invoke());
         var exitItem = CreateItem("Tray_Exit", "\uE7E8", () => ExitRequested?.Invoke());
 
+        // Toggles: the glyph is a check mark (Accept) while on and blank while off, set as the menu opens.
+        var flyoutCompactItem = CreateItem("Tray_FlyoutCompact", string.Empty, () => FlyoutCompactToggled?.Invoke());
+        var flyoutClickThroughItem = CreateItem("Tray_FlyoutClickThrough", string.Empty, () => FlyoutClickThroughToggled?.Invoke());
+        var taskbarBarClickThroughItem = CreateItem("Tray_TaskbarBarClickThrough", string.Empty, () => TaskbarBarClickThroughToggled?.Invoke());
+
         var contextMenu = new ContextMenu();
         contextMenu.Items.Add(refreshItem);
         contextMenu.Items.Add(settingsItem);
         contextMenu.Items.Add(resetPositionItem);
         contextMenu.Items.Add(new Separator());
+        contextMenu.Items.Add(flyoutCompactItem);
+        contextMenu.Items.Add(flyoutClickThroughItem);
+        contextMenu.Items.Add(taskbarBarClickThroughItem);
+        contextMenu.Items.Add(new Separator());
         contextMenu.Items.Add(exitItem);
-        contextMenu.Opened += (_, _) => resetPositionItem.IsEnabled = CanResetPosition?.Invoke() ?? false;
+        contextMenu.Opened += (_, _) =>
+        {
+            resetPositionItem.IsEnabled = CanResetPosition?.Invoke() ?? false;
+            SetChecked(flyoutCompactItem, IsFlyoutCompact?.Invoke() ?? false);
+            SetChecked(flyoutClickThroughItem, IsFlyoutClickThrough?.Invoke() ?? false);
+            SetChecked(taskbarBarClickThroughItem, IsTaskbarBarClickThrough?.Invoke() ?? false);
+            taskbarBarClickThroughItem.IsEnabled = IsTaskbarBarShown?.Invoke() ?? false;
+        };
 
         _taskbarIcon = new TaskbarIcon
         {
@@ -67,6 +95,8 @@ public sealed class TrayIconController : IDisposable
         Loc.LanguageChanged += () => item.Header = Loc.Get(textKey);
         return item;
     }
+
+    private static void SetChecked(MenuItem item, bool isChecked) => ((TextBlock)item.Icon).Text = isChecked ? "" : string.Empty;
 
     public void UpdateIcon(double percentage, UsageStatusLevel status)
     {

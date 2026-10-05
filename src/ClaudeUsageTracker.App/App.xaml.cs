@@ -33,8 +33,8 @@ public partial class App : System.Windows.Application
     private ILaunchAtLoginService _launchAtLoginService = null!;
     private TrayIconController _trayIconController = null!;
     private TaskbarBarController _taskbarBarController = null!;
+    private ClickThroughController _clickThroughController = null!;
     private UsageRefreshCoordinator _coordinator = null!;
-    private UsageHistoryStore _historyStore = null!;
     private DispatcherTimer _minuteTimer = null!;
     private FlyoutWindow _flyoutWindow = null!;
     private DispatcherTimer _refreshTimer = null!;
@@ -68,6 +68,7 @@ public partial class App : System.Windows.Application
             Topmost = settings.AlwaysOnTop,
             RestingOpacity = settings.FlyoutOpacity,
             Scale = settings.FlyoutScale,
+            Compact = settings.FlyoutCompact,
             SavedPosition = settings.FlyoutPosition
         };
         _flyoutWindow.ScaleSaved += scale =>
@@ -78,6 +79,7 @@ public partial class App : System.Windows.Application
             if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
                 settingsViewModel.FlyoutScalePercent = SettingsViewModel.ToScalePercent(scale);
         };
+        _flyoutWindow.CompactChanged += SetFlyoutCompact;
         _flyoutWindow.PositionSaved += position =>
         {
             _settingsStore.Current.FlyoutPosition = position;
@@ -114,19 +116,20 @@ public partial class App : System.Windows.Application
         };
         ApplyTaskbarBarSettings();
 
-        _historyStore = new UsageHistoryStore();
-        _historyStore.Changed += () => _flyoutViewModel.HistorySamples = [.. _historyStore.Samples];
-        _flyoutViewModel.HistorySamples = [.. _historyStore.Samples];
-        _flyoutViewModel.ShowHistory = settings.ShowHistoryChart;
-        _flyoutViewModel.HistoryRange = settings.HistoryRange;
-        _flyoutViewModel.HistoryRangePicked += range =>
-        {
-            _settingsStore.Current.HistoryRange = range;
-            _settingsStore.Save();
-        };
+        _clickThroughController = new ClickThroughController();
+        _clickThroughController.Add(() => _settingsStore.Current.FlyoutClickThrough, () => [_flyoutWindow]);
+        _clickThroughController.Add(() => _settingsStore.Current.TaskbarBarClickThrough, () => _taskbarBarController.Strips);
+        _clickThroughController.Refresh();
+        _trayIconController.IsFlyoutCompact = () => _settingsStore.Current.FlyoutCompact;
+        _trayIconController.FlyoutCompactToggled += () => SetFlyoutCompact(!_settingsStore.Current.FlyoutCompact);
+        _trayIconController.IsFlyoutClickThrough =() => _settingsStore.Current.FlyoutClickThrough;
+        _trayIconController.IsTaskbarBarClickThrough = () => _settingsStore.Current.TaskbarBarClickThrough;
+        _trayIconController.IsTaskbarBarShown = () => _settingsStore.Current.ShowTaskbarBar;
+        _trayIconController.FlyoutClickThroughToggled += () => SetClickThrough(flyout: !_settingsStore.Current.FlyoutClickThrough);
+        _trayIconController.TaskbarBarClickThroughToggled += () => SetClickThrough(taskbarBar: !_settingsStore.Current.TaskbarBarClickThrough);
 
         _coordinator = new UsageRefreshCoordinator(
-            _usageFetcher, _settingsStore, _flyoutViewModel, _historyStore, new ToastNotificationService(), _trayIconController.UpdateIcon);
+            _usageFetcher, _settingsStore, _flyoutViewModel, new ToastNotificationService(), _trayIconController.UpdateIcon);
 
         // Refreshes can be minutes apart; the "resets in" times shown in between must still run down.
         _minuteTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
@@ -154,6 +157,7 @@ public partial class App : System.Windows.Application
         ThemeManager.Shutdown();
         _trayIconController?.Dispose();
         _taskbarBarController?.Dispose();
+        _clickThroughController?.Dispose();
         _credentialsWatcher?.Dispose();
         _httpClient.Dispose();
         base.OnExit(e);
@@ -167,6 +171,38 @@ public partial class App : System.Windows.Application
     {
         _taskbarBarController.Enabled = _settingsStore.Current.ShowTaskbarBar;
         _taskbarBarController.Refresh();
+    }
+
+    // From the tray menu or a double-click on the flyout; saved the same way as the click-through toggles below.
+    private void SetFlyoutCompact(bool compact)
+    {
+        if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
+        {
+            settingsViewModel.FlyoutCompact = compact;
+            return;
+        }
+
+        _settingsStore.Current.FlyoutCompact = compact;
+        _settingsStore.Save();
+        _flyoutWindow.Compact = compact;
+    }
+
+    // From the tray menu. With the settings window open the change goes through its view model,
+    // which saves and applies it like a flip of its own toggle; otherwise it's done here.
+    private void SetClickThrough(bool? flyout = null, bool? taskbarBar = null)
+    {
+        if (_settingsWindow?.DataContext is SettingsViewModel settingsViewModel)
+        {
+            settingsViewModel.FlyoutClickThrough = flyout ?? settingsViewModel.FlyoutClickThrough;
+            settingsViewModel.TaskbarBarClickThrough = taskbarBar ?? settingsViewModel.TaskbarBarClickThrough;
+            return;
+        }
+
+        var settings = _settingsStore.Current;
+        settings.FlyoutClickThrough = flyout ?? settings.FlyoutClickThrough;
+        settings.TaskbarBarClickThrough = taskbarBar ?? settings.TaskbarBarClickThrough;
+        _settingsStore.Save();
+        _clickThroughController.Refresh();
     }
 
     private void StartSignIn()
@@ -198,9 +234,10 @@ public partial class App : System.Windows.Application
                 _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
             _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
             ApplyTaskbarBarSettings();
+            _clickThroughController.Refresh();
+            _flyoutWindow.Compact = _settingsStore.Current.FlyoutCompact;
             if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
                 _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
-            _flyoutViewModel.ShowHistory = _settingsStore.Current.ShowHistoryChart;
             if (_flyoutWindow.Scale != _settingsStore.Current.FlyoutScale)
                 _flyoutWindow.Scale = _settingsStore.Current.FlyoutScale;
         };

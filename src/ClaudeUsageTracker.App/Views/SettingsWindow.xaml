@@ -422,11 +422,11 @@
                             </StackPanel>
                         </DockPanel>
                         <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowHistoryChart}"
-                                  AutomationProperties.Name="{loc:Tr Settings_HistoryChart}">
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutCompact}"
+                                  AutomationProperties.Name="{loc:Tr Settings_FlyoutCompact}">
                             <StackPanel>
-                                <TextBlock Text="{loc:Tr Settings_HistoryChart}" Style="{StaticResource RowTitleStyle}" />
-                                <TextBlock Text="{loc:Tr Settings_HistoryChartDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_FlyoutCompact}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_FlyoutCompactDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </CheckBox>
                     </StackPanel>
@@ -484,6 +484,14 @@
                             </StackPanel>
                         </CheckBox>
                         <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutClickThrough}"
+                                  AutomationProperties.Name="{loc:Tr Settings_FlyoutClickThrough}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_FlyoutClickThrough}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_FlyoutClickThroughDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding ShowTaskbarBar}"
                                   AutomationProperties.Name="{loc:Tr Settings_TaskbarBar}">
                             <StackPanel>
@@ -501,6 +509,15 @@
                             </StackPanel>
                         </CheckBox>
                         <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarClickThrough}"
+                                  IsEnabled="{Binding ShowTaskbarBar}"
+                                  AutomationProperties.Name="{loc:Tr Settings_TaskbarBarClickThrough}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarClickThrough}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TaskbarBarClickThroughDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
+                        <Border Style="{StaticResource CardDividerStyle}" />
                         <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding ShowTaskbarBar}">
                             <ComboBox DockPanel.Dock="Right" Width="170" Margin="16,0,0,0" VerticalAlignment="Center"
                                       ItemsSource="{x:Static vm:SettingsViewModel.TaskbarBarRowsOptions}"
@@ -513,14 +530,17 @@
                             </StackPanel>
                         </DockPanel>
                         <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowLabels}"
-                                  IsEnabled="{Binding ShowTaskbarBar}"
-                                  AutomationProperties.Name="{loc:Tr Settings_TaskbarBarLabels}">
-                            <StackPanel>
+                        <DockPanel Style="{StaticResource CardRowStyle}" IsEnabled="{Binding ShowTaskbarBar}">
+                            <ComboBox DockPanel.Dock="Right" Width="170" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.TaskbarBarLabelsOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding TaskbarBarLabels}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_TaskbarBarLabels}" />
+                            <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{loc:Tr Settings_TaskbarBarLabels}" Style="{StaticResource RowTitleStyle}" />
                                 <TextBlock Text="{loc:Tr Settings_TaskbarBarLabelsDescription}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
-                        </CheckBox>
+                        </DockPanel>
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowResetTime}"
                                   IsEnabled="{Binding ShowTaskbarBar}"

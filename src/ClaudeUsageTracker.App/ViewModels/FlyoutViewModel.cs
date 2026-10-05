@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
 using ClaudeUsageTracker.App.Localization;
-using ClaudeUsageTracker.App.Settings;
-using ClaudeUsageTracker.Core.History;
 using ClaudeUsageTracker.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -37,28 +35,6 @@ public partial class FlyoutViewModel : ObservableObject
 
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
 
-    /// <summary>Whether the history chart is shown at all (a setting).</summary>
-    [ObservableProperty]
-    private bool _showHistory;
-
-    /// <summary>The recorded samples the history chart draws, oldest first; replaced (not mutated) when one is added.</summary>
-    [ObservableProperty]
-    private IReadOnlyList<UsageSample> _historySamples = [];
-
-    /// <summary>How far back the history chart goes; switched by the two buttons above it.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HistorySpan), nameof(IsDayHistory), nameof(IsWeekHistory))]
-    private HistoryRange _historyRange;
-
-    public TimeSpan HistorySpan => HistoryRange == HistoryRange.Week ? TimeSpan.FromDays(7) : TimeSpan.FromDays(1);
-
-    public bool IsDayHistory => HistoryRange == HistoryRange.Day;
-
-    public bool IsWeekHistory => HistoryRange == HistoryRange.Week;
-
-    /// <summary>Raised when the user picks another range for the history chart, so it can be saved.</summary>
-    public event Action<HistoryRange>? HistoryRangePicked;
-
     public event Action? RefreshRequested;
     public event Action? SettingsRequested;
     public event Action? SignInRequested;
@@ -71,15 +47,6 @@ public partial class FlyoutViewModel : ObservableObject
 
     [RelayCommand]
     private void SignIn() => SignInRequested?.Invoke();
-
-    [RelayCommand]
-    private void PickHistoryRange(HistoryRange range)
-    {
-        if (HistoryRange == range)
-            return;
-        HistoryRange = range;
-        HistoryRangePicked?.Invoke(range);
-    }
 
     public void SetBanner(string message, bool canSignIn = false)
     {

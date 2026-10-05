@@ -61,12 +61,14 @@ public partial class SettingsViewModel : ObservableObject
         NotificationsEnabled = settings.NotificationsEnabled;
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
+        FlyoutClickThrough = settings.FlyoutClickThrough;
+        FlyoutCompact = settings.FlyoutCompact;
+        TaskbarBarClickThrough = settings.TaskbarBarClickThrough;
         ShowTaskbarBar = settings.ShowTaskbarBar;
         ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
         TaskbarBarRows = settings.TaskbarBarRows;
-        TaskbarBarShowLabels = settings.TaskbarBarShowLabels;
+        TaskbarBarLabels = settings.TaskbarBarLabels;
         TaskbarBarShowResetTime = settings.TaskbarBarShowResetTime;
-        ShowHistoryChart = settings.ShowHistoryChart;
         _notificationThresholdsText = FormatThresholds(settings.EffectiveNotificationThresholds);
         TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
         FlyoutOpacityPercent = (int)Math.Round(settings.FlyoutOpacity * 100);
@@ -99,6 +101,13 @@ public partial class SettingsViewModel : ObservableObject
         new(TaskbarBarRows.Both, "Settings_TaskbarBarRowsBoth"),
         new(TaskbarBarRows.SessionOnly, "Settings_TaskbarBarRowsSession"),
         new(TaskbarBarRows.WeeklyOnly, "Settings_TaskbarBarRowsWeekly"),
+    ];
+
+    public static IReadOnlyList<ChoiceOption> TaskbarBarLabelsOptions { get; } =
+    [
+        new(TaskbarBarLabels.Full, "Settings_TaskbarBarLabelsFull"),
+        new(TaskbarBarLabels.Short, "Settings_TaskbarBarLabelsShort"),
+        new(TaskbarBarLabels.None, "Settings_TaskbarBarLabelsNone"),
     ];
 
     /// <summary>Raised after a change has been written to disk.</summary>
@@ -179,6 +188,15 @@ public partial class SettingsViewModel : ObservableObject
     private bool _alwaysOnTop;
 
     [ObservableProperty]
+    private bool _flyoutCompact;
+
+    [ObservableProperty]
+    private bool _flyoutClickThrough;
+
+    [ObservableProperty]
+    private bool _taskbarBarClickThrough;
+
+    [ObservableProperty]
     private bool _showTaskbarBar;
 
     [ObservableProperty]
@@ -188,13 +206,10 @@ public partial class SettingsViewModel : ObservableObject
     private TaskbarBarRows _taskbarBarRows;
 
     [ObservableProperty]
-    private bool _taskbarBarShowLabels;
+    private TaskbarBarLabels _taskbarBarLabels;
 
     [ObservableProperty]
     private bool _taskbarBarShowResetTime;
-
-    [ObservableProperty]
-    private bool _showHistoryChart;
 
     private string _notificationThresholdsText;
 
@@ -336,17 +351,21 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnAlwaysOnTopChanged(bool value) => Apply();
 
+    partial void OnFlyoutClickThroughChanged(bool value) => Apply();
+
+    partial void OnFlyoutCompactChanged(bool value) => Apply();
+
+    partial void OnTaskbarBarClickThroughChanged(bool value) => Apply();
+
     partial void OnShowTaskbarBarChanged(bool value) => Apply();
 
     partial void OnShowTaskbarBarOverFullScreenChanged(bool value) => Apply();
 
     partial void OnTaskbarBarRowsChanged(TaskbarBarRows value) => Apply();
 
-    partial void OnTaskbarBarShowLabelsChanged(bool value) => Apply();
+    partial void OnTaskbarBarLabelsChanged(TaskbarBarLabels value) => Apply();
 
     partial void OnTaskbarBarShowResetTimeChanged(bool value) => Apply();
-
-    partial void OnShowHistoryChartChanged(bool value) => Apply();
 
     partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
 
@@ -412,12 +431,14 @@ public partial class SettingsViewModel : ObservableObject
         settings.NotificationsEnabled = NotificationsEnabled;
         settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
         settings.AlwaysOnTop = AlwaysOnTop;
+        settings.FlyoutClickThrough = FlyoutClickThrough;
+        settings.FlyoutCompact = FlyoutCompact;
+        settings.TaskbarBarClickThrough = TaskbarBarClickThrough;
         settings.ShowTaskbarBar = ShowTaskbarBar;
         settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
         settings.TaskbarBarRows = TaskbarBarRows;
-        settings.TaskbarBarShowLabels = TaskbarBarShowLabels;
+        settings.TaskbarBarLabels = TaskbarBarLabels;
         settings.TaskbarBarShowResetTime = TaskbarBarShowResetTime;
-        settings.ShowHistoryChart = ShowHistoryChart;
         settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;

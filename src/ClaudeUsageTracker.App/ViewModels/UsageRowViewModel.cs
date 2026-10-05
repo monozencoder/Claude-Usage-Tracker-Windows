@@ -12,12 +12,21 @@ public sealed class UsageRowViewModel
 {
     public required UsageRowKind Kind { get; init; }
     public required string Label { get; init; }
+
+    /// <summary>The row's name cut down to its window ("5h", "7d"), for the taskbar where width is scarce.</summary>
+    public required string ShortLabel { get; init; }
+
     public required double Percentage { get; init; }
     public required string PercentageText { get; init; }
     public required string ResetText { get; init; }
 
-    /// <summary>Time left until the reset, short enough for the taskbar: "2:15", or "3d 4h" from a day up.</summary>
+    /// <summary>Time left until the reset, short enough for the taskbar: "45m", "2h 15m", or "3d 4h" from a day up.</summary>
     public required string ShortResetText { get; init; }
+
+    // ShortResetText in its two parts ("4d" + "10h", "4h" + "2m", "" + "45m"), so that rows of
+    // different lengths can be lined up part by part instead of only at one edge.
+    public string ShortResetLead => ShortResetText.LastIndexOf(' ') is var space and >= 0 ? ShortResetText[..space] : string.Empty;
+    public string ShortResetTail => ShortResetText[(ShortResetText.LastIndexOf(' ') + 1)..];
 
     public required UsageStatusLevel Status { get; init; }
 
@@ -28,6 +37,7 @@ public sealed class UsageRowViewModel
         {
             Kind = kind,
             Label = Loc.Get(kind == UsageRowKind.Session ? "Usage_Session" : "Usage_Weekly"),
+            ShortLabel = Loc.Get(kind == UsageRowKind.Session ? "Usage_SessionShort" : "Usage_WeeklyShort"),
             Percentage = Math.Clamp(percentage, 0, 100),
             PercentageText = $"{percentage:0.#}%",
             ResetText = resetTime is { } reset ? FormatReset(reset - now) : string.Empty,
@@ -51,8 +61,12 @@ public sealed class UsageRowViewModel
         if (delta < TimeSpan.Zero)
             delta = TimeSpan.Zero;
 
-        return delta.TotalHours >= 24
-            ? Loc.Format("Usage_ShortDaysHours", delta.Days, delta.Hours)
-            : $"{(int)delta.TotalHours}:{delta.Minutes:00}";
+        // Units throughout rather than "4:03", which also reads as a time of day or as minutes and seconds.
+        return delta switch
+        {
+            { TotalHours: >= 24 } => Loc.Format("Usage_ShortDaysHours", delta.Days, delta.Hours),
+            { TotalHours: >= 1 } => Loc.Format("Usage_ShortHoursMinutes", delta.Hours, delta.Minutes),
+            _ => Loc.Format("Usage_ShortMinutes", delta.Minutes)
+        };
     }
 }

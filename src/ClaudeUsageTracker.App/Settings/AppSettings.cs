@@ -50,6 +50,17 @@ public sealed class AppSettings
     /// <summary>Keeps the flyout above other windows (Topmost).</summary>
     public bool AlwaysOnTop { get; set; } = true;
 
+    /// <summary>
+    /// Lets the mouse through the flyout to whatever is behind it; holding Ctrl makes it clickable
+    /// again. <see cref="TaskbarBarClickThrough"/> is the same for the taskbar bars.
+    /// </summary>
+    public bool FlyoutClickThrough { get; set; }
+
+    public bool TaskbarBarClickThrough { get; set; }
+
+    /// <summary>Shows the flyout cut down to one short line per usage row, about the size of the taskbar bars.</summary>
+    public bool FlyoutCompact { get; set; }
+
     /// <summary>Shows the usage bars on the taskbar, left of the notification area.</summary>
     public bool ShowTaskbarBar { get; set; }
 
@@ -63,18 +74,27 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarRows>))]
     public TaskbarBarRows TaskbarBarRows { get; set; } = TaskbarBarRows.Both;
 
-    /// <summary>Shows each row's name ("Session (5h)") left of its bar on the taskbar.</summary>
-    public bool TaskbarBarShowLabels { get; set; } = true;
+    /// <summary>How each row is named left of its bar on the taskbar: "Session (5h)", "5h", or not at all.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarLabels>))]
+    public TaskbarBarLabels TaskbarBarLabels { get; set; } = TaskbarBarLabels.Short;
+
+    /// <summary>
+    /// The on/off setting <see cref="TaskbarBarLabels"/> replaced, read from older settings files
+    /// (off carries over as None) and never written back.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? TaskbarBarShowLabels
+    {
+        get => null;
+        set
+        {
+            if (value == false)
+                TaskbarBarLabels = TaskbarBarLabels.None;
+        }
+    }
 
     /// <summary>Shows the time left until each row resets, right of its percentage on the taskbar.</summary>
     public bool TaskbarBarShowResetTime { get; set; }
-
-    /// <summary>Shows the chart of past usage in the flyout.</summary>
-    public bool ShowHistoryChart { get; set; } = true;
-
-    /// <summary>How far back the flyout's history chart goes.</summary>
-    [JsonConverter(typeof(JsonStringEnumConverter<HistoryRange>))]
-    public HistoryRange HistoryRange { get; set; } = HistoryRange.Day;
 
     /// <summary>
     /// Per-monitor placement of the taskbar bars, by the monitor's device name (e.g. "\\.\DISPLAY2").
@@ -134,7 +154,7 @@ public sealed class AppSettings
 
 public enum TaskbarBarRows { Both, SessionOnly, WeeklyOnly }
 
-public enum HistoryRange { Day, Week }
+public enum TaskbarBarLabels { Full, Short, None }
 
 /// <summary>Whether one monitor's taskbar gets the usage bars, and where on it.</summary>
 public sealed class TaskbarBarDisplaySettings

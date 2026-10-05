@@ -9,16 +9,15 @@ namespace ClaudeUsageTracker.App.Views;
 
 public partial class TaskbarBarWindow : Window
 {
-    /// <param name="taskbar">
-    /// The taskbar's window, made this window's owner: an owned window always stays above its
-    /// owner, so the strip stays on the (topmost) taskbar without fighting it for the top spot,
-    /// and goes wherever the taskbar goes in the z-order — e.g. behind a full-screen app.
-    /// </param>
-    public TaskbarBarWindow(IntPtr taskbar)
+    // Topmost like the taskbar it sits on, and kept above it by TaskbarBarController. Deliberately
+    // not owned by the taskbar, which would do that for free: an owner in another process joins
+    // this app's input queue to Explorer's, and the tray menu then can't take the foreground or
+    // hold the mouse — it closes the moment it opens.
+    public TaskbarBarWindow()
     {
         InitializeComponent();
         UseLightTaskbar(false);
-        new WindowInteropHelper(this).Owner = taskbar;
+        Topmost = true;
 
         // Never takes focus (a click must not pull it away from the app in use) and stays out of Alt+Tab.
         SourceInitialized += (_, _) =>
@@ -31,8 +30,8 @@ public partial class TaskbarBarWindow : Window
     public static readonly DependencyProperty RowsModeProperty = DependencyProperty.Register(
         nameof(RowsMode), typeof(TaskbarBarRows), typeof(TaskbarBarWindow), new PropertyMetadata(TaskbarBarRows.Both));
 
-    public static readonly DependencyProperty ShowLabelsProperty = DependencyProperty.Register(
-        nameof(ShowLabels), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(true));
+    public static readonly DependencyProperty LabelModeProperty = DependencyProperty.Register(
+        nameof(LabelMode), typeof(TaskbarBarLabels), typeof(TaskbarBarWindow), new PropertyMetadata(TaskbarBarLabels.Short));
 
     public static readonly DependencyProperty ShowResetTimeProperty = DependencyProperty.Register(
         nameof(ShowResetTime), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(false));
@@ -44,11 +43,11 @@ public partial class TaskbarBarWindow : Window
         set => SetValue(RowsModeProperty, value);
     }
 
-    /// <summary>Whether each row's name is shown left of its bar.</summary>
-    public bool ShowLabels
+    /// <summary>How each row is named left of its bar: in full, short, or not at all.</summary>
+    public TaskbarBarLabels LabelMode
     {
-        get => (bool)GetValue(ShowLabelsProperty);
-        set => SetValue(ShowLabelsProperty, value);
+        get => (TaskbarBarLabels)GetValue(LabelModeProperty);
+        set => SetValue(LabelModeProperty, value);
     }
 
     /// <summary>Whether the time left until each row resets is shown right of its percentage.</summary>

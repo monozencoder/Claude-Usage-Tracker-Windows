@@ -69,11 +69,26 @@
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
                             <ColumnDefinition Width="56" />
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Value" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Reset" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="ResetLead" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="ResetTail" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Label}" FontSize="11" Opacity="0.8" VerticalAlignment="Center" Margin="0,0,6,0"
-                                   Foreground="{DynamicResource TaskbarBarTextBrush}"
-                                   Visibility="{Binding ShowLabels, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}, Converter={StaticResource BoolToVisibility}}" />
+                        <!-- The row's name as LabelMode has it: short, in full, or left out (the tooltip always has it in full). -->
+                        <TextBlock FontSize="11" Opacity="0.8" VerticalAlignment="Center" Margin="0,0,6,0"
+                                   Foreground="{DynamicResource TaskbarBarTextBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="Text" Value="{Binding ShortLabel}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding LabelMode, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}}" Value="Full">
+                                            <Setter Property="Text" Value="{Binding Label}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding LabelMode, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}}" Value="None">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <ProgressBar Grid.Column="1" Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100"
                                      Height="4" Margin="0,1,6,0" VerticalAlignment="Center"
                                      Background="{DynamicResource TaskbarBarTrackBrush}">
@@ -93,9 +108,13 @@
                         </ProgressBar>
                         <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
                                    VerticalAlignment="Center" Foreground="{DynamicResource TaskbarBarTextBrush}" />
-                        <!-- Time left until this row resets. -->
-                        <TextBlock Grid.Column="3" Text="{Binding ShortResetText}" FontSize="11" Opacity="0.8" TextAlignment="Right"
+                        <!-- Time left until this row resets, in two columns ("4d" "10h" over "4h" "2m")
+                             so the units line up between the rows. -->
+                        <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11" Opacity="0.8" TextAlignment="Right"
                                    VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TaskbarBarTextBrush}"
+                                   Visibility="{Binding ShowResetTime, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}, Converter={StaticResource BoolToVisibility}}" />
+                        <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11" Opacity="0.8" TextAlignment="Right"
+                                   VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TaskbarBarTextBrush}"
                                    Visibility="{Binding ShowResetTime, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>
                 </DataTemplate>

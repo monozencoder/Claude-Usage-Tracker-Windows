@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views"
         xmlns:loc="clr-namespace:ClaudeUsageTracker.App.Localization"
-        xmlns:settings="clr-namespace:ClaudeUsageTracker.App.Settings"
         TextOptions.TextFormattingMode="Display"
         FontSize="{StaticResource BodyFontSize}"
         Title="Claude Usage Tracker"
@@ -23,6 +22,8 @@
             <TranslateTransform x:Name="RootTranslate" Y="0" />
         </Border.RenderTransform>
         <StackPanel>
+        <!-- The full flyout. Compact mode (see FlyoutWindow.Compact) shows CompactContent below instead. -->
+        <StackPanel x:Name="FullContent">
             <!-- Slim header: no title (the content says what this is), just settings and close,
                  small and quiet in the top-right corner. -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,-8,4">
@@ -62,59 +63,6 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Past usage: both percentages over the last day or week. The two words on the right
-                 pick the range; the one in use is the darker one. -->
-            <StackPanel Margin="0,0,0,8" Visibility="{Binding ShowHistory, Converter={StaticResource BoolToVisibility}}">
-                <StackPanel.Resources>
-                    <Style x:Key="RangeButtonStyle" TargetType="Button">
-                        <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
-                        <Setter Property="FontFamily" Value="{StaticResource UIFontFamily}" />
-                        <Setter Property="FontSize" Value="{StaticResource CaptionFontSize}" />
-                        <Setter Property="Cursor" Value="Hand" />
-                        <Setter Property="Margin" Value="4,0,0,0" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="6,2">
-                                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
-                                                   FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                            <!-- Tag = whether this button's range is the one shown. -->
-                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </StackPanel.Resources>
-                <DockPanel LastChildFill="False">
-                    <TextBlock Text="{loc:Tr History_Title}" Foreground="{DynamicResource TextSecondaryBrush}"
-                               Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" DockPanel.Dock="Left" />
-                    <Button DockPanel.Dock="Right" Content="{loc:Tr History_Week}" Style="{StaticResource RangeButtonStyle}"
-                            Command="{Binding PickHistoryRangeCommand}" CommandParameter="{x:Static settings:HistoryRange.Week}"
-                            Tag="{Binding IsWeekHistory}" Margin="4,0,-6,0" />
-                    <Button DockPanel.Dock="Right" Content="{loc:Tr History_Day}" Style="{StaticResource RangeButtonStyle}"
-                            Command="{Binding PickHistoryRangeCommand}" CommandParameter="{x:Static settings:HistoryRange.Day}"
-                            Tag="{Binding IsDayHistory}" />
-                </DockPanel>
-                <views:UsageHistoryChart Height="112" Margin="0,6,0,0"
-                                         Samples="{Binding HistorySamples}" Span="{Binding HistorySpan}"
-                                         SessionBrush="{DynamicResource ChartSeries1Brush}" WeeklyBrush="{DynamicResource ChartSeries2Brush}"
-                                         GridBrush="{DynamicResource BorderBrush}" SurfaceBrush="{DynamicResource WindowBackgroundBrush}"
-                                         TextBrush="{DynamicResource TextPrimaryBrush}" MutedTextBrush="{DynamicResource TextTertiaryBrush}"
-                                         SessionLabel="{loc:Tr History_Session}" WeeklyLabel="{loc:Tr History_Weekly}"
-                                         EmptyText="{loc:Tr History_Empty}" />
-            </StackPanel>
-
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
                 <TextBlock Text="{Binding LastUpdatedText}" ToolTip="{Binding LastUpdatedToolTip}"
                            Foreground="{DynamicResource TextTertiaryBrush}" Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" />
@@ -126,6 +74,70 @@
                     <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" />
                 </Button>
             </StackPanel>
+        </StackPanel>
+        <!-- Compact mode: the flyout cut down to what the taskbar bars show — one line per row
+             (short name, bar, percentage, time left) and nothing else, as wide as that takes.
+             No buttons: it's closed and set up from the tray icon, and a double-click brings
+             the full flyout back. A problem that would show as a banner still gets a line. -->
+        <StackPanel x:Name="CompactContent" Visibility="Collapsed">
+            <StackPanel.ToolTip>
+                <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <Run Text="{Binding Label, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding PercentageText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ResetText, Mode=OneWay}" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ToolTip>
+            </StackPanel.ToolTip>
+            <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Grid.IsSharedSizeScope="True">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Value" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="ResetLead" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="ResetTail" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding ShortLabel}" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                            <ProgressBar Grid.Column="1" Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100"
+                                         Height="4" Margin="0,1,6,0" VerticalAlignment="Center"
+                                         Background="{DynamicResource ProgressTrackBrush}">
+                                <ProgressBar.Style>
+                                    <Style TargetType="ProgressBar" BasedOn="{StaticResource PillProgressBarStyle}">
+                                        <Setter Property="Foreground" Value="{DynamicResource UsageSafeBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status}" Value="Moderate">
+                                                <Setter Property="Foreground" Value="{DynamicResource UsageModerateBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Critical">
+                                                <Setter Property="Foreground" Value="{DynamicResource UsageCriticalBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                            <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
+                                       VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" />
+                            <!-- Two columns ("4d" "10h" over "4h" "2m") so the units line up between the rows. -->
+                            <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11" TextAlignment="Right"
+                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}" />
+                            <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11" TextAlignment="Right"
+                                       VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding BannerText}" FontSize="11" TextWrapping="Wrap" MaxWidth="220" HorizontalAlignment="Left" Margin="0,4,0,0"
+                       Foreground="{DynamicResource WarningBrush}"
+                       Visibility="{Binding BannerText, Converter={StaticResource StringToVisibility}}" />
+        </StackPanel>
         </StackPanel>
     </Border>
     <!-- Invisible resize grips along the panel's edges and corners (the borderless window has no
