@@ -65,10 +65,6 @@ public partial class App : System.Windows.Application
         _flyoutWindow = new FlyoutWindow
         {
             DataContext = _flyoutViewModel,
-            Topmost = settings.AlwaysOnTop,
-            RestingOpacity = settings.FlyoutOpacity,
-            Scale = settings.FlyoutScale,
-            Compact = settings.FlyoutCompact,
             SavedPosition = settings.FlyoutPosition
         };
         _flyoutWindow.ScaleSaved += scale =>
@@ -85,9 +81,6 @@ public partial class App : System.Windows.Application
             _settingsStore.Current.FlyoutPosition = position;
             _settingsStore.Save();
         };
-        _flyoutViewModel.ShowResetClockTime = settings.ResetTimeDisplay == ResetTimeDisplay.Clock;
-        _flyoutViewModel.ShowMascot = settings.FlyoutShowMascot;
-        _flyoutViewModel.MascotAnimation = settings.MascotAnimation;
         _flyoutViewModel.RefreshRequested += RefreshNow;
         _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
         _flyoutViewModel.SignInRequested += StartSignIn;
@@ -95,7 +88,7 @@ public partial class App : System.Windows.Application
         // The view model was built (as a field) before the saved language was applied above.
         _flyoutViewModel.RefreshLanguage();
 
-        _trayIconController = new TrayIconController(new TrayIconRenderer()) { Style = settings.TrayIconStyle };
+        _trayIconController = new TrayIconController(new TrayIconRenderer());
         _trayIconController.Clicked += _flyoutWindow.Toggle;
         _trayIconController.RefreshRequested += RefreshNow;
         _trayIconController.SettingsRequested += OpenSettingsWindow;
@@ -117,15 +110,14 @@ public partial class App : System.Windows.Application
                 && settingsViewModel.TaskbarBarDisplays.FirstOrDefault(display => display.DeviceName == device) is { } row)
                 row.Offset = offset;
         };
-        ApplyTaskbarBarSettings();
 
         _clickThroughController = new ClickThroughController();
         _clickThroughController.Add(() => _settingsStore.Current.FlyoutClickThrough, () => [_flyoutWindow]);
         _clickThroughController.Add(() => _settingsStore.Current.TaskbarBarClickThrough, () => _taskbarBarController.Strips);
-        _clickThroughController.Refresh();
+        ApplyAppearance();
         _trayIconController.IsFlyoutCompact = () => _settingsStore.Current.FlyoutCompact;
         _trayIconController.FlyoutCompactToggled += () => SetFlyoutCompact(!_settingsStore.Current.FlyoutCompact);
-        _trayIconController.IsFlyoutClickThrough =() => _settingsStore.Current.FlyoutClickThrough;
+        _trayIconController.IsFlyoutClickThrough = () => _settingsStore.Current.FlyoutClickThrough;
         _trayIconController.IsTaskbarBarClickThrough = () => _settingsStore.Current.TaskbarBarClickThrough;
         _trayIconController.IsTaskbarBarShown = () => _settingsStore.Current.ShowTaskbarBar;
         _trayIconController.FlyoutClickThroughToggled += () => SetClickThrough(flyout: !_settingsStore.Current.FlyoutClickThrough);
@@ -170,10 +162,31 @@ public partial class App : System.Windows.Application
     // DispatcherUnhandledException (and the banner) instead of vanishing with a Task.
     private async void RefreshNow() => await _coordinator.RefreshAsync();
 
-    private void ApplyTaskbarBarSettings()
+    /// <summary>
+    /// Puts the settings for how things look and behave onto the windows, the tray icon and the
+    /// taskbar bars: once at startup, and again whenever the settings window changes one.
+    /// </summary>
+    private void ApplyAppearance()
     {
-        _taskbarBarController.Enabled = _settingsStore.Current.ShowTaskbarBar;
+        var settings = _settingsStore.Current;
+
+        _flyoutWindow.Topmost = settings.AlwaysOnTop;
+        _flyoutWindow.Compact = settings.FlyoutCompact;
+        // These two restart an animation or a layout when set, so only when they actually changed.
+        if (_flyoutWindow.RestingOpacity != settings.FlyoutOpacity)
+            _flyoutWindow.RestingOpacity = settings.FlyoutOpacity;
+        if (_flyoutWindow.Scale != settings.FlyoutScale)
+            _flyoutWindow.Scale = settings.FlyoutScale;
+
+        _flyoutViewModel.ShowResetClockTime = settings.ResetTimeDisplay == ResetTimeDisplay.Clock;
+        _flyoutViewModel.ShowMascot = settings.FlyoutShowMascot;
+        _flyoutViewModel.MascotAnimation = settings.MascotAnimation;
+
+        _trayIconController.Style = settings.TrayIconStyle;
+
+        _taskbarBarController.Enabled = settings.ShowTaskbarBar;
         _taskbarBarController.Refresh();
+        _clickThroughController.Refresh();
     }
 
     // From the tray menu or a double-click on the flyout; saved the same way as the click-through toggles below.
@@ -235,18 +248,7 @@ public partial class App : System.Windows.Application
             // Setting Interval restarts the timer, so only touch it when it actually changed.
             if (_refreshTimer.Interval != _settingsStore.Current.RefreshInterval)
                 _refreshTimer.Interval = _settingsStore.Current.RefreshInterval;
-            _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
-            ApplyTaskbarBarSettings();
-            _clickThroughController.Refresh();
-            _trayIconController.Style = _settingsStore.Current.TrayIconStyle;
-            _flyoutViewModel.ShowResetClockTime = _settingsStore.Current.ResetTimeDisplay == ResetTimeDisplay.Clock;
-            _flyoutWindow.Compact = _settingsStore.Current.FlyoutCompact;
-            _flyoutViewModel.ShowMascot = _settingsStore.Current.FlyoutShowMascot;
-            _flyoutViewModel.MascotAnimation = _settingsStore.Current.MascotAnimation;
-            if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
-                _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
-            if (_flyoutWindow.Scale != _settingsStore.Current.FlyoutScale)
-                _flyoutWindow.Scale = _settingsStore.Current.FlyoutScale;
+            ApplyAppearance();
         };
         viewModel.ConnectionTested += result => _coordinator.ApplyResult(result);
         _settingsWindow = new SettingsWindow(viewModel);
