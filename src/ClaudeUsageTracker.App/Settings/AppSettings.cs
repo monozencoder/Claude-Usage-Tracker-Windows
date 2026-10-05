@@ -201,6 +201,15 @@ public sealed class AppSettings
     /// <summary>Threshold-notification dedup state (e.g. "session_75"), so the same threshold doesn't re-notify every refresh.</summary>
     public List<string> NotifiedThresholdKeys { get; set; } = [];
 
+    /// <summary>
+    /// When the free usage endpoint was last called (whatever the outcome), and whether it
+    /// answered 429 then. Kept here rather than in memory so restarting the app doesn't
+    /// forget to space its calls out, which is what trips the endpoint's rate limit.
+    /// </summary>
+    public DateTimeOffset? LastUsageEndpointCall { get; set; }
+
+    public bool UsageEndpointRateLimited { get; set; }
+
     /// <summary>The effective refresh interval for the current mode (clamped: the file may have been hand-edited).</summary>
     [JsonIgnore]
     public TimeSpan RefreshInterval => AvoidTokenUsage

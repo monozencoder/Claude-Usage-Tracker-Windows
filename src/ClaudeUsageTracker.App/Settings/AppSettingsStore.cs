@@ -21,7 +21,12 @@ public sealed class AppSettingsStore
     public void Save()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(Current, JsonOptions));
+
+        // Written beside the real file and swapped in: a crash or power cut mid-write would
+        // otherwise leave a truncated file, which Load answers by resetting every setting.
+        var temporaryPath = SettingsPath + ".tmp";
+        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(Current, JsonOptions));
+        File.Move(temporaryPath, SettingsPath, overwrite: true);
     }
 
     private static AppSettings Load()

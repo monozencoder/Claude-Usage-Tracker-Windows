@@ -37,7 +37,7 @@ public static class WslClaudeCli
     // process itself wrote, so StandardOutputEncoding must be set explicitly or
     // the output decodes as mojibake.
     private static string? Run(string[] args, TimeSpan timeout)
-        => ProcessRunner.Run("wsl.exe", args, timeout, Encoding.Unicode) is { ExitCode: 0 } result
+        => ProcessRunner.Run(SystemExecutables.Wsl, args, timeout, Encoding.Unicode) is { ExitCode: 0 } result
             ? result.StandardOutput
             : null;
 }

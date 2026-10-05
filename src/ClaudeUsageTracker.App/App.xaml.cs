@@ -24,7 +24,12 @@ public partial class App : System.Windows.Application
     // Usage is read from Anthropic's actual API (api.anthropic.com) using Claude Code
     // CLI's own OAuth credentials — not claude.ai's bot-protected web app — so a plain
     // HttpClient is sufficient; no embedded browser needed.
-    private readonly HttpClient _httpClient = new();
+    // The default timeout (100 s) would leave a stalled refresh "refreshing", and refusing
+    // manual refreshes, for that long.
+    private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+
+    // Held for the life of the process, so a second copy can tell one is already running.
+    private Mutex? _singleInstanceMutex;
     private readonly FlyoutViewModel _flyoutViewModel = new();
 
     // Assigned in OnStartup, which WPF always runs before anything else here.
@@ -45,6 +50,15 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // A second copy would add a second tray icon, double the API calls and overwrite the
+        // first one's settings file, so it just exits.
+        _singleInstanceMutex = new Mutex(initiallyOwned: true, $@"Local\{AppName}.SingleInstance", out var isFirstInstance);
+        if (!isFirstInstance)
+        {
+            Shutdown();
+            return;
+        }
 
         // Safety net: this is a background tray app with no visible main window,
         // so an unhandled exception would otherwise silently kill it with no
@@ -155,6 +169,7 @@ public partial class App : System.Windows.Application
         _clickThroughController?.Dispose();
         _credentialsWatcher?.Dispose();
         _httpClient.Dispose();
+        _singleInstanceMutex?.Dispose();
         base.OnExit(e);
     }
 

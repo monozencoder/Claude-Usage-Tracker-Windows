@@ -15,7 +15,6 @@ namespace ClaudeUsageTracker.Platform.ClaudeCode;
 public static class ClaudeCli
 {
     private static readonly TimeSpan StatusTimeout = TimeSpan.FromSeconds(15);
-    private static readonly TimeSpan LocateTimeout = TimeSpan.FromSeconds(5);
 
     // Where Claude Code's native installer puts the executable (no Node.js needed).
     private static readonly string NativeInstallPath = Path.Combine(
@@ -32,8 +31,8 @@ public static class ClaudeCli
         if (Locate() is not { } path)
             return null;
 
-        var (fileName, arguments) = CommandFor(path, ["auth", "status", "--json"]);
-        var result = ProcessRunner.Run(fileName, arguments, StatusTimeout, Encoding.UTF8);
+        var result = ProcessRunner.Run(path, [], StatusTimeout, Encoding.UTF8,
+            startInfo => SetCommand(startInfo, path, ["auth", "status", "--json"]));
         return result is { } r ? ClaudeAuthStatus.Parse(r.StandardOutput) : null;
     }
 
@@ -48,10 +47,8 @@ public static class ClaudeCli
         if (Locate() is not { } path)
             return false;
 
-        var (fileName, arguments) = CommandFor(path, ["auth", "login"]);
-        var startInfo = new ProcessStartInfo(fileName) { UseShellExecute = true };
-        foreach (var argument in arguments)
-            startInfo.ArgumentList.Add(argument);
+        var startInfo = new ProcessStartInfo { UseShellExecute = true };
+        SetCommand(startInfo, path, ["auth", "login"]);
         try
         {
             using var process = Process.Start(startInfo);
@@ -74,16 +71,47 @@ public static class ClaudeCli
         return _cachedPath;
     }
 
+    // Searched here rather than with where.exe, which also looks in the current directory
+    // (and costs a process). Only absolute PATH entries count, for the same reason.
     private static string? FindOnPath(string name)
-        => ProcessRunner.Run("where.exe", [name], LocateTimeout) is { ExitCode: 0 } found
-            ? found.StandardOutput
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .FirstOrDefault()
-            : null;
+    {
+        var directories = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var entry in directories)
+        {
+            var directory = entry.Trim('"');
+            try
+            {
+                if (!Path.IsPathFullyQualified(directory))
+                    continue;
+                var candidate = Path.Combine(directory, name);
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+            catch (ArgumentException)
+            {
+                // A malformed PATH entry (invalid characters): skip it.
+            }
+        }
 
-    // npm's .cmd shims can't be started directly without a shell.
-    private static (string FileName, string[] Arguments) CommandFor(string claudePath, string[] arguments)
-        => claudePath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase)
-            ? ("cmd.exe", ["/c", claudePath, .. arguments])
-            : (claudePath, arguments);
+        return null;
+    }
+
+    /// <summary>Points <paramref name="startInfo"/> at the CLI, with <paramref name="arguments"/> (fixed words, no quoting needed).</summary>
+    private static void SetCommand(ProcessStartInfo startInfo, string claudePath, string[] arguments)
+    {
+        if (!claudePath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase))
+        {
+            startInfo.FileName = claudePath;
+            foreach (var argument in arguments)
+                startInfo.ArgumentList.Add(argument);
+            return;
+        }
+
+        // npm's .cmd shims can't be started directly without a shell. With /s, cmd strips just
+        // the outer pair of quotes, so the path stays quoted and a space or an & in it (a user
+        // name can have either) isn't read as a separator. /d skips any AutoRun commands.
+        startInfo.FileName = SystemExecutables.Cmd;
+        startInfo.Arguments = $"/d /s /c \"\"{claudePath}\" {string.Join(' ', arguments)}\"";
+    }
 }

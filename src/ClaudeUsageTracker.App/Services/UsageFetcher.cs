@@ -50,7 +50,7 @@ public sealed record UsageFetchResult
 ///   consumed; rate-limited, hence the fixed 5-minute interval and the back-off after a 429).</item>
 /// </list>
 /// An expired or rejected sign-in is reported (with a sign-in option), never refreshed by
-/// the app. Credential discovery shells out to wsl.exe / where.exe, so it runs off the UI thread.
+/// the app. Credential discovery may shell out to wsl.exe, so it runs off the UI thread.
 /// </summary>
 public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsStore settingsStore)
 {
@@ -60,12 +60,6 @@ public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsS
     /// clicks could trip its rate limit (HTTP 429), which can take an hour or more to lift.
     /// </summary>
     public static readonly TimeSpan MinUsageEndpointSpacing = TimeSpan.FromMinutes(2);
-
-    // When the usage endpoint was last actually called (whatever the outcome).
-    private DateTimeOffset? _lastUsageEndpointCall;
-
-    // Set while the last call was answered with 429: calls then wait the longer retry interval.
-    private bool _usageEndpointLimited;
 
     // The timer ticks a little before the time the call itself is stamped (credential lookup runs
     // first), so a wait of exactly one interval would push the retry a whole tick later.
@@ -77,16 +71,19 @@ public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsS
     /// <param name="avoidTokenUsage">Overrides the saved mode (Test connection checks the unsaved choice).</param>
     public async Task<UsageFetchResult> FetchAsync(bool? avoidTokenUsage = null, CancellationToken ct = default)
     {
-        var avoidTokens = avoidTokenUsage ?? settingsStore.Current.AvoidTokenUsage;
-        if (avoidTokens && _lastUsageEndpointCall is { } lastCall)
+        // The last call's time and outcome live in the settings file, so they outlast a restart.
+        var settings = settingsStore.Current;
+        var avoidTokens = avoidTokenUsage ?? settings.AvoidTokenUsage;
+        if (avoidTokens && settings.LastUsageEndpointCall is { } lastCall)
         {
             // Rate-limited: skip regular refreshes until 10 minutes after the 429, then retry.
-            var spacing = _usageEndpointLimited
+            var spacing = settings.UsageEndpointRateLimited
                 ? TimeSpan.FromSeconds(AppSettings.TokenFreeRateLimitedRetrySeconds) - TimerSlack
                 : MinUsageEndpointSpacing;
             var wait = lastCall + spacing - DateTimeOffset.Now;
-            if (wait > TimeSpan.Zero)
-                return UsageFetchResult.Throttled(wait, _usageEndpointLimited);
+            // A longer wait means the saved time is in the future (the clock was set back): ignore it.
+            if (wait > TimeSpan.Zero && wait <= spacing)
+                return UsageFetchResult.Throttled(wait, settings.UsageEndpointRateLimited);
         }
 
         var resolution = await Task.Run(ClaudeCredentialResolver.Resolve, ct);
@@ -96,12 +93,15 @@ public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsS
         try
         {
             if (avoidTokens)
-                _lastUsageEndpointCall = DateTimeOffset.Now;
+            {
+                settings.LastUsageEndpointCall = DateTimeOffset.Now;
+                settingsStore.Save();
+            }
             var usage = avoidTokens
                 ? await usageClient.GetUsageAsync(credentials, ct)
                 : await usageClient.GetUsageViaMessagesApiAsync(credentials, ct);
             if (avoidTokens)
-                _usageEndpointLimited = false;
+                SetUsageEndpointLimited(false);
             return UsageFetchResult.Success(usage);
         }
         catch (AuthRequiredException)
@@ -110,7 +110,7 @@ public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsS
         }
         catch (ClaudeApiException ex) when (avoidTokens && ex.StatusCode == 429)
         {
-            _usageEndpointLimited = true;
+            SetUsageEndpointLimited(true);
             return UsageFetchResult.RateLimited();
         }
         catch (ClaudeApiException ex)
@@ -123,6 +123,15 @@ public sealed class UsageFetcher(ClaudeCodeUsageClient usageClient, AppSettingsS
         {
             return UsageFetchResult.Failure(Loc.Get("Error_Network"));
         }
+    }
+
+    // While set (the last call was answered with 429), calls wait the longer retry interval.
+    private void SetUsageEndpointLimited(bool limited)
+    {
+        if (settingsStore.Current.UsageEndpointRateLimited == limited)
+            return;
+        settingsStore.Current.UsageEndpointRateLimited = limited;
+        settingsStore.Save();
     }
 
     private static UsageFetchResult DescribeMissingCredentials(ClaudeCredentialResolver.Result resolution)

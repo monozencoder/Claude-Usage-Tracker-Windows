@@ -29,6 +29,10 @@ public sealed class UsageRefreshCoordinator
     private double _lastSessionPercentage = -1;
     private double _lastWeeklyPercentage = -1;
 
+    // Whether any usage has been shown since the app started, and whether RefreshAgainAfter is waiting.
+    private bool _hasUsage;
+    private bool _retryPending;
+
     public UsageRefreshCoordinator(
         UsageFetcher fetcher,
         AppSettingsStore settingsStore,
@@ -53,12 +57,34 @@ public sealed class UsageRefreshCoordinator
         _flyoutViewModel.IsRefreshing = true;
         try
         {
-            ApplyResult(await _fetcher.FetchAsync(ct: ct));
+            var result = await _fetcher.FetchAsync(ct: ct);
+            ApplyResult(result);
+
+            // Restarted soon after the last call to the usage endpoint: there's nothing to show
+            // yet, and the regular timer is minutes away, so come back as soon as it may be asked.
+            if (result.RetryAfter is { } retryAfter && !_hasUsage && !_retryPending)
+                RefreshAgainAfter(retryAfter);
         }
         finally
         {
             _flyoutViewModel.IsRefreshing = false;
         }
+    }
+
+    // async void on purpose, like App.RefreshNow: an unexpected exception reaches the banner.
+    private async void RefreshAgainAfter(TimeSpan wait)
+    {
+        _retryPending = true;
+        try
+        {
+            await Task.Delay(wait + TimeSpan.FromSeconds(1));
+        }
+        finally
+        {
+            _retryPending = false;
+        }
+
+        await RefreshAsync();
     }
 
     /// <summary>
@@ -92,6 +118,7 @@ public sealed class UsageRefreshCoordinator
         }
 
         var now = DateTimeOffset.Now;
+        _hasUsage = true;
         _flyoutViewModel.ApplyUsage(usage, now);
         _flyoutViewModel.ClearBanner();
 
