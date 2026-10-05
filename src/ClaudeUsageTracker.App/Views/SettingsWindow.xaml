@@ -403,6 +403,9 @@
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowLabels}"
                                   views:SettingRow.Title="{loc:Tr Settings_CompactLabels}" views:SettingRow.Description="{loc:Tr Settings_CompactLabelsDescription}" />
                         <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowPercentage}"
+                                  views:SettingRow.Title="{loc:Tr Settings_CompactPercentage}" views:SettingRow.Description="{loc:Tr Settings_CompactPercentageDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowResetTime}"
                                   views:SettingRow.Title="{loc:Tr Settings_CompactResetTime}" views:SettingRow.Description="{loc:Tr Settings_CompactResetTimeDescription}" />
                         <Border Style="{StaticResource CardDividerStyle}" />

@@ -63,6 +63,10 @@ public partial class FlyoutViewModel : ObservableObject
     [ObservableProperty]
     private bool _compactShowLabels = true;
 
+    /// <summary>Whether the compact views show each row's percentage as a number (a setting).</summary>
+    [ObservableProperty]
+    private bool _compactShowPercentage = true;
+
     /// <summary>Whether the compact views show when each row resets (a setting).</summary>
     [ObservableProperty]
     private bool _compactShowResetTime = true;

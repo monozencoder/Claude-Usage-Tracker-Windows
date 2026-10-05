@@ -73,6 +73,7 @@ public partial class SettingsViewModel : ObservableObject
         ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
         VisibleRows = settings.VisibleRows;
         CompactShowLabels = settings.CompactShowLabels;
+        CompactShowPercentage = settings.CompactShowPercentage;
         CompactShowResetTime = settings.CompactShowResetTime;
         TaskbarBarShowMascot = settings.TaskbarBarShowMascot;
         FlyoutShowMascot = settings.FlyoutShowMascot;
@@ -240,6 +241,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _compactShowLabels;
+
+    [ObservableProperty]
+    private bool _compactShowPercentage;
 
     [ObservableProperty]
     private bool _compactShowResetTime;
@@ -433,6 +437,8 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnCompactShowLabelsChanged(bool value) => Apply();
 
+    partial void OnCompactShowPercentageChanged(bool value) => Apply();
+
     partial void OnCompactShowResetTimeChanged(bool value) => Apply();
 
     partial void OnTaskbarBarShowMascotChanged(bool value) => Apply();
@@ -516,6 +522,7 @@ public partial class SettingsViewModel : ObservableObject
         settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
         settings.VisibleRows = VisibleRows;
         settings.CompactShowLabels = CompactShowLabels;
+        settings.CompactShowPercentage = CompactShowPercentage;
         settings.CompactShowResetTime = CompactShowResetTime;
         settings.TaskbarBarShowMascot = TaskbarBarShowMascot;
         settings.FlyoutShowMascot = FlyoutShowMascot;

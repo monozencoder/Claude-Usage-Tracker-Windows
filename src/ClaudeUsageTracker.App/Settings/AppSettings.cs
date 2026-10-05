@@ -99,6 +99,9 @@ public sealed class AppSettings
     /// </summary>
     public bool CompactShowLabels { get; set; } = true;
 
+    /// <summary>Shows each row's percentage as a number, right of its bar, in the compact views. Off leaves the bar to say it.</summary>
+    public bool CompactShowPercentage { get; set; } = true;
+
     /// <summary>Shows when each row resets, right of its percentage, in the compact views.</summary>
     public bool CompactShowResetTime { get; set; } = true;
 

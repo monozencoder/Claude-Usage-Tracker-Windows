@@ -137,6 +137,8 @@
   <data name="Settings_VisibleRowsWeekly" xml:space="preserve"><value>Weekly only</value></data>
   <data name="Settings_CompactLabels" xml:space="preserve"><value>Show names in the compact window and on the taskbar</value></data>
   <data name="Settings_CompactLabelsDescription" xml:space="preserve"><value>Shows “5h” and “7d” left of the bars. Off makes them narrower; pointing at them still tells the rows apart.</value></data>
+  <data name="Settings_CompactPercentage" xml:space="preserve"><value>Show percentages in the compact window and on the taskbar</value></data>
+  <data name="Settings_CompactPercentageDescription" xml:space="preserve"><value>Shows the number, like “80%”, right of each bar. Off leaves the bar's length and color to say it.</value></data>
   <data name="Settings_CompactResetTime" xml:space="preserve"><value>Show resets in the compact window and on the taskbar</value></data>
   <data name="Settings_CompactResetTimeDescription" xml:space="preserve"><value>Shows the time until each reset (or its time of day) right of its percentage, e.g. 2h 15m or 3d 4h.</value></data>
   <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>Show a creature on the taskbar bars</value></data>

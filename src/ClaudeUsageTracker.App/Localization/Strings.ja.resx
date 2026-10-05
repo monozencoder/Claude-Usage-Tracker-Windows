@@ -137,6 +137,8 @@
   <data name="Settings_VisibleRowsWeekly" xml:space="preserve"><value>週間のみ</value></data>
   <data name="Settings_CompactLabels" xml:space="preserve"><value>コンパクト表示とタスクバーに項目名を表示する</value></data>
   <data name="Settings_CompactLabelsDescription" xml:space="preserve"><value>バーの左に「5h」「7d」を表示します。オフにすると幅が狭くなります。カーソルを載せれば項目名を確認できます。</value></data>
+  <data name="Settings_CompactPercentage" xml:space="preserve"><value>コンパクト表示とタスクバーに使用率の数字を表示する</value></data>
+  <data name="Settings_CompactPercentageDescription" xml:space="preserve"><value>バーの右に「80%」のような数字を表示します。オフにすると、バーの長さと色だけで表します。</value></data>
   <data name="Settings_CompactResetTime" xml:space="preserve"><value>コンパクト表示とタスクバーにリセットを表示する</value></data>
   <data name="Settings_CompactResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間(または時刻)を表示します(例: 2h 15m、3d 4h)。</value></data>
   <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>タスクバーのバーにキャラクターを表示する</value></data>
