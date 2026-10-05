@@ -89,11 +89,11 @@
                         <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
                                    VerticalAlignment="Center" Foreground="{DynamicResource TaskbarBarTextBrush}" />
                         <!-- Time left until this row resets, in two columns ("4d" "10h" over "4h" "2m")
-                             so the units line up between the rows. -->
-                        <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11" Opacity="0.8" TextAlignment="Right"
+                             each starting at the same place in every row. -->
+                        <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11" Opacity="0.8"
                                    VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TaskbarBarTextBrush}"
                                    Visibility="{Binding ShowResetTime, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}, Converter={StaticResource BoolToVisibility}}" />
-                        <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11" Opacity="0.8" TextAlignment="Right"
+                        <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11" Opacity="0.8"
                                    VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TaskbarBarTextBrush}"
                                    Visibility="{Binding ShowResetTime, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>

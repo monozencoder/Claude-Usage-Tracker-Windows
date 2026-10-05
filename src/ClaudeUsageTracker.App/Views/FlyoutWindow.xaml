@@ -105,10 +105,10 @@
                                          Style="{StaticResource UsageProgressBarStyle}" />
                             <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
                                        VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" />
-                            <!-- Two columns ("4d" "10h" over "4h" "2m") so the units line up between the rows. -->
-                            <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11" TextAlignment="Right"
+                            <!-- Two columns ("4d" "10h" over "4h" "2m") each starting at the same place in every row. -->
+                            <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11"
                                        VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}" />
-                            <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11" TextAlignment="Right"
+                            <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11"
                                        VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}" />
                         </Grid>
                     </DataTemplate>
