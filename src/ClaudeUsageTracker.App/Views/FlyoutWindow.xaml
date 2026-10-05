@@ -119,7 +119,7 @@
                                        Visibility="{Binding DataContext.CompactShowPercentage, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
                             <!-- When this row resets. Which edge the rows line up on depends on what it is (see ShortResetAlignment). -->
                             <TextBlock Grid.Column="3" Text="{Binding ShortResetText}" TextAlignment="{Binding ShortResetAlignment}" FontSize="11"
-                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}"
                                        Visibility="{Binding DataContext.CompactShowResetTime, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
                         </Grid>
                     </DataTemplate>
