@@ -19,6 +19,13 @@ public sealed class AppState
     public List<string> NotifiedThresholdKeys { get; set; } = [];
 
     /// <summary>
+    /// When the usage window those keys were sent in ends, by the keys' prefix (e.g. "session_").
+    /// Past that, they're from a window that is over and no longer hold a notification back —
+    /// which is how a reset that happened while the app wasn't running is noticed.
+    /// </summary>
+    public Dictionary<string, DateTimeOffset> NotifiedWindowEnds { get; set; } = [];
+
+    /// <summary>
     /// When the free usage endpoint was last called (whatever the outcome), and whether it
     /// answered 429 then. Kept here rather than in memory so restarting the app doesn't
     /// forget to space its calls out, which is what trips the endpoint's rate limit.

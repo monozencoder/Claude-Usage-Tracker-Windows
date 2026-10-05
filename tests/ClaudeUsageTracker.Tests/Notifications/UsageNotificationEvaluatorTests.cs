@@ -11,8 +11,17 @@ public class UsageNotificationEvaluatorTests
 
     public UsageNotificationEvaluatorTests() => _evaluator = new UsageNotificationEvaluator(_tracker);
 
-    private IReadOnlyList<UsageNotification> Evaluate(double session, double weekly, bool enabled = true, bool weeklyEnabled = true)
-        => _evaluator.Evaluate(session, weekly, Thresholds, enabled, weeklyEnabled);
+    private static readonly DateTimeOffset Now = new(2026, 10, 6, 12, 0, 0, TimeSpan.Zero);
+
+    private IReadOnlyList<UsageNotification> Evaluate(
+        double session, double weekly, bool enabled = true, bool weeklyEnabled = true,
+        DateTimeOffset? now = null, DateTimeOffset? sessionReset = null, DateTimeOffset? weeklyReset = null)
+        => Evaluate(_evaluator, session, weekly, enabled, weeklyEnabled, now, sessionReset, weeklyReset);
+
+    private static IReadOnlyList<UsageNotification> Evaluate(
+        UsageNotificationEvaluator evaluator, double session, double weekly, bool enabled = true, bool weeklyEnabled = true,
+        DateTimeOffset? now = null, DateTimeOffset? sessionReset = null, DateTimeOffset? weeklyReset = null)
+        => evaluator.Evaluate(new(session, sessionReset), new(weekly, weeklyReset), now ?? Now, Thresholds, enabled, weeklyEnabled);
 
     [Fact]
     public void BelowEveryThreshold_NotifiesNothing()
@@ -32,17 +41,15 @@ public class UsageNotificationEvaluatorTests
     }
 
     [Fact]
-    public void JumpingPastSeveralThresholds_NotifiesEachInAscendingOrder()
+    public void JumpingPastSeveralThresholds_NotifiesOnlyTheHighest()
     {
-        var notifications = Evaluate(session: 96, weekly: 20);
+        var notifications = Evaluate(session: 92, weekly: 20);
+        var later = Evaluate(session: 93, weekly: 20);
+        var next = Evaluate(session: 96, weekly: 20);
 
-        Assert.Equal(
-            [
-                new UsageNotification(UsageWindow.Session, 75),
-                new UsageNotification(UsageWindow.Session, 90),
-                new UsageNotification(UsageWindow.Session, 95)
-            ],
-            notifications);
+        Assert.Equal([new UsageNotification(UsageWindow.Session, 90)], notifications);
+        Assert.Empty(later); // 75 counts as sent too
+        Assert.Equal([new UsageNotification(UsageWindow.Session, 95)], next);
     }
 
     [Fact]
@@ -53,7 +60,6 @@ public class UsageNotificationEvaluatorTests
         Assert.Equal(
             [
                 new UsageNotification(UsageWindow.Session, 75),
-                new UsageNotification(UsageWindow.Weekly, 75),
                 new UsageNotification(UsageWindow.Weekly, 90)
             ],
             notifications);
@@ -128,8 +134,60 @@ public class UsageNotificationEvaluatorTests
     {
         var evaluator = new UsageNotificationEvaluator(new NotificationDedupTracker(["session_75"]));
 
-        var notifications = evaluator.Evaluate(92, 20, Thresholds, enabled: true, weeklyEnabled: true);
+        var notifications = Evaluate(evaluator, session: 92, weekly: 20);
 
         Assert.Equal([new UsageNotification(UsageWindow.Session, 90)], notifications);
+    }
+
+    [Fact]
+    public void KeysSentInAWindowThatEndedWhileNotRunning_NoLongerCount()
+    {
+        // Notified at 75 and 90 in a session that was to reset an hour ago; the app starts in the next one.
+        var tracker = new NotificationDedupTracker(
+            ["session_75", "session_90", "weekly_75"],
+            new Dictionary<string, DateTimeOffset> { ["session_"] = Now.AddHours(-1), ["weekly_"] = Now.AddDays(2) });
+        var evaluator = new UsageNotificationEvaluator(tracker);
+
+        var notifications = Evaluate(evaluator, session: 80, weekly: 80, sessionReset: Now.AddHours(3), weeklyReset: Now.AddDays(2));
+
+        // No reset notification: that's old news by now. The weekly window is still the same one.
+        Assert.Equal([new UsageNotification(UsageWindow.Session, 75)], notifications);
+        Assert.Equal(Now.AddHours(3), tracker.WindowEnds["session_"]);
+        Assert.True(tracker.TakeChanged());
+    }
+
+    [Fact]
+    public void KeysSentInTheWindowStillRunning_AfterARestart_StillCount()
+    {
+        var tracker = new NotificationDedupTracker(
+            ["session_75"], new Dictionary<string, DateTimeOffset> { ["session_"] = Now.AddHours(1) });
+        var evaluator = new UsageNotificationEvaluator(tracker);
+
+        Assert.Empty(Evaluate(evaluator, session: 80, weekly: 20, sessionReset: Now.AddHours(1)));
+        Assert.False(tracker.TakeChanged());
+    }
+
+    [Fact]
+    public void WindowEndingWhileRunning_WithTheNextAlreadyInUse_IsStillAReset()
+    {
+        Evaluate(session: 80, weekly: 20, sessionReset: Now.AddMinutes(2));
+
+        // Five minutes on, the next session is already past 5%: no drop to near zero to go by.
+        var after = Evaluate(session: 8, weekly: 20, now: Now.AddMinutes(5), sessionReset: Now.AddHours(5));
+        var again = Evaluate(session: 76, weekly: 20, now: Now.AddMinutes(10), sessionReset: Now.AddHours(5));
+
+        Assert.Equal([new UsageNotification(UsageWindow.Session, null)], after);
+        Assert.Equal([new UsageNotification(UsageWindow.Session, 75)], again);
+    }
+
+    [Fact]
+    public void KeysSavedWithoutAWindowEnd_TakeOnTheCurrentWindows()
+    {
+        var tracker = new NotificationDedupTracker(["session_75"]);
+        var evaluator = new UsageNotificationEvaluator(tracker);
+
+        Assert.Empty(Evaluate(evaluator, session: 80, weekly: 20, sessionReset: Now.AddHours(1)));
+        Assert.Equal(Now.AddHours(1), tracker.WindowEnds["session_"]);
+        Assert.False(tracker.WindowEnds.ContainsKey("weekly_")); // nothing sent for it
     }
 }

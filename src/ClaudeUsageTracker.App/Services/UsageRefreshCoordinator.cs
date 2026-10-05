@@ -44,7 +44,7 @@ public sealed class UsageRefreshCoordinator
         _flyoutViewModel = flyoutViewModel;
         _toastService = toastService;
         _onIconUpdate = onIconUpdate;
-        _dedupTracker = new NotificationDedupTracker(stateStore.Current.NotifiedThresholdKeys);
+        _dedupTracker = new NotificationDedupTracker(stateStore.Current.NotifiedThresholdKeys, stateStore.Current.NotifiedWindowEnds);
         _notifications = new UsageNotificationEvaluator(_dedupTracker);
     }
 
@@ -129,21 +129,20 @@ public sealed class UsageRefreshCoordinator
         var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction: null);
         var weeklyStatus = UsageStatusCalculator.CalculateStatus(usage.WeeklyPercentage, showRemaining: false, elapsedFraction: null);
 
-        Notify(effectiveSession, usage.WeeklyPercentage);
+        Notify(new(effectiveSession, usage.SessionResetTime), new(usage.WeeklyPercentage, usage.WeeklyResetTime), now);
         _onIconUpdate(new TrayIconContent(effectiveSession, status, usage.WeeklyPercentage, weeklyStatus));
     }
 
     /// <summary>
     /// Raises the toasts a new reading calls for (thresholds: the user's, 75/90/95% by default;
-    /// and window resets). Dedup state is only persisted when it actually changes.
+    /// and window resets). Dedup state is only persisted when it actually changes, which it can
+    /// without a toast (e.g. a window that ended while the app wasn't running).
     /// </summary>
-    private void Notify(double sessionPercentage, double weeklyPercentage)
+    private void Notify(UsageWindowReading session, UsageWindowReading weekly, DateTimeOffset now)
     {
         var settings = _settingsStore.Current;
-        var notifications = _notifications.Evaluate(sessionPercentage, weeklyPercentage,
+        var notifications = _notifications.Evaluate(session, weekly, now,
             settings.EffectiveNotificationThresholds, settings.NotificationsEnabled, settings.WeeklyNotificationsEnabled);
-        if (notifications.Count == 0)
-            return;
 
         foreach (var notification in notifications)
         {
@@ -151,7 +150,10 @@ public sealed class UsageRefreshCoordinator
             _toastService.Show(title, body);
         }
 
+        if (!_dedupTracker.TakeChanged())
+            return;
         _stateStore.Current.NotifiedThresholdKeys = [.. _dedupTracker.SentKeys];
+        _stateStore.Current.NotifiedWindowEnds = new(_dedupTracker.WindowEnds);
         _stateStore.Save();
     }
 
