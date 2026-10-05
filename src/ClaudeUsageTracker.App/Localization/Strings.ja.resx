@@ -68,6 +68,7 @@
   <data name="Settings_TrayIconRing" xml:space="preserve"><value>リング</value></data>
   <data name="Settings_TrayIconDoubleRing" xml:space="preserve"><value>二重リング</value></data>
   <data name="Settings_TrayIconNumber" xml:space="preserve"><value>数字</value></data>
+  <data name="Settings_TrayIconCreature" xml:space="preserve"><value>数字 (キャラクター)</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>終了</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>設定 - Claude Usage Tracker</value></data>
   <data name="Settings_NavOptions" xml:space="preserve"><value>オプション</value></data>

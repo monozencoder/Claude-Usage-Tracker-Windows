@@ -120,6 +120,7 @@ public partial class SettingsViewModel : ObservableObject
         new(TrayIconStyle.Ring, "Settings_TrayIconRing"),
         new(TrayIconStyle.DoubleRing, "Settings_TrayIconDoubleRing"),
         new(TrayIconStyle.Number, "Settings_TrayIconNumber"),
+        new(TrayIconStyle.NumberOnCreature, "Settings_TrayIconCreature"),
     ];
 
     public static IReadOnlyList<ChoiceOption> TaskbarBarLabelsOptions { get; } =

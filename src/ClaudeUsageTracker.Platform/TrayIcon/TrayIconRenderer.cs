@@ -17,7 +17,10 @@ public enum TrayIconStyle
     DoubleRing,
 
     /// <summary>The session usage as a number.</summary>
-    Number
+    Number,
+
+    /// <summary>The session usage as a number, in a color for the status, on the body of a small orange pixel-art creature.</summary>
+    NumberOnCreature
 }
 
 /// <summary>The usage the tray icon shows: each window's percentage used and the status that colors it.</summary>
@@ -52,7 +55,10 @@ public sealed class TrayIconRenderer
             switch (style)
             {
                 case TrayIconStyle.Number:
-                    DrawNumber(g, content.SessionPercentage, content.SessionStatus, sizePx);
+                    DrawNumber(g, content.SessionPercentage, ColorForStatus(content.SessionStatus), new RectangleF(0, 0, sizePx, sizePx), 1f);
+                    break;
+                case TrayIconStyle.NumberOnCreature:
+                    DrawCreature(g, content.SessionPercentage, content.SessionStatus, sizePx);
                     break;
                 case TrayIconStyle.DoubleRing:
                     DrawRing(g, outer, strokeWidth, content.SessionPercentage, content.SessionStatus);
@@ -91,24 +97,63 @@ public sealed class TrayIconRenderer
         }
     }
 
-    // The whole icon is the number, as large as its digits allow: three ("100") have to be
+    // An orange pixel-art creature: a wide body with two square eyes, a stubby arm on each
+    // side, and four legs in two pairs. The number goes under the eyes, colored by status, and to
+    // be legible at the tray's 16px it needs most of the icon: so the body is taller than the
+    // creature's would be, and the eyes sit right at its top.
+    // Drawn on a 16 x 16 grid of blocks, so at 16px every block is exactly one pixel.
+    private static void DrawCreature(Graphics g, double percentage, UsageStatusLevel status, int sizePx)
+    {
+        var unit = sizePx / 16f;
+        var state = g.Save();
+        g.SmoothingMode = SmoothingMode.None;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+        void Block(Brush brush, int x, int y, int width, int height) => g.FillRectangle(brush, x * unit, y * unit, width * unit, height * unit);
+
+        using (var body = new SolidBrush(CreatureColor))
+        {
+            Block(body, 2, 1, 12, 12);
+            Block(body, 0, 5, 2, 3); // arms
+            Block(body, 14, 5, 2, 3);
+            foreach (var x in (int[])[2, 5, 10, 13])
+                Block(body, x, 13, 1, 2); // legs: a pair under each side, a gap in the middle
+        }
+        Block(Brushes.Black, 4, 2, 1, 1); // eyes
+        Block(Brushes.Black, 11, 2, 1, 1);
+        g.Restore(state);
+
+        DrawNumber(g, percentage, NumberColorOnCreature(status), new RectangleF(2 * unit, 3 * unit, 12 * unit, 10 * unit), 0.98f);
+    }
+
+    // The number fills the given area, as large as its digits allow: three ("100") have to be
     // smaller than two to fit, and one can afford to be a little larger.
-    private static void DrawNumber(Graphics g, double percentage, UsageStatusLevel status, int sizePx)
+    private static void DrawNumber(Graphics g, double percentage, Color color, RectangleF area, float scale)
     {
         var text = ((int)Math.Round(Math.Clamp(percentage, 0, 100))).ToString(CultureInfo.InvariantCulture);
-        var emSize = sizePx * (text.Length switch { 1 => 0.84f, 2 => 0.78f, _ => 0.54f });
+        var emSize = area.Width * scale * (text.Length switch { 1 => 0.84f, 2 => 0.78f, _ => 0.54f });
 
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
         using var font = new Font("Segoe UI", emSize, FontStyle.Bold, GraphicsUnit.Pixel);
-        using var brush = new SolidBrush(ColorForStatus(status));
+        using var brush = new SolidBrush(color);
         // Typographic: without GDI+'s default side padding, which would push the digits off-center and apart.
         using var format = new StringFormat(StringFormat.GenericTypographic)
         {
             Alignment = StringAlignment.Center,
             LineAlignment = StringAlignment.Center
         };
-        g.DrawString(text, font, brush, new RectangleF(0, 0, sizePx, sizePx), format);
+        g.DrawString(text, font, brush, area, format);
     }
+
+    private static readonly Color CreatureColor = Color.FromArgb(255, 217, 119, 87);
+
+    // The status as the number's color where the background is the creature's orange, on which
+    // the usual green / orange / red would be anywhere from hard to read to invisible.
+    private static Color NumberColorOnCreature(UsageStatusLevel status) => status switch
+    {
+        UsageStatusLevel.Moderate => Color.FromArgb(255, 255, 236, 110),
+        UsageStatusLevel.Critical => Color.FromArgb(255, 110, 0, 0),
+        _ => Color.White
+    };
 
     private static Color ColorForStatus(UsageStatusLevel status) => status switch
     {

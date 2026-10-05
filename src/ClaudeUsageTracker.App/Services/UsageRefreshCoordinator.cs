@@ -96,11 +96,10 @@ public sealed class UsageRefreshCoordinator
         _flyoutViewModel.ClearBanner();
 
         var effectiveSession = usage.EffectiveSessionPercentage(now);
-        var elapsedFraction = UsageStatusCalculator.ElapsedFraction(
-            usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
-        var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
-
-        // The weekly window is too long for its pace to say much, so its status is the usage itself.
+        // Colored by the usage itself, like the bars in the flyout and on the taskbar, so the same
+        // number is the same color everywhere. Not by pace (usage projected to the end of the
+        // window): work comes in bursts, so the projection cries wolf early in a window.
+        var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction: null);
         var weeklyStatus = UsageStatusCalculator.CalculateStatus(usage.WeeklyPercentage, showRemaining: false, elapsedFraction: null);
 
         EvaluateNotifications(effectiveSession, usage.WeeklyPercentage);

@@ -68,6 +68,7 @@
   <data name="Settings_TrayIconRing" xml:space="preserve"><value>Ring</value></data>
   <data name="Settings_TrayIconDoubleRing" xml:space="preserve"><value>Double ring</value></data>
   <data name="Settings_TrayIconNumber" xml:space="preserve"><value>Number</value></data>
+  <data name="Settings_TrayIconCreature" xml:space="preserve"><value>Number on a creature</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Settings - Claude Usage Tracker</value></data>
   <data name="Settings_NavOptions" xml:space="preserve"><value>Options</value></data>
