@@ -168,6 +168,9 @@ public partial class App : System.Windows.Application
             if (showFlyout && !_flyoutWindow.IsVisible && !Dispatcher.HasShutdownStarted)
                 _flyoutWindow.Toggle();
         }
+
+        // So the settings window's Account page is already filled in the first time it opens.
+        await SettingsViewModel.PreloadAccountAsync(_claudeCode);
     }
 
     protected override void OnExit(ExitEventArgs e)

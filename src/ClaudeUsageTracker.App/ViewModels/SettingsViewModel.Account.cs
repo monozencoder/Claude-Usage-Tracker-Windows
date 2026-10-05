@@ -39,13 +39,37 @@ public partial class SettingsViewModel
     // Result of the last account lookup, kept so a language switch can re-render it without the CLI.
     private AccountInfo? _account;
 
+    // The last lookup by any settings window (or PreloadAccountAsync), so the next window opens
+    // with the account already filled in rather than "Checking…" and no button until the CLI answers.
+    private static AccountInfo? s_lastAccount;
+
     private sealed record AccountInfo(ClaudeCredentialLookup Lookup, bool Installed, ClaudeAuthStatus? Status);
 
     /// <summary>
-    /// Refreshes the account section. Uses <c>claude auth status</c>, which only reads
-    /// Claude Code's local state (no prompt, no usage consumed). The lookup may shell out to
-    /// wsl.exe / the Claude CLI, so it runs off the UI thread.
+    /// Looks the account up ahead of the first settings window, which then shows it at once.
     /// </summary>
+    public static async Task PreloadAccountAsync(IClaudeCodeEnvironment claudeCode) =>
+        s_lastAccount = await LookUpAccountAsync(claudeCode);
+
+    // Uses `claude auth status`, which only reads Claude Code's local state (no prompt, no usage
+    // consumed). The lookup may shell out to wsl.exe / the Claude CLI, so it runs off the UI thread.
+    private static Task<AccountInfo> LookUpAccountAsync(IClaudeCodeEnvironment claudeCode) => Task.Run(() =>
+    {
+        var lookup = claudeCode.FindCredentials();
+        var installed = claudeCode.IsCliInstalled;
+        return new AccountInfo(lookup, installed, installed ? claudeCode.GetAuthStatus() : null);
+    });
+
+    // Shows the last known account straight away; LoadAccountAsync then brings it up to date.
+    private void ShowLastAccount()
+    {
+        if (s_lastAccount is not { } account)
+            return;
+        _account = account;
+        ApplyAccount(account);
+    }
+
+    /// <summary>Refreshes the account section.</summary>
     public async Task LoadAccountAsync()
     {
         if (_loadingAccount)
@@ -53,12 +77,7 @@ public partial class SettingsViewModel
         _loadingAccount = true;
         try
         {
-            _account = await Task.Run(() =>
-            {
-                var lookup = _claudeCode.FindCredentials();
-                var installed = _claudeCode.IsCliInstalled;
-                return new AccountInfo(lookup, installed, installed ? _claudeCode.GetAuthStatus() : null);
-            });
+            s_lastAccount = _account = await LookUpAccountAsync(_claudeCode);
             ApplyAccount(_account);
         }
         finally

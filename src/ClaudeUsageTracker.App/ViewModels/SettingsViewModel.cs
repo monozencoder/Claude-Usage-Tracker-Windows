@@ -62,6 +62,7 @@ public partial class SettingsViewModel : ObservableObject
         _initialSettings = new AppSettings { AvoidTokenUsage = settings.AvoidTokenUsage, RefreshIntervalSeconds = settings.RefreshIntervalSeconds };
         TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
         Load();
+        ShowLastAccount();
 
         settingsStore.Changed += OnSettingsChanged;
         Loc.LanguageChanged += OnUiLanguageChanged;

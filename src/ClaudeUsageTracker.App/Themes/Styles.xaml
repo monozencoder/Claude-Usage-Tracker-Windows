@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:views="clr-namespace:ClaudeUsageTracker.App.Views">
 
     <!-- Palette brushes live in Colors.Dark.xaml / Colors.Light.xaml (see ThemeManager). -->
 
@@ -297,6 +298,10 @@
         <Setter Property="FontFamily" Value="{StaticResource UIFontFamily}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Cursor" Value="Hand" />
+        <!-- The knob's slide between off and on is played from code (Views/ToggleSwitch.cs): as
+             the IsChecked trigger's enter/exit actions it also ran when the template was first
+             applied, so every "on" toggle slid in from "off" when its page was first shown. -->
+        <Setter Property="views:ToggleSwitch.AnimateKnob" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -339,17 +344,14 @@
                             </Border>
                             <!-- A Canvas lets the pressed knob overflow the track without being clipped. -->
                             <Canvas>
-                                <Border x:Name="Knob" Width="18" Height="18" Canvas.Top="2" CornerRadius="13" Background="White">
+                                <!-- Canvas.Left: translate3d(2px) off / (40 - 18 - 2 = 20px) on -->
+                                <Border x:Name="Knob" Width="18" Height="18" Canvas.Left="2" Canvas.Top="2" CornerRadius="13" Background="White">
                                     <Border.Effect>
                                         <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.15" />
                                     </Border.Effect>
                                     <Border.RenderTransform>
-                                        <TransformGroup>
-                                            <!-- translate3d(2px) off / (40 - 18 - 2 = 20px) on -->
-                                            <TranslateTransform x:Name="KnobOffset" X="2" />
-                                            <!-- "left: -4px" while an enabled toggle is pressed -->
-                                            <TranslateTransform x:Name="KnobPressShift" X="0" />
-                                        </TransformGroup>
+                                        <!-- "left: -4px" while an enabled toggle is pressed -->
+                                        <TranslateTransform x:Name="KnobPressShift" X="0" />
                                     </Border.RenderTransform>
                                 </Border>
                             </Canvas>
@@ -358,22 +360,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}" />
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="KnobOffset" Storyboard.TargetProperty="X" To="20"
-                                                         Duration="0:0:0.15" EasingFunction="{StaticResource EaseInOut}" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="KnobOffset" Storyboard.TargetProperty="X" To="2"
-                                                         Duration="0:0:0.15" EasingFunction="{StaticResource EaseInOut}" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
+                            <Setter TargetName="Knob" Property="Canvas.Left" Value="20" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Trigger.EnterActions>
