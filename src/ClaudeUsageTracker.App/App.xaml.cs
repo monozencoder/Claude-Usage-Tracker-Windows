@@ -86,6 +86,8 @@ public partial class App : System.Windows.Application
             _settingsStore.Save();
         };
         _flyoutViewModel.ShowResetClockTime = settings.ResetTimeDisplay == ResetTimeDisplay.Clock;
+        _flyoutViewModel.ShowMascot = settings.FlyoutShowMascot;
+        _flyoutViewModel.MascotAnimation = settings.MascotAnimation;
         _flyoutViewModel.RefreshRequested += RefreshNow;
         _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
         _flyoutViewModel.SignInRequested += StartSignIn;
@@ -239,6 +241,8 @@ public partial class App : System.Windows.Application
             _trayIconController.Style = _settingsStore.Current.TrayIconStyle;
             _flyoutViewModel.ShowResetClockTime = _settingsStore.Current.ResetTimeDisplay == ResetTimeDisplay.Clock;
             _flyoutWindow.Compact = _settingsStore.Current.FlyoutCompact;
+            _flyoutViewModel.ShowMascot = _settingsStore.Current.FlyoutShowMascot;
+            _flyoutViewModel.MascotAnimation = _settingsStore.Current.MascotAnimation;
             if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
                 _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
             if (_flyoutWindow.Scale != _settingsStore.Current.FlyoutScale)

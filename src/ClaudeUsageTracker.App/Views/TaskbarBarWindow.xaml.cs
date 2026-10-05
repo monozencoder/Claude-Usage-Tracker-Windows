@@ -36,6 +36,26 @@ public partial class TaskbarBarWindow : Window
     public static readonly DependencyProperty ShowResetTimeProperty = DependencyProperty.Register(
         nameof(ShowResetTime), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(false));
 
+    public static readonly DependencyProperty ShowMascotProperty = DependencyProperty.Register(
+        nameof(ShowMascot), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty MascotAnimationProperty = DependencyProperty.Register(
+        nameof(MascotAnimation), typeof(MascotAnimation), typeof(TaskbarBarWindow), new PropertyMetadata(MascotAnimation.Subtle));
+
+    /// <summary>Whether the creature that acts out the usage sits left of the bars.</summary>
+    public bool ShowMascot
+    {
+        get => (bool)GetValue(ShowMascotProperty);
+        set => SetValue(ShowMascotProperty, value);
+    }
+
+    /// <summary>How much that creature moves.</summary>
+    public MascotAnimation MascotAnimation
+    {
+        get => (MascotAnimation)GetValue(MascotAnimationProperty);
+        set => SetValue(MascotAnimationProperty, value);
+    }
+
     /// <summary>Which usage rows the strip shows.</summary>
     public TaskbarBarRows RowsMode
     {

@@ -445,6 +445,14 @@
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutCompact}"
                                   views:SettingRow.Title="{loc:Tr Settings_FlyoutCompact}" views:SettingRow.Description="{loc:Tr Settings_FlyoutCompactDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding FlyoutShowMascot}"
+                                  views:SettingRow.Title="{loc:Tr Settings_FlyoutMascot}" views:SettingRow.Description="{loc:Tr Settings_FlyoutMascotDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <views:SettingRow Title="{loc:Tr Settings_MascotAnimation}" Description="{loc:Tr Settings_MascotAnimationDescription}" IsEnabled="{Binding CanAnimateMascot}">
+                            <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.MascotAnimationOptions}" SelectedValue="{Binding MascotAnimation}" />
+                        </views:SettingRow>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -571,6 +579,9 @@
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowResetTime}" IsEnabled="{Binding ShowTaskbarBar}"
                                   views:SettingRow.Title="{loc:Tr Settings_TaskbarBarResetTime}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarResetTimeDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowMascot}" IsEnabled="{Binding ShowTaskbarBar}"
+                                  views:SettingRow.Title="{loc:Tr Settings_TaskbarBarMascot}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarMascotDescription}" />
                         <!-- One row per connected monitor: the switch puts the bars on its taskbar, the slider
                              shifts them. Only meaningful while the bars are shown at all. -->
                         <ItemsControl ItemsSource="{Binding TaskbarBarDisplays}" IsEnabled="{Binding ShowTaskbarBar}" Focusable="False">

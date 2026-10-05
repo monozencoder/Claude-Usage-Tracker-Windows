@@ -63,7 +63,13 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <!-- Footer: last update and refresh on the right; on the left, sitting in the corner,
+                 the creature that acts out the usage, if the user wants it here. -->
+            <DockPanel Margin="0,4,0,0" LastChildFill="False">
+            <views:MascotView DockPanel.Dock="Left" VerticalAlignment="Bottom" Mood="{Binding MascotMood}"
+                              Animation="{Binding MascotAnimation}"
+                              Visibility="{Binding ShowMascot, Converter={StaticResource BoolToVisibility}}" />
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
                 <TextBlock Text="{Binding LastUpdatedText}" ToolTip="{Binding LastUpdatedToolTip}"
                            Foreground="{DynamicResource TextTertiaryBrush}" Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" />
                 <Button Command="{Binding RefreshCommand}"
@@ -74,6 +80,7 @@
                     <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" />
                 </Button>
             </StackPanel>
+            </DockPanel>
         </StackPanel>
         <!-- Compact mode: the flyout cut down to what the taskbar bars show — one line per row
              (short name, bar, percentage, time left) and nothing else, as wide as that takes.
@@ -86,7 +93,11 @@
                               ItemTemplate="{StaticResource UsageRowSummaryTemplate}" />
                 </ToolTip>
             </StackPanel.ToolTip>
-            <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Grid.IsSharedSizeScope="True">
+            <StackPanel Orientation="Horizontal">
+            <views:MascotView Margin="0,0,8,0" VerticalAlignment="Center" Mood="{Binding MascotMood}"
+                              Animation="{Binding MascotAnimation}"
+                              Visibility="{Binding ShowMascot, Converter={StaticResource BoolToVisibility}}" />
+            <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Grid.IsSharedSizeScope="True" VerticalAlignment="Center">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,1">
@@ -114,6 +125,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            </StackPanel>
             <TextBlock Text="{Binding BannerText}" FontSize="11" TextWrapping="Wrap" MaxWidth="220" HorizontalAlignment="Left" Margin="0,4,0,0"
                        Foreground="{DynamicResource WarningBrush}"
                        Visibility="{Binding BannerText, Converter={StaticResource StringToVisibility}}" />

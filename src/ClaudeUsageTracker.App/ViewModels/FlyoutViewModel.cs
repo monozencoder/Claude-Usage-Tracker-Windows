@@ -1,10 +1,24 @@
 using System.Collections.ObjectModel;
 using ClaudeUsageTracker.App.Localization;
+using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace ClaudeUsageTracker.App.ViewModels;
+
+/// <summary>How the creature (shown on the taskbar bars and in the flyout) is doing, from how much usage is left.</summary>
+public enum MascotMood
+{
+    /// <summary>The session has just reset.</summary>
+    Happy,
+    Calm,
+    Worried,
+    Panic,
+
+    /// <summary>A window is used up.</summary>
+    Tired
+}
 
 public partial class FlyoutViewModel : ObservableObject
 {
@@ -34,6 +48,29 @@ public partial class FlyoutViewModel : ObservableObject
     private static readonly TimeSpan FooterNoteDuration = TimeSpan.FromSeconds(4);
 
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
+
+    /// <summary>Whether the flyout shows the creature (a setting).</summary>
+    [ObservableProperty]
+    private bool _showMascot;
+
+    /// <summary>How much the creature moves (a setting).</summary>
+    [ObservableProperty]
+    private MascotAnimation _mascotAnimation = MascotAnimation.Subtle;
+
+    /// <summary>The mood the usage puts the creature in, in the flyout and on the taskbar.</summary>
+    [ObservableProperty]
+    private MascotMood _mascotMood = MascotMood.Calm;
+
+    // Whichever window is fuller sets the mood, at the bars' own color steps (70% and 90%); it's
+    // only happy while the session is as good as untouched.
+    private static MascotMood MoodFor(double sessionPercentage, double weeklyPercentage) =>
+        Math.Max(sessionPercentage, weeklyPercentage) switch
+        {
+            >= 100 => MascotMood.Tired,
+            >= 90 => MascotMood.Panic,
+            >= 70 => MascotMood.Worried,
+            _ => sessionPercentage < 10 ? MascotMood.Happy : MascotMood.Calm
+        };
 
     /// <summary>Shows each reset as the time of day it happens instead of the time left until it (a setting).</summary>
     [ObservableProperty]
@@ -101,6 +138,7 @@ public partial class FlyoutViewModel : ObservableObject
         Rows.Clear();
         Rows.Add(UsageRowViewModel.For(UsageRowKind.Session, usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now, ShowResetClockTime));
         Rows.Add(UsageRowViewModel.For(UsageRowKind.Weekly, usage.WeeklyPercentage, usage.WeeklyResetTime, now, ShowResetClockTime));
+        MascotMood = MoodFor(usage.EffectiveSessionPercentage(now), usage.WeeklyPercentage);
         RefreshLastUpdatedText(now);
     }
 

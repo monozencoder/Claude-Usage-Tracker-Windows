@@ -33,6 +33,11 @@
                               ItemTemplate="{StaticResource UsageRowSummaryTemplate}" />
             </ToolTip>
         </Border.ToolTip>
+        <StackPanel Orientation="Horizontal">
+        <!-- The creature that acts out the usage, if the user wants it. -->
+        <views:MascotView Margin="0,0,8,0" VerticalAlignment="Center" Mood="{Binding MascotMood}"
+                          Animation="{Binding MascotAnimation, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}}"
+                          Visibility="{Binding ShowMascot, RelativeSource={RelativeSource AncestorType=views:TaskbarBarWindow}, Converter={StaticResource BoolToVisibility}}" />
         <ItemsControl ItemsSource="{Binding Rows}" VerticalAlignment="Center" Focusable="False" Grid.IsSharedSizeScope="True">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
@@ -100,5 +105,6 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+        </StackPanel>
     </Border>
 </Window>

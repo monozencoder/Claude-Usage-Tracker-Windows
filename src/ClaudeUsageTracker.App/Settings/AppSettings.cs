@@ -115,6 +115,31 @@ public sealed class AppSettings
     /// <summary>Shows the time left until each row resets, right of its percentage on the taskbar.</summary>
     public bool TaskbarBarShowResetTime { get; set; }
 
+    /// <summary>Shows a small creature left of the taskbar bars that acts out how much usage is left.</summary>
+    public bool TaskbarBarShowMascot { get; set; }
+
+    /// <summary>Shows the same creature in the flyout: in its bottom-left corner, or left of the rows when compact.</summary>
+    public bool FlyoutShowMascot { get; set; }
+
+    /// <summary>How much the creature moves, wherever it's shown.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<MascotAnimation>))]
+    public MascotAnimation MascotAnimation { get; set; } = MascotAnimation.Subtle;
+
+    /// <summary>
+    /// The on/off setting <see cref="MascotAnimation"/> replaced, read from older settings files
+    /// (off carries over as Off) and never written back.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AnimateMascot
+    {
+        get => null;
+        set
+        {
+            if (value == false)
+                MascotAnimation = MascotAnimation.Off;
+        }
+    }
+
     /// <summary>
     /// Per-monitor placement of the taskbar bars, by the monitor's device name (e.g. "\\.\DISPLAY2").
     /// A monitor without an entry shows them, unshifted.
@@ -176,6 +201,19 @@ public enum ResetTimeDisplay { Remaining, Clock }
 public enum TaskbarBarRows { Both, SessionOnly, WeeklyOnly }
 
 public enum TaskbarBarLabels { Full, Short, None }
+
+/// <summary>How much the creature moves.</summary>
+public enum MascotAnimation
+{
+    /// <summary>Not at all: its face still follows the usage, but it holds a pose.</summary>
+    Off,
+
+    /// <summary>Now and then: when its mood changes, and briefly once a minute.</summary>
+    Subtle,
+
+    /// <summary>All the time.</summary>
+    Lively
+}
 
 /// <summary>Whether one monitor's taskbar gets the usage bars, and where on it.</summary>
 public sealed class TaskbarBarDisplaySettings

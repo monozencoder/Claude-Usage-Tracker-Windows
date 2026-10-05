@@ -74,6 +74,9 @@ public partial class SettingsViewModel : ObservableObject
         TaskbarBarRows = settings.TaskbarBarRows;
         TaskbarBarLabels = settings.TaskbarBarLabels;
         TaskbarBarShowResetTime = settings.TaskbarBarShowResetTime;
+        TaskbarBarShowMascot = settings.TaskbarBarShowMascot;
+        FlyoutShowMascot = settings.FlyoutShowMascot;
+        MascotAnimation = settings.MascotAnimation;
         foreach (var threshold in settings.EffectiveNotificationThresholds)
             NotificationThresholds.Add(threshold);
         TaskbarBarDisplays = [.. TaskbarBarDisplayViewModel.ForConnectedMonitors(settings, Apply)];
@@ -121,6 +124,13 @@ public partial class SettingsViewModel : ObservableObject
         new(TrayIconStyle.DoubleRing, "Settings_TrayIconDoubleRing"),
         new(TrayIconStyle.Number, "Settings_TrayIconNumber"),
         new(TrayIconStyle.NumberOnCreature, "Settings_TrayIconCreature"),
+    ];
+
+    public static IReadOnlyList<ChoiceOption> MascotAnimationOptions { get; } =
+    [
+        new(MascotAnimation.Off, "Settings_MascotAnimationOff"),
+        new(MascotAnimation.Subtle, "Settings_MascotAnimationSubtle"),
+        new(MascotAnimation.Lively, "Settings_MascotAnimationLively"),
     ];
 
     public static IReadOnlyList<ChoiceOption> TaskbarBarLabelsOptions { get; } =
@@ -226,6 +236,7 @@ public partial class SettingsViewModel : ObservableObject
     private bool _taskbarBarClickThrough;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanAnimateMascot))]
     private bool _showTaskbarBar;
 
     [ObservableProperty]
@@ -239,6 +250,20 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _taskbarBarShowResetTime;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanAnimateMascot))]
+    private bool _taskbarBarShowMascot;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanAnimateMascot))]
+    private bool _flyoutShowMascot;
+
+    [ObservableProperty]
+    private MascotAnimation _mascotAnimation;
+
+    /// <summary>Whether there is a creature to animate: in the flyout, or on taskbar bars that are shown.</summary>
+    public bool CanAnimateMascot => FlyoutShowMascot || (ShowTaskbarBar && TaskbarBarShowMascot);
 
     /// <summary>The usage percentages a notification is sent at, ascending; each is a chip that can be removed.</summary>
     public ObservableCollection<int> NotificationThresholds { get; } = [];
@@ -417,6 +442,12 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnTaskbarBarShowResetTimeChanged(bool value) => Apply();
 
+    partial void OnTaskbarBarShowMascotChanged(bool value) => Apply();
+
+    partial void OnFlyoutShowMascotChanged(bool value) => Apply();
+
+    partial void OnMascotAnimationChanged(MascotAnimation value) => Apply();
+
     partial void OnFlyoutOpacityPercentChanged(int value) => Apply();
 
     // Written here rather than in Apply: a drag saves a finer scale than the slider's whole
@@ -493,6 +524,9 @@ public partial class SettingsViewModel : ObservableObject
         settings.TaskbarBarRows = TaskbarBarRows;
         settings.TaskbarBarLabels = TaskbarBarLabels;
         settings.TaskbarBarShowResetTime = TaskbarBarShowResetTime;
+        settings.TaskbarBarShowMascot = TaskbarBarShowMascot;
+        settings.FlyoutShowMascot = FlyoutShowMascot;
+        settings.MascotAnimation = MascotAnimation;
         settings.FlyoutOpacityPercent = FlyoutOpacityPercent;
         settings.AvoidTokenUsage = AvoidTokenUsage;
         settings.Theme = Theme;

@@ -190,6 +190,8 @@ public sealed class TaskbarBarController : IDisposable
         strip.RowsMode = settings.TaskbarBarRows;
         strip.LabelMode = settings.TaskbarBarLabels;
         strip.ShowResetTime = settings.TaskbarBarShowResetTime;
+        strip.ShowMascot = settings.TaskbarBarShowMascot;
+        strip.MascotAnimation = settings.MascotAnimation;
 
         // The strip takes the DPI of the monitor it's on, so right after it's first moved onto a
         // monitor with a different scale this is still the old one; the next tick corrects it.

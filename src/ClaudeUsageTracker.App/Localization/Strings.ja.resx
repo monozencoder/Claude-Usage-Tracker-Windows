@@ -142,6 +142,15 @@
   <data name="Settings_TaskbarBarLabelsNone" xml:space="preserve"><value>なし</value></data>
   <data name="Settings_TaskbarBarResetTime" xml:space="preserve"><value>タスクバーのバーに残り時間を表示する</value></data>
   <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間を表示します(例: 2h 15m、3d 4h)。</value></data>
+  <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>タスクバーのバーにキャラクターを表示する</value></data>
+  <data name="Settings_TaskbarBarMascotDescription" xml:space="preserve"><value>バーの左に、使用率に合わせて表情が変わるキャラクターを表示します。セッションと週間のうち、高いほうの使用率に反応します。</value></data>
+  <data name="Settings_FlyoutMascot" xml:space="preserve"><value>ウィンドウにキャラクターを表示する</value></data>
+  <data name="Settings_FlyoutMascotDescription" xml:space="preserve"><value>フライアウトの左下に、使用率に合わせて表情が変わるキャラクターを表示します。コンパクト表示では、行の左に表示します。</value></data>
+  <data name="Settings_MascotAnimation" xml:space="preserve"><value>キャラクターの動き</value></data>
+  <data name="Settings_MascotAnimationDescription" xml:space="preserve"><value>「控えめ」は、表情が変わったときと 1 分ごとに少しだけ動きます。「よく動く」は、ずっと動き続けます。</value></data>
+  <data name="Settings_MascotAnimationOff" xml:space="preserve"><value>動かさない</value></data>
+  <data name="Settings_MascotAnimationSubtle" xml:space="preserve"><value>控えめ</value></data>
+  <data name="Settings_MascotAnimationLively" xml:space="preserve"><value>よく動く</value></data>
   <data name="Settings_Scale" xml:space="preserve"><value>ウィンドウの拡大率</value></data>
   <data name="Settings_ScaleDescription" xml:space="preserve"><value>フライアウト全体の大きさを変えます。フライアウトの端をドラッグしても変更できます。</value></data>
   <data name="Settings_Opacity" xml:space="preserve"><value>ウィンドウの不透明度</value></data>
