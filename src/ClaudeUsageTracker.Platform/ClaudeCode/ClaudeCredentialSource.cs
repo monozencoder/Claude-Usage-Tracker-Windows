@@ -31,12 +31,16 @@ public sealed class ClaudeCredentialSource
     public static ClaudeCredentialSource ForWsl(string distro) =>
         new($"WSL ({distro})", isWsl: true, () => WslClaudeCli.TryReadCredentials(distro));
 
-    /// <summary>Windows-native first, then every installed WSL distro, in listed order.</summary>
-    public static IReadOnlyList<ClaudeCredentialSource> EnumerateAll()
+    /// <summary>
+    /// Windows-native first, then every installed WSL distro, in listed order. Lazy: wsl.exe
+    /// is only run once the caller moves past the Windows source, so a caller that stops
+    /// there (usable Windows credentials) never starts it.
+    /// </summary>
+    public static IEnumerable<ClaudeCredentialSource> EnumerateAll()
     {
-        var sources = new List<ClaudeCredentialSource> { Windows };
-        sources.AddRange(WslClaudeCli.ListDistros().Select(ForWsl));
-        return sources;
+        yield return Windows;
+        foreach (var distro in WslClaudeCli.ListDistros())
+            yield return ForWsl(distro);
     }
 
     public ClaudeCodeCredentials? TryRead() => _read();
