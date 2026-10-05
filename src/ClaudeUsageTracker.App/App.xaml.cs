@@ -153,10 +153,24 @@ public partial class App : System.Windows.Application
         _credentialsWatcher = new CredentialsFileWatcher();
         _credentialsWatcher.Changed += RefreshNow;
 
-        if (settings.ShowFlyoutOnStartup)
-            _flyoutWindow.Toggle();
+        RefreshOnStartup(settings.ShowFlyoutOnStartup);
+    }
 
-        RefreshNow();
+    // The flyout opens once the first refresh is in rather than straight away: opened empty, it
+    // shows only its frame (in compact mode, just the creature) and the rows pop in a moment later.
+    // async void for the same reason as RefreshNow.
+    private async void RefreshOnStartup(bool showFlyout)
+    {
+        try
+        {
+            await _coordinator.RefreshAsync();
+        }
+        finally
+        {
+            // Unless the user has already opened it from the tray icon meanwhile.
+            if (showFlyout && !_flyoutWindow.IsVisible && !Dispatcher.HasShutdownStarted)
+                _flyoutWindow.Toggle();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
