@@ -96,7 +96,8 @@
                                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                                 <StackPanel Margin="12,20,12,12">
                                     <TextBlock Text="{loc:Tr Settings_NavOptions}" Style="{StaticResource CaptionTextStyle}"
-                                               Foreground="{DynamicResource TextTertiaryBrush}" FontWeight="SemiBold" Margin="8,0,0,6" />
+                                               Foreground="{DynamicResource TextTertiaryBrush}" FontWeight="SemiBold"
+                                               TextOptions.TextFormattingMode="Ideal" Margin="8,0,0,6" />
                                     <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                                 </StackPanel>
                             </Border>
@@ -372,6 +373,30 @@
                         </DockPanel>
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <DockPanel Style="{StaticResource CardRowStyle}">
+                            <ComboBox DockPanel.Dock="Right" Width="150" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.ResetTimeDisplayOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding ResetTimeDisplay}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_ResetTime}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_ResetTime}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_ResetTimeDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}">
+                            <ComboBox DockPanel.Dock="Right" Width="150" Margin="16,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.TrayIconStyleOptions}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding TrayIconStyle}"
+                                      ItemTemplate="{StaticResource ChoiceTemplate}"
+                                      AutomationProperties.Name="{loc:Tr Settings_TrayIcon}" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Tr Settings_TrayIcon}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_TrayIconDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <DockPanel Style="{StaticResource CardRowStyle}">
                             <!-- Applied as it's dragged, so an open flyout previews the value. The button
                                  puts it back to 100% in one click; disabled while already there. -->
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
@@ -459,6 +484,15 @@
                                 <TextBlock Text="{Binding NotificationThresholdsHint}" Style="{StaticResource RowDescriptionStyle}" />
                             </StackPanel>
                         </DockPanel>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding WeeklyNotificationsEnabled}"
+                                  IsEnabled="{Binding NotificationsEnabled}"
+                                  AutomationProperties.Name="{loc:Tr Settings_WeeklyNotifications}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr Settings_WeeklyNotifications}" Style="{StaticResource RowTitleStyle}" />
+                                <TextBlock Text="{loc:Tr Settings_WeeklyNotificationsDescription}" Style="{StaticResource RowDescriptionStyle}" />
+                            </StackPanel>
+                        </CheckBox>
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding LaunchAtLoginEnabled}"
                                   AutomationProperties.Name="{loc:Tr Settings_LaunchAtLogin}">

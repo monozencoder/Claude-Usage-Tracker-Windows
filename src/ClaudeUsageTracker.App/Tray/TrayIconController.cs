@@ -76,7 +76,7 @@ public sealed class TrayIconController : IDisposable
         };
         _taskbarIcon.TrayLeftMouseUp += (_, _) => Clicked?.Invoke();
 
-        UpdateIcon(0, UsageStatusLevel.Safe);
+        Repaint();
         _taskbarIcon.ForceCreate();
     }
 
@@ -98,9 +98,31 @@ public sealed class TrayIconController : IDisposable
 
     private static void SetChecked(MenuItem item, bool isChecked) => ((TextBlock)item.Icon).Text = isChecked ? "" : string.Empty;
 
-    public void UpdateIcon(double percentage, UsageStatusLevel status)
+    private TrayIconContent _content = new(0, UsageStatusLevel.Safe, 0, UsageStatusLevel.Safe);
+    private TrayIconStyle _style;
+
+    /// <summary>How the icon shows the usage; changing it repaints the icon with the last usage.</summary>
+    public TrayIconStyle Style
     {
-        var newIcon = _renderer.Render(percentage, status);
+        get => _style;
+        set
+        {
+            if (_style == value)
+                return;
+            _style = value;
+            Repaint();
+        }
+    }
+
+    public void UpdateIcon(TrayIconContent content)
+    {
+        _content = content;
+        Repaint();
+    }
+
+    private void Repaint()
+    {
+        var newIcon = _renderer.Render(_content, _style);
         _taskbarIcon.Icon = newIcon;
         _currentIcon?.Dispose();
         _currentIcon = newIcon;

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ClaudeUsageTracker.App.Localization;
 using ClaudeUsageTracker.App.Themes;
+using ClaudeUsageTracker.Platform.TrayIcon;
 
 namespace ClaudeUsageTracker.App.Settings;
 
@@ -45,6 +46,21 @@ public sealed class AppSettings
 
     /// <summary>Session usage percentages a notification is sent at. Use <see cref="EffectiveNotificationThresholds"/>.</summary>
     public List<int> NotificationThresholds { get; set; } = [75, 90, 95];
+
+    /// <summary>
+    /// Also notifies for the weekly window: at the same <see cref="NotificationThresholds"/>, and
+    /// when it resets. Only while <see cref="NotificationsEnabled"/> is on.
+    /// </summary>
+    public bool WeeklyNotificationsEnabled { get; set; } = true;
+
+    /// <summary>Whether a reset is shown as the time left until it or as the time of day it happens.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<ResetTimeDisplay>))]
+    public ResetTimeDisplay ResetTimeDisplay { get; set; } = ResetTimeDisplay.Remaining;
+
+    /// <summary>What the tray icon draws.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<TrayIconStyle>))]
+    public TrayIconStyle TrayIconStyle { get; set; } = TrayIconStyle.Ring;
+
     public bool ShowFlyoutOnStartup { get; set; } = true;
 
     /// <summary>Keeps the flyout above other windows (Topmost).</summary>
@@ -151,6 +167,8 @@ public sealed class AppSettings
     [JsonIgnore]
     public double FlyoutOpacity => Math.Clamp(FlyoutOpacityPercent, MinFlyoutOpacityPercent, MaxFlyoutOpacityPercent) / 100.0;
 }
+
+public enum ResetTimeDisplay { Remaining, Clock }
 
 public enum TaskbarBarRows { Both, SessionOnly, WeeklyOnly }
 

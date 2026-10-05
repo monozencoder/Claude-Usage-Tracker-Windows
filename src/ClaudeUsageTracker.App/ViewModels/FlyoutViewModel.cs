@@ -35,6 +35,12 @@ public partial class FlyoutViewModel : ObservableObject
 
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
 
+    /// <summary>Shows each reset as the time of day it happens instead of the time left until it (a setting).</summary>
+    [ObservableProperty]
+    private bool _showResetClockTime;
+
+    partial void OnShowResetClockTimeChanged(bool value) => RefreshTimes();
+
     public event Action? RefreshRequested;
     public event Action? SettingsRequested;
     public event Action? SignInRequested;
@@ -93,8 +99,8 @@ public partial class FlyoutViewModel : ObservableObject
     {
         var usage = _lastUsage!;
         Rows.Clear();
-        Rows.Add(UsageRowViewModel.For(UsageRowKind.Session, usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now));
-        Rows.Add(UsageRowViewModel.For(UsageRowKind.Weekly, usage.WeeklyPercentage, usage.WeeklyResetTime, now));
+        Rows.Add(UsageRowViewModel.For(UsageRowKind.Session, usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now, ShowResetClockTime));
+        Rows.Add(UsageRowViewModel.For(UsageRowKind.Weekly, usage.WeeklyPercentage, usage.WeeklyResetTime, now, ShowResetClockTime));
         RefreshLastUpdatedText(now);
     }
 

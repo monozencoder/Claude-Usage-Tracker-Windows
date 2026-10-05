@@ -23,14 +23,15 @@ public sealed class UsageRowViewModel
     /// <summary>Time left until the reset, short enough for the taskbar: "45m", "2h 15m", or "3d 4h" from a day up.</summary>
     public required string ShortResetText { get; init; }
 
-    // ShortResetText in its two parts ("4d" + "10h", "4h" + "2m", "" + "45m"), so that rows of
+    // ShortResetText in its two parts ("4d" + "10h", "4h" + "2m", "" + "45m", "Thu" + "18:30"), so that rows of
     // different lengths can be lined up part by part instead of only at one edge.
     public string ShortResetLead => ShortResetText.LastIndexOf(' ') is var space and >= 0 ? ShortResetText[..space] : string.Empty;
     public string ShortResetTail => ShortResetText[(ShortResetText.LastIndexOf(' ') + 1)..];
 
     public required UsageStatusLevel Status { get; init; }
 
-    public static UsageRowViewModel For(UsageRowKind kind, double percentage, DateTimeOffset? resetTime, DateTimeOffset now)
+    /// <param name="clockTime">Shows the reset as the time of day it happens instead of the time left until it.</param>
+    public static UsageRowViewModel For(UsageRowKind kind, double percentage, DateTimeOffset? resetTime, DateTimeOffset now, bool clockTime = false)
     {
         var status = UsageStatusCalculator.CalculateStatus(percentage, showRemaining: false, elapsedFraction: null);
         return new UsageRowViewModel
@@ -40,8 +41,10 @@ public sealed class UsageRowViewModel
             ShortLabel = Loc.Get(kind == UsageRowKind.Session ? "Usage_SessionShort" : "Usage_WeeklyShort"),
             Percentage = Math.Clamp(percentage, 0, 100),
             PercentageText = $"{percentage:0.#}%",
-            ResetText = resetTime is { } reset ? FormatReset(reset - now) : string.Empty,
-            ShortResetText = resetTime is { } shortReset ? FormatShortReset(shortReset - now) : string.Empty,
+            ResetText = resetTime is not { } reset ? string.Empty
+                : clockTime ? FormatResetClock(reset, now) : FormatReset(reset - now),
+            ShortResetText = resetTime is not { } shortReset ? string.Empty
+                : clockTime ? FormatShortResetClock(shortReset, now) : FormatShortReset(shortReset - now),
             Status = status
         };
     }
@@ -54,6 +57,23 @@ public sealed class UsageRowViewModel
         return delta.TotalHours >= 24
             ? Loc.Format("Usage_ResetsInDaysHours", delta.Days, delta.Hours)
             : Loc.Format("Usage_ResetsInHoursMinutes", (int)delta.TotalHours, delta.Minutes);
+    }
+
+    // The reset as a time of day, in the user's time zone; with the day when it isn't today's.
+    private static string FormatResetClock(DateTimeOffset reset, DateTimeOffset now)
+    {
+        if (reset <= now)
+            return Loc.Get("Usage_ResetsSoon");
+
+        var local = reset.ToLocalTime();
+        return Loc.Format(local.Date == now.ToLocalTime().Date ? "Usage_ResetsAtTime" : "Usage_ResetsAtDayTime", local);
+    }
+
+    // "18:30", or "Thu 18:30" on another day: the weekday is enough, a reset is never more than a week off.
+    private static string FormatShortResetClock(DateTimeOffset reset, DateTimeOffset now)
+    {
+        var local = reset.ToLocalTime();
+        return Loc.Format(local.Date == now.ToLocalTime().Date ? "Usage_ShortAtTime" : "Usage_ShortAtDayTime", local);
     }
 
     private static string FormatShortReset(TimeSpan delta)

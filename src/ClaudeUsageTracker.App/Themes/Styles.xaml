@@ -32,9 +32,13 @@
         <Setter Property="FontSize" Value="{StaticResource BodyFontSize}" />
     </Style>
 
-    <!-- Titles, section headings, key values. -->
+    <!-- Titles, section headings, key values.
+         Laid out in Ideal mode, unlike the Display mode the windows set: snapped to whole pixels,
+         a semibold stroke is either one pixel wide or two, so Japanese text comes out much
+         heavier than the Latin text and digits beside it, which barely thicken at all. -->
     <Style x:Key="BodyStrongTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
     </Style>
 
     <!-- ===== ToolTip (Obsidian .tooltip) =====

@@ -5,33 +5,36 @@ using ClaudeUsageTracker.Core.Models;
 using ClaudeUsageTracker.Core.Notifications;
 using ClaudeUsageTracker.Core.Status;
 using ClaudeUsageTracker.Platform.Notifications;
+using ClaudeUsageTracker.Platform.TrayIcon;
 
 namespace ClaudeUsageTracker.App.Services;
 
 /// <summary>
 /// Orchestrates a single refresh cycle: fetch usage (<see cref="UsageFetcher"/>),
 /// update the flyout view model, evaluate threshold/reset notifications, and report
-/// the session status/percentage back to the caller so it can repaint the tray icon.
+/// the usage and its status back to the caller so it can repaint the tray icon.
 /// </summary>
 public sealed class UsageRefreshCoordinator
 {
     private const string SessionKeyPrefix = "session_";
+    private const string WeeklyKeyPrefix = "weekly_";
 
     private readonly UsageFetcher _fetcher;
     private readonly AppSettingsStore _settingsStore;
     private readonly FlyoutViewModel _flyoutViewModel;
     private readonly IToastNotificationService _toastService;
-    private readonly Action<double, UsageStatusLevel> _onIconUpdate;
+    private readonly Action<TrayIconContent> _onIconUpdate;
     private readonly NotificationDedupTracker _dedupTracker;
 
     private double _lastSessionPercentage = -1;
+    private double _lastWeeklyPercentage = -1;
 
     public UsageRefreshCoordinator(
         UsageFetcher fetcher,
         AppSettingsStore settingsStore,
         FlyoutViewModel flyoutViewModel,
         IToastNotificationService toastService,
-        Action<double, UsageStatusLevel> onIconUpdate)
+        Action<TrayIconContent> onIconUpdate)
     {
         _fetcher = fetcher;
         _settingsStore = settingsStore;
@@ -84,7 +87,7 @@ public sealed class UsageRefreshCoordinator
         {
             _flyoutViewModel.SetBanner(result.Error!, result.CanSignIn);
             if (result.ErrorStatus is { } errorStatus)
-                _onIconUpdate(0, errorStatus);
+                _onIconUpdate(new TrayIconContent(0, errorStatus, 0, errorStatus));
             return;
         }
 
@@ -97,46 +100,66 @@ public sealed class UsageRefreshCoordinator
             usage.SessionResetTime, ClaudeUsage.SessionWindow, showRemaining: false, now);
         var status = UsageStatusCalculator.CalculateStatus(effectiveSession, showRemaining: false, elapsedFraction);
 
-        EvaluateNotifications(effectiveSession);
-        _onIconUpdate(effectiveSession, status);
+        // The weekly window is too long for its pace to say much, so its status is the usage itself.
+        var weeklyStatus = UsageStatusCalculator.CalculateStatus(usage.WeeklyPercentage, showRemaining: false, elapsedFraction: null);
+
+        EvaluateNotifications(effectiveSession, usage.WeeklyPercentage);
+        _onIconUpdate(new TrayIconContent(effectiveSession, status, usage.WeeklyPercentage, weeklyStatus));
     }
 
     /// <summary>
-    /// Fires threshold (the user's, 75/90/95% by default) and session-reset toasts, deduped so the same
-    /// threshold doesn't re-notify every refresh cycle. Dedup state is only
-    /// persisted when it actually changes.
+    /// Fires threshold (the user's, 75/90/95% by default) and window-reset toasts for the session
+    /// window and, if the user wants them, the weekly one — deduped so the same threshold
+    /// doesn't re-notify every refresh cycle. Dedup state is only persisted when it actually changes.
     /// </summary>
-    private void EvaluateNotifications(double effectiveSessionPercentage)
+    private void EvaluateNotifications(double sessionPercentage, double weeklyPercentage)
     {
-        var previous = _lastSessionPercentage;
-        _lastSessionPercentage = effectiveSessionPercentage;
+        var previousSession = _lastSessionPercentage;
+        var previousWeekly = _lastWeeklyPercentage;
+        _lastSessionPercentage = sessionPercentage;
+        _lastWeeklyPercentage = weeklyPercentage;
 
-        if (!_settingsStore.Current.NotificationsEnabled)
+        var settings = _settingsStore.Current;
+        if (!settings.NotificationsEnabled)
             return;
 
+        var stateChanged = EvaluateWindow(SessionKeyPrefix, previousSession, sessionPercentage,
+            "Toast_SessionResetTitle", "Toast_SessionResetBody", "Toast_UsageAlertBody");
+        if (settings.WeeklyNotificationsEnabled)
+        {
+            stateChanged |= EvaluateWindow(WeeklyKeyPrefix, previousWeekly, weeklyPercentage,
+                "Toast_WeeklyResetTitle", "Toast_WeeklyResetBody", "Toast_WeeklyAlertBody");
+        }
+
+        if (stateChanged)
+        {
+            settings.NotifiedThresholdKeys = [.. _dedupTracker.SentKeys];
+            _settingsStore.Save();
+        }
+    }
+
+    /// <summary>One window's toasts; returns whether the dedup state changed.</summary>
+    private bool EvaluateWindow(string keyPrefix, double previous, double percentage, string resetTitleKey, string resetBodyKey, string alertBodyKey)
+    {
         var stateChanged = false;
 
-        // A drop from a meaningfully-used session back near zero means the 5h window rolled over.
-        if (previous > 5 && effectiveSessionPercentage < 5)
+        // A drop from a meaningfully-used window back near zero means the window rolled over.
+        if (previous > 5 && percentage < 5)
         {
-            _dedupTracker.ResetForWindow(SessionKeyPrefix);
-            _toastService.Show(Loc.Get("Toast_SessionResetTitle"), Loc.Get("Toast_SessionResetBody"));
+            _dedupTracker.ResetForWindow(keyPrefix);
+            _toastService.Show(Loc.Get(resetTitleKey), Loc.Get(resetBodyKey));
             stateChanged = true;
         }
 
         foreach (var threshold in _settingsStore.Current.EffectiveNotificationThresholds)
         {
-            if (effectiveSessionPercentage < threshold || !_dedupTracker.ShouldNotify($"{SessionKeyPrefix}{threshold}"))
+            if (percentage < threshold || !_dedupTracker.ShouldNotify($"{keyPrefix}{threshold}"))
                 continue;
 
-            _toastService.Show(Loc.Get("Toast_UsageAlertTitle"), Loc.Format("Toast_UsageAlertBody", threshold));
+            _toastService.Show(Loc.Get("Toast_UsageAlertTitle"), Loc.Format(alertBodyKey, threshold));
             stateChanged = true;
         }
 
-        if (stateChanged)
-        {
-            _settingsStore.Current.NotifiedThresholdKeys = [.. _dedupTracker.SentKeys];
-            _settingsStore.Save();
-        }
+        return stateChanged;
     }
 }

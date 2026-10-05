@@ -50,6 +50,24 @@
   <data name="Settings_FlyoutClickThroughDescription" xml:space="preserve"><value>Passes mouse input on the flyout to the window behind it. Hold Ctrl to use the flyout itself.</value></data>
   <data name="Settings_TaskbarBarClickThrough" xml:space="preserve"><value>Click through the taskbar bars</value></data>
   <data name="Settings_TaskbarBarClickThroughDescription" xml:space="preserve"><value>Passes mouse input on the bars to the taskbar or full-screen app under them. Hold Ctrl to click or drag them.</value></data>
+  <data name="Usage_ResetsAtTime" xml:space="preserve"><value>Resets at {0:t}</value></data>
+  <data name="Usage_ResetsAtDayTime" xml:space="preserve"><value>Resets {0:ddd} {0:M/d} at {0:t}</value></data>
+  <data name="Usage_ShortAtTime" xml:space="preserve"><value>{0:H:mm}</value></data>
+  <data name="Usage_ShortAtDayTime" xml:space="preserve"><value>{0:ddd} {0:H:mm}</value></data>
+  <data name="Toast_WeeklyResetTitle" xml:space="preserve"><value>Claude weekly reset</value></data>
+  <data name="Toast_WeeklyResetBody" xml:space="preserve"><value>Your 7-day weekly window has reset.</value></data>
+  <data name="Toast_WeeklyAlertBody" xml:space="preserve"><value>Weekly usage has reached {0}%.</value></data>
+  <data name="Settings_WeeklyNotifications" xml:space="preserve"><value>Notify for the weekly window too</value></data>
+  <data name="Settings_WeeklyNotificationsDescription" xml:space="preserve"><value>Also notifies you when weekly usage reaches the same percentages, and when the weekly window resets.</value></data>
+  <data name="Settings_ResetTime" xml:space="preserve"><value>Reset display</value></data>
+  <data name="Settings_ResetTimeDescription" xml:space="preserve"><value>Show a reset as the time left until it, or as the time of day it happens.</value></data>
+  <data name="Settings_ResetTimeRemaining" xml:space="preserve"><value>Time left</value></data>
+  <data name="Settings_ResetTimeClock" xml:space="preserve"><value>Time of day</value></data>
+  <data name="Settings_TrayIcon" xml:space="preserve"><value>Tray icon</value></data>
+  <data name="Settings_TrayIconDescription" xml:space="preserve"><value>What the tray icon shows. In the double ring, the outer ring is the session and the inner one the week.</value></data>
+  <data name="Settings_TrayIconRing" xml:space="preserve"><value>Ring</value></data>
+  <data name="Settings_TrayIconDoubleRing" xml:space="preserve"><value>Double ring</value></data>
+  <data name="Settings_TrayIconNumber" xml:space="preserve"><value>Number</value></data>
   <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Settings_Title" xml:space="preserve"><value>Settings - Claude Usage Tracker</value></data>
   <data name="Settings_NavOptions" xml:space="preserve"><value>Options</value></data>
@@ -105,7 +123,7 @@
   <data name="Usage_ShortHoursMinutes" xml:space="preserve"><value>{0}h {1}m</value></data>
   <data name="Usage_ShortMinutes" xml:space="preserve"><value>{0}m</value></data>
   <data name="Settings_Thresholds" xml:space="preserve"><value>Notify at</value></data>
-  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>Session usage percentages to notify at, separated by commas (up to {0}), e.g. 75, 90, 95.</value></data>
+  <data name="Settings_ThresholdsDescription" xml:space="preserve"><value>Usage percentages to notify at, separated by commas (up to {0}), e.g. 75, 90, 95.</value></data>
   <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>Rows on the taskbar</value></data>
   <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>Which usage the taskbar bars show.</value></data>
   <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>Session and weekly</value></data>

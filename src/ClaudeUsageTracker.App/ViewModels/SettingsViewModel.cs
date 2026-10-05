@@ -8,6 +8,7 @@ using ClaudeUsageTracker.Core.Api;
 using ClaudeUsageTracker.Core.ClaudeCode;
 using ClaudeUsageTracker.Platform.ClaudeCode;
 using ClaudeUsageTracker.Platform.Startup;
+using ClaudeUsageTracker.Platform.TrayIcon;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -59,6 +60,9 @@ public partial class SettingsViewModel : ObservableObject
         AvoidTokenUsage = settings.AvoidTokenUsage;
         RefreshIntervalSeconds = _lastValidRefreshInterval = settings.RefreshIntervalSeconds;
         NotificationsEnabled = settings.NotificationsEnabled;
+        WeeklyNotificationsEnabled = settings.WeeklyNotificationsEnabled;
+        ResetTimeDisplay = settings.ResetTimeDisplay;
+        TrayIconStyle = settings.TrayIconStyle;
         ShowFlyoutOnStartup = settings.ShowFlyoutOnStartup;
         AlwaysOnTop = settings.AlwaysOnTop;
         FlyoutClickThrough = settings.FlyoutClickThrough;
@@ -101,6 +105,19 @@ public partial class SettingsViewModel : ObservableObject
         new(TaskbarBarRows.Both, "Settings_TaskbarBarRowsBoth"),
         new(TaskbarBarRows.SessionOnly, "Settings_TaskbarBarRowsSession"),
         new(TaskbarBarRows.WeeklyOnly, "Settings_TaskbarBarRowsWeekly"),
+    ];
+
+    public static IReadOnlyList<ChoiceOption> ResetTimeDisplayOptions { get; } =
+    [
+        new(ResetTimeDisplay.Remaining, "Settings_ResetTimeRemaining"),
+        new(ResetTimeDisplay.Clock, "Settings_ResetTimeClock"),
+    ];
+
+    public static IReadOnlyList<ChoiceOption> TrayIconStyleOptions { get; } =
+    [
+        new(TrayIconStyle.Ring, "Settings_TrayIconRing"),
+        new(TrayIconStyle.DoubleRing, "Settings_TrayIconDoubleRing"),
+        new(TrayIconStyle.Number, "Settings_TrayIconNumber"),
     ];
 
     public static IReadOnlyList<ChoiceOption> TaskbarBarLabelsOptions { get; } =
@@ -192,6 +209,15 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _flyoutClickThrough;
+
+    [ObservableProperty]
+    private bool _weeklyNotificationsEnabled;
+
+    [ObservableProperty]
+    private ResetTimeDisplay _resetTimeDisplay;
+
+    [ObservableProperty]
+    private TrayIconStyle _trayIconStyle;
 
     [ObservableProperty]
     private bool _taskbarBarClickThrough;
@@ -351,6 +377,12 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnAlwaysOnTopChanged(bool value) => Apply();
 
+    partial void OnWeeklyNotificationsEnabledChanged(bool value) => Apply();
+
+    partial void OnResetTimeDisplayChanged(ResetTimeDisplay value) => Apply();
+
+    partial void OnTrayIconStyleChanged(TrayIconStyle value) => Apply();
+
     partial void OnFlyoutClickThroughChanged(bool value) => Apply();
 
     partial void OnFlyoutCompactChanged(bool value) => Apply();
@@ -429,6 +461,9 @@ public partial class SettingsViewModel : ObservableObject
         var settings = _settingsStore.Current;
         settings.RefreshIntervalSeconds = _lastValidRefreshInterval;
         settings.NotificationsEnabled = NotificationsEnabled;
+        settings.WeeklyNotificationsEnabled = WeeklyNotificationsEnabled;
+        settings.ResetTimeDisplay = ResetTimeDisplay;
+        settings.TrayIconStyle = TrayIconStyle;
         settings.ShowFlyoutOnStartup = ShowFlyoutOnStartup;
         settings.AlwaysOnTop = AlwaysOnTop;
         settings.FlyoutClickThrough = FlyoutClickThrough;

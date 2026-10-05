@@ -85,6 +85,7 @@ public partial class App : System.Windows.Application
             _settingsStore.Current.FlyoutPosition = position;
             _settingsStore.Save();
         };
+        _flyoutViewModel.ShowResetClockTime = settings.ResetTimeDisplay == ResetTimeDisplay.Clock;
         _flyoutViewModel.RefreshRequested += RefreshNow;
         _flyoutViewModel.SettingsRequested += OpenSettingsWindow;
         _flyoutViewModel.SignInRequested += StartSignIn;
@@ -92,7 +93,7 @@ public partial class App : System.Windows.Application
         // The view model was built (as a field) before the saved language was applied above.
         _flyoutViewModel.RefreshLanguage();
 
-        _trayIconController = new TrayIconController(new TrayIconRenderer());
+        _trayIconController = new TrayIconController(new TrayIconRenderer()) { Style = settings.TrayIconStyle };
         _trayIconController.Clicked += _flyoutWindow.Toggle;
         _trayIconController.RefreshRequested += RefreshNow;
         _trayIconController.SettingsRequested += OpenSettingsWindow;
@@ -235,6 +236,8 @@ public partial class App : System.Windows.Application
             _flyoutWindow.Topmost = _settingsStore.Current.AlwaysOnTop;
             ApplyTaskbarBarSettings();
             _clickThroughController.Refresh();
+            _trayIconController.Style = _settingsStore.Current.TrayIconStyle;
+            _flyoutViewModel.ShowResetClockTime = _settingsStore.Current.ResetTimeDisplay == ResetTimeDisplay.Clock;
             _flyoutWindow.Compact = _settingsStore.Current.FlyoutCompact;
             if (_flyoutWindow.RestingOpacity != _settingsStore.Current.FlyoutOpacity)
                 _flyoutWindow.RestingOpacity = _settingsStore.Current.FlyoutOpacity;
