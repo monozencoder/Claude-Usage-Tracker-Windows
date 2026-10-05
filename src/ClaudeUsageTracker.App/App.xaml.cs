@@ -179,6 +179,9 @@ public partial class App : System.Windows.Application
             _flyoutWindow.Scale = settings.FlyoutScale;
 
         _flyoutViewModel.ShowResetClockTime = settings.ResetTimeDisplay == ResetTimeDisplay.Clock;
+        _flyoutViewModel.VisibleRows = settings.VisibleRows;
+        _flyoutViewModel.CompactShowLabels = settings.CompactShowLabels;
+        _flyoutViewModel.CompactShowResetTime = settings.CompactShowResetTime;
         _flyoutViewModel.ShowMascot = settings.FlyoutShowMascot;
         _flyoutViewModel.MascotAnimation = settings.MascotAnimation;
 

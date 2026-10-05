@@ -187,9 +187,6 @@ public sealed class TaskbarBarController : IDisposable
 
         strip.OverFullScreen = covered;
         var settings = _settingsStore.Current;
-        strip.RowsMode = settings.TaskbarBarRows;
-        strip.LabelMode = settings.TaskbarBarLabels;
-        strip.ShowResetTime = settings.TaskbarBarShowResetTime;
         strip.ShowMascot = settings.TaskbarBarShowMascot;
         strip.MascotAnimation = settings.MascotAnimation;
 

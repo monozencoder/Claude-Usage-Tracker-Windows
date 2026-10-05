@@ -27,15 +27,6 @@ public partial class TaskbarBarWindow : Window
         };
     }
 
-    public static readonly DependencyProperty RowsModeProperty = DependencyProperty.Register(
-        nameof(RowsMode), typeof(TaskbarBarRows), typeof(TaskbarBarWindow), new PropertyMetadata(TaskbarBarRows.Both));
-
-    public static readonly DependencyProperty LabelModeProperty = DependencyProperty.Register(
-        nameof(LabelMode), typeof(TaskbarBarLabels), typeof(TaskbarBarWindow), new PropertyMetadata(TaskbarBarLabels.Short));
-
-    public static readonly DependencyProperty ShowResetTimeProperty = DependencyProperty.Register(
-        nameof(ShowResetTime), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(false));
-
     public static readonly DependencyProperty ShowMascotProperty = DependencyProperty.Register(
         nameof(ShowMascot), typeof(bool), typeof(TaskbarBarWindow), new PropertyMetadata(false));
 
@@ -54,27 +45,6 @@ public partial class TaskbarBarWindow : Window
     {
         get => (MascotAnimation)GetValue(MascotAnimationProperty);
         set => SetValue(MascotAnimationProperty, value);
-    }
-
-    /// <summary>Which usage rows the strip shows.</summary>
-    public TaskbarBarRows RowsMode
-    {
-        get => (TaskbarBarRows)GetValue(RowsModeProperty);
-        set => SetValue(RowsModeProperty, value);
-    }
-
-    /// <summary>How each row is named left of its bar: in full, short, or not at all.</summary>
-    public TaskbarBarLabels LabelMode
-    {
-        get => (TaskbarBarLabels)GetValue(LabelModeProperty);
-        set => SetValue(LabelModeProperty, value);
-    }
-
-    /// <summary>Whether the time left until each row resets is shown right of its percentage.</summary>
-    public bool ShowResetTime
-    {
-        get => (bool)GetValue(ShowResetTimeProperty);
-        set => SetValue(ShowResetTimeProperty, value);
     }
 
     public event Action? Clicked;

@@ -47,7 +47,25 @@ public partial class FlyoutViewModel : ObservableObject
     private DateTimeOffset _footerNoteUntil;
     private static readonly TimeSpan FooterNoteDuration = TimeSpan.FromSeconds(4);
 
+    /// <summary>The usage rows to show: those the user picked (<see cref="VisibleRows"/>).</summary>
     public ObservableCollection<UsageRowViewModel> Rows { get; } = [];
+
+    /// <summary>Both usage rows whatever is shown, for the compact views' tooltips.</summary>
+    public ObservableCollection<UsageRowViewModel> AllRows { get; } = [];
+
+    /// <summary>Which rows <see cref="Rows"/> holds (a setting).</summary>
+    [ObservableProperty]
+    private UsageRows _visibleRows = UsageRows.Both;
+
+    partial void OnVisibleRowsChanged(UsageRows value) => RefreshTimes();
+
+    /// <summary>Whether the compact views (compact flyout, taskbar bars) name each row (a setting).</summary>
+    [ObservableProperty]
+    private bool _compactShowLabels = true;
+
+    /// <summary>Whether the compact views show when each row resets (a setting).</summary>
+    [ObservableProperty]
+    private bool _compactShowResetTime = true;
 
     /// <summary>Whether the flyout shows the creature (a setting).</summary>
     [ObservableProperty]
@@ -135,9 +153,18 @@ public partial class FlyoutViewModel : ObservableObject
     private void RenderUsage(DateTimeOffset now)
     {
         var usage = _lastUsage!;
+        var session = UsageRowViewModel.For(UsageRowKind.Session, usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now, ShowResetClockTime);
+        var weekly = UsageRowViewModel.For(UsageRowKind.Weekly, usage.WeeklyPercentage, usage.WeeklyResetTime, now, ShowResetClockTime);
+
+        AllRows.Clear();
+        AllRows.Add(session);
+        AllRows.Add(weekly);
+
         Rows.Clear();
-        Rows.Add(UsageRowViewModel.For(UsageRowKind.Session, usage.EffectiveSessionPercentage(now), usage.SessionResetTime, now, ShowResetClockTime));
-        Rows.Add(UsageRowViewModel.For(UsageRowKind.Weekly, usage.WeeklyPercentage, usage.WeeklyResetTime, now, ShowResetClockTime));
+        if (VisibleRows != UsageRows.WeeklyOnly)
+            Rows.Add(session);
+        if (VisibleRows != UsageRows.SessionOnly)
+            Rows.Add(weekly);
         MascotMood = MoodFor(usage.EffectiveSessionPercentage(now), usage.WeeklyPercentage);
         RefreshLastUpdatedText(now);
     }

@@ -89,7 +89,7 @@
         <StackPanel x:Name="CompactContent" Visibility="Collapsed">
             <StackPanel.ToolTip>
                 <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                    <ItemsControl ItemsSource="{Binding Rows}" Focusable="False"
+                    <ItemsControl ItemsSource="{Binding AllRows}" Focusable="False"
                               ItemTemplate="{StaticResource UsageRowSummaryTemplate}" />
                 </ToolTip>
             </StackPanel.ToolTip>
@@ -109,7 +109,8 @@
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="ResetTail" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{Binding ShortLabel}" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Visibility="{Binding DataContext.CompactShowLabels, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
                             <ProgressBar Grid.Column="1" Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100"
                                          Height="4" Margin="0,1,6,0" VerticalAlignment="Center"
                                          Background="{DynamicResource ProgressTrackBrush}"
@@ -118,9 +119,11 @@
                                        VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" />
                             <!-- Two columns ("4d" "10h" over "4h" "2m") each starting at the same place in every row. -->
                             <TextBlock Grid.Column="3" Text="{Binding ShortResetLead}" FontSize="11"
-                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}" />
+                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}"
+                                       Visibility="{Binding DataContext.CompactShowResetTime, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
                             <TextBlock Grid.Column="4" Text="{Binding ShortResetTail}" FontSize="11"
-                                       VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}" />
+                                       VerticalAlignment="Center" Margin="3,0,0,0" Foreground="{DynamicResource TextTertiaryBrush}"
+                                       Visibility="{Binding DataContext.CompactShowResetTime, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}" />
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

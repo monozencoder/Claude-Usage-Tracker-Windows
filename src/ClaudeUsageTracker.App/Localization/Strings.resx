@@ -130,18 +130,15 @@
   <data name="Settings_ThresholdAdd" xml:space="preserve"><value>Add</value></data>
   <data name="Settings_ThresholdRemove" xml:space="preserve"><value>Remove</value></data>
   <data name="Settings_ThresholdNew" xml:space="preserve"><value>Percentage to add (1–100)</value></data>
-  <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>Rows on the taskbar</value></data>
-  <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>Which usage the taskbar bars show.</value></data>
-  <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>Session and weekly</value></data>
-  <data name="Settings_TaskbarBarRowsSession" xml:space="preserve"><value>Session only</value></data>
-  <data name="Settings_TaskbarBarRowsWeekly" xml:space="preserve"><value>Weekly only</value></data>
-  <data name="Settings_TaskbarBarLabels" xml:space="preserve"><value>Names on the taskbar bars</value></data>
-  <data name="Settings_TaskbarBarLabelsDescription" xml:space="preserve"><value>How each bar is named on its left. Shorter makes a narrower strip; pointing at it always shows the full names.</value></data>
-  <data name="Settings_TaskbarBarLabelsFull" xml:space="preserve"><value>Full (Session (5h))</value></data>
-  <data name="Settings_TaskbarBarLabelsShort" xml:space="preserve"><value>Short (5h)</value></data>
-  <data name="Settings_TaskbarBarLabelsNone" xml:space="preserve"><value>None</value></data>
-  <data name="Settings_TaskbarBarResetTime" xml:space="preserve"><value>Show the time left on the taskbar bars</value></data>
-  <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>Shows the time until each reset right of its percentage, e.g. 2h 15m or 3d 4h.</value></data>
+  <data name="Settings_VisibleRows" xml:space="preserve"><value>Rows to show</value></data>
+  <data name="Settings_VisibleRowsDescription" xml:space="preserve"><value>Which usage the flyout and the taskbar bars show.</value></data>
+  <data name="Settings_VisibleRowsBoth" xml:space="preserve"><value>Session and weekly</value></data>
+  <data name="Settings_VisibleRowsSession" xml:space="preserve"><value>Session only</value></data>
+  <data name="Settings_VisibleRowsWeekly" xml:space="preserve"><value>Weekly only</value></data>
+  <data name="Settings_CompactLabels" xml:space="preserve"><value>Show names in the compact window and on the taskbar</value></data>
+  <data name="Settings_CompactLabelsDescription" xml:space="preserve"><value>Shows “5h” and “7d” left of the bars. Off makes them narrower; pointing at them still tells the rows apart.</value></data>
+  <data name="Settings_CompactResetTime" xml:space="preserve"><value>Show resets in the compact window and on the taskbar</value></data>
+  <data name="Settings_CompactResetTimeDescription" xml:space="preserve"><value>Shows the time until each reset (or its time of day) right of its percentage, e.g. 2h 15m or 3d 4h.</value></data>
   <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>Show a creature on the taskbar bars</value></data>
   <data name="Settings_TaskbarBarMascotDescription" xml:space="preserve"><value>Shows a small creature left of the bars whose face changes with the usage. It reacts to whichever of the session and the week is fuller.</value></data>
   <data name="Settings_FlyoutMascot" xml:space="preserve"><value>Show a creature in the window</value></data>

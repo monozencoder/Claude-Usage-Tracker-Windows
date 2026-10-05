@@ -395,6 +395,17 @@
                                       ItemsSource="{x:Static vm:SettingsViewModel.ResetTimeDisplayOptions}" SelectedValue="{Binding ResetTimeDisplay}" />
                         </views:SettingRow>
                         <Border Style="{StaticResource CardDividerStyle}" />
+                        <views:SettingRow Title="{loc:Tr Settings_VisibleRows}" Description="{loc:Tr Settings_VisibleRowsDescription}">
+                            <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
+                                      ItemsSource="{x:Static vm:SettingsViewModel.VisibleRowsOptions}" SelectedValue="{Binding VisibleRows}" />
+                        </views:SettingRow>
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowLabels}"
+                                  views:SettingRow.Title="{loc:Tr Settings_CompactLabels}" views:SettingRow.Description="{loc:Tr Settings_CompactLabelsDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowResetTime}"
+                                  views:SettingRow.Title="{loc:Tr Settings_CompactResetTime}" views:SettingRow.Description="{loc:Tr Settings_CompactResetTimeDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
                         <views:SettingRow Title="{loc:Tr Settings_TrayIcon}" Description="{loc:Tr Settings_TrayIconDescription}">
                             <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
                                       ItemsSource="{x:Static vm:SettingsViewModel.TrayIconStyleOptions}" SelectedValue="{Binding TrayIconStyle}" />
@@ -566,19 +577,6 @@
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarClickThrough}" IsEnabled="{Binding ShowTaskbarBar}"
                                   views:SettingRow.Title="{loc:Tr Settings_TaskbarBarClickThrough}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarClickThroughDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <views:SettingRow Title="{loc:Tr Settings_TaskbarBarRows}" Description="{loc:Tr Settings_TaskbarBarRowsDescription}" IsEnabled="{Binding ShowTaskbarBar}">
-                            <ComboBox Style="{StaticResource SettingComboStyle}" Width="170"
-                                      ItemsSource="{x:Static vm:SettingsViewModel.TaskbarBarRowsOptions}" SelectedValue="{Binding TaskbarBarRows}" />
-                        </views:SettingRow>
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <views:SettingRow Title="{loc:Tr Settings_TaskbarBarLabels}" Description="{loc:Tr Settings_TaskbarBarLabelsDescription}" IsEnabled="{Binding ShowTaskbarBar}">
-                            <ComboBox Style="{StaticResource SettingComboStyle}" Width="170"
-                                      ItemsSource="{x:Static vm:SettingsViewModel.TaskbarBarLabelsOptions}" SelectedValue="{Binding TaskbarBarLabels}" />
-                        </views:SettingRow>
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowResetTime}" IsEnabled="{Binding ShowTaskbarBar}"
-                                  views:SettingRow.Title="{loc:Tr Settings_TaskbarBarResetTime}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarResetTimeDescription}" />
                         <Border Style="{StaticResource CardDividerStyle}" />
                         <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding TaskbarBarShowMascot}" IsEnabled="{Binding ShowTaskbarBar}"
                                   views:SettingRow.Title="{loc:Tr Settings_TaskbarBarMascot}" views:SettingRow.Description="{loc:Tr Settings_TaskbarBarMascotDescription}" />

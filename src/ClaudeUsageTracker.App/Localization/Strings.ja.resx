@@ -130,18 +130,15 @@
   <data name="Settings_ThresholdAdd" xml:space="preserve"><value>追加</value></data>
   <data name="Settings_ThresholdRemove" xml:space="preserve"><value>削除</value></data>
   <data name="Settings_ThresholdNew" xml:space="preserve"><value>追加する使用率 (1〜100)</value></data>
-  <data name="Settings_TaskbarBarRows" xml:space="preserve"><value>タスクバーに表示する項目</value></data>
-  <data name="Settings_TaskbarBarRowsDescription" xml:space="preserve"><value>タスクバーの使用率バーに、どの使用率を表示するかを選びます。</value></data>
-  <data name="Settings_TaskbarBarRowsBoth" xml:space="preserve"><value>セッションと週間</value></data>
-  <data name="Settings_TaskbarBarRowsSession" xml:space="preserve"><value>セッションのみ</value></data>
-  <data name="Settings_TaskbarBarRowsWeekly" xml:space="preserve"><value>週間のみ</value></data>
-  <data name="Settings_TaskbarBarLabels" xml:space="preserve"><value>タスクバーのバーの項目名</value></data>
-  <data name="Settings_TaskbarBarLabelsDescription" xml:space="preserve"><value>バーの左に表示する名前を選びます。短いほど幅が狭くなります。どれを選んでも、カーソルを載せれば正式な項目名を確認できます。</value></data>
-  <data name="Settings_TaskbarBarLabelsFull" xml:space="preserve"><value>正式 (セッション (5 時間))</value></data>
-  <data name="Settings_TaskbarBarLabelsShort" xml:space="preserve"><value>短縮 (5h)</value></data>
-  <data name="Settings_TaskbarBarLabelsNone" xml:space="preserve"><value>なし</value></data>
-  <data name="Settings_TaskbarBarResetTime" xml:space="preserve"><value>タスクバーのバーに残り時間を表示する</value></data>
-  <data name="Settings_TaskbarBarResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間を表示します(例: 2h 15m、3d 4h)。</value></data>
+  <data name="Settings_VisibleRows" xml:space="preserve"><value>表示する項目</value></data>
+  <data name="Settings_VisibleRowsDescription" xml:space="preserve"><value>フライアウトとタスクバーのバーに、どの使用率を表示するかを選びます。</value></data>
+  <data name="Settings_VisibleRowsBoth" xml:space="preserve"><value>セッションと週間</value></data>
+  <data name="Settings_VisibleRowsSession" xml:space="preserve"><value>セッションのみ</value></data>
+  <data name="Settings_VisibleRowsWeekly" xml:space="preserve"><value>週間のみ</value></data>
+  <data name="Settings_CompactLabels" xml:space="preserve"><value>コンパクト表示とタスクバーに項目名を表示する</value></data>
+  <data name="Settings_CompactLabelsDescription" xml:space="preserve"><value>バーの左に「5h」「7d」を表示します。オフにすると幅が狭くなります。カーソルを載せれば項目名を確認できます。</value></data>
+  <data name="Settings_CompactResetTime" xml:space="preserve"><value>コンパクト表示とタスクバーにリセットを表示する</value></data>
+  <data name="Settings_CompactResetTimeDescription" xml:space="preserve"><value>使用率の右に、リセットまでの残り時間(または時刻)を表示します(例: 2h 15m、3d 4h)。</value></data>
   <data name="Settings_TaskbarBarMascot" xml:space="preserve"><value>タスクバーのバーにキャラクターを表示する</value></data>
   <data name="Settings_TaskbarBarMascotDescription" xml:space="preserve"><value>バーの左に、使用率に合わせて表情が変わるキャラクターを表示します。セッションと週間のうち、高いほうの使用率に反応します。</value></data>
   <data name="Settings_FlyoutMascot" xml:space="preserve"><value>ウィンドウにキャラクターを表示する</value></data>

@@ -89,31 +89,52 @@ public sealed class AppSettings
     /// </summary>
     public bool ShowTaskbarBarOverFullScreen { get; set; }
 
-    /// <summary>Which usage rows the taskbar bars show.</summary>
-    [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarRows>))]
-    public TaskbarBarRows TaskbarBarRows { get; set; } = TaskbarBarRows.Both;
-
-    /// <summary>How each row is named left of its bar on the taskbar: "Session (5h)", "5h", or not at all.</summary>
-    [JsonConverter(typeof(JsonStringEnumConverter<TaskbarBarLabels>))]
-    public TaskbarBarLabels TaskbarBarLabels { get; set; } = TaskbarBarLabels.Short;
+    /// <summary>Which usage rows are shown: in the flyout, compact or not, and on the taskbar bars.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<UsageRows>))]
+    public UsageRows VisibleRows { get; set; } = UsageRows.Both;
 
     /// <summary>
-    /// The on/off setting <see cref="TaskbarBarLabels"/> replaced, read from older settings files
-    /// (off carries over as None) and never written back.
+    /// Shows each row's short name ("5h") left of its bar in the compact views: the compact flyout
+    /// and the taskbar bars. Off makes them narrower; their tooltip still names the rows.
     /// </summary>
+    public bool CompactShowLabels { get; set; } = true;
+
+    /// <summary>Shows when each row resets, right of its percentage, in the compact views.</summary>
+    public bool CompactShowResetTime { get; set; } = true;
+
+    // The settings the three above replaced, from when they were the taskbar bars' alone (and
+    // names could also be shown in full, or were an on/off before that). Read from older
+    // settings files so their choices carry over; never written back.
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(JsonStringEnumConverter<UsageRows>))]
+    public UsageRows? TaskbarBarRows
+    {
+        get => null;
+        set => VisibleRows = value ?? VisibleRows;
+    }
+
+    /// <summary>Was "Full", "Short" or "None".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TaskbarBarLabels
+    {
+        get => null;
+        set => CompactShowLabels = value is null ? CompactShowLabels : value != "None";
+    }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? TaskbarBarShowLabels
     {
         get => null;
-        set
-        {
-            if (value == false)
-                TaskbarBarLabels = TaskbarBarLabels.None;
-        }
+        set => CompactShowLabels = value ?? CompactShowLabels;
     }
 
-    /// <summary>Shows the time left until each row resets, right of its percentage on the taskbar.</summary>
-    public bool TaskbarBarShowResetTime { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? TaskbarBarShowResetTime
+    {
+        get => null;
+        set => CompactShowResetTime = value ?? CompactShowResetTime;
+    }
 
     /// <summary>Shows a small creature left of the taskbar bars that acts out how much usage is left.</summary>
     public bool TaskbarBarShowMascot { get; set; }
@@ -198,9 +219,8 @@ public sealed class AppSettings
 
 public enum ResetTimeDisplay { Remaining, Clock }
 
-public enum TaskbarBarRows { Both, SessionOnly, WeeklyOnly }
-
-public enum TaskbarBarLabels { Full, Short, None }
+/// <summary>Which of the two usage windows are shown.</summary>
+public enum UsageRows { Both, SessionOnly, WeeklyOnly }
 
 /// <summary>How much the creature moves.</summary>
 public enum MascotAnimation

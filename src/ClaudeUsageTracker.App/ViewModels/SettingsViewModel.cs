@@ -71,9 +71,9 @@ public partial class SettingsViewModel : ObservableObject
         TaskbarBarClickThrough = settings.TaskbarBarClickThrough;
         ShowTaskbarBar = settings.ShowTaskbarBar;
         ShowTaskbarBarOverFullScreen = settings.ShowTaskbarBarOverFullScreen;
-        TaskbarBarRows = settings.TaskbarBarRows;
-        TaskbarBarLabels = settings.TaskbarBarLabels;
-        TaskbarBarShowResetTime = settings.TaskbarBarShowResetTime;
+        VisibleRows = settings.VisibleRows;
+        CompactShowLabels = settings.CompactShowLabels;
+        CompactShowResetTime = settings.CompactShowResetTime;
         TaskbarBarShowMascot = settings.TaskbarBarShowMascot;
         FlyoutShowMascot = settings.FlyoutShowMascot;
         MascotAnimation = settings.MascotAnimation;
@@ -105,11 +105,11 @@ public partial class SettingsViewModel : ObservableObject
         new(AppLanguage.Japanese, Text: "日本語"),
     ];
 
-    public static IReadOnlyList<ChoiceOption> TaskbarBarRowsOptions { get; } =
+    public static IReadOnlyList<ChoiceOption> VisibleRowsOptions { get; } =
     [
-        new(TaskbarBarRows.Both, "Settings_TaskbarBarRowsBoth"),
-        new(TaskbarBarRows.SessionOnly, "Settings_TaskbarBarRowsSession"),
-        new(TaskbarBarRows.WeeklyOnly, "Settings_TaskbarBarRowsWeekly"),
+        new(UsageRows.Both, "Settings_VisibleRowsBoth"),
+        new(UsageRows.SessionOnly, "Settings_VisibleRowsSession"),
+        new(UsageRows.WeeklyOnly, "Settings_VisibleRowsWeekly"),
     ];
 
     public static IReadOnlyList<ChoiceOption> ResetTimeDisplayOptions { get; } =
@@ -131,13 +131,6 @@ public partial class SettingsViewModel : ObservableObject
         new(MascotAnimation.Off, "Settings_MascotAnimationOff"),
         new(MascotAnimation.Subtle, "Settings_MascotAnimationSubtle"),
         new(MascotAnimation.Lively, "Settings_MascotAnimationLively"),
-    ];
-
-    public static IReadOnlyList<ChoiceOption> TaskbarBarLabelsOptions { get; } =
-    [
-        new(TaskbarBarLabels.Full, "Settings_TaskbarBarLabelsFull"),
-        new(TaskbarBarLabels.Short, "Settings_TaskbarBarLabelsShort"),
-        new(TaskbarBarLabels.None, "Settings_TaskbarBarLabelsNone"),
     ];
 
     /// <summary>Raised after a change has been written to disk.</summary>
@@ -243,13 +236,13 @@ public partial class SettingsViewModel : ObservableObject
     private bool _showTaskbarBarOverFullScreen;
 
     [ObservableProperty]
-    private TaskbarBarRows _taskbarBarRows;
+    private UsageRows _visibleRows;
 
     [ObservableProperty]
-    private TaskbarBarLabels _taskbarBarLabels;
+    private bool _compactShowLabels;
 
     [ObservableProperty]
-    private bool _taskbarBarShowResetTime;
+    private bool _compactShowResetTime;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanAnimateMascot))]
@@ -436,11 +429,11 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnShowTaskbarBarOverFullScreenChanged(bool value) => Apply();
 
-    partial void OnTaskbarBarRowsChanged(TaskbarBarRows value) => Apply();
+    partial void OnVisibleRowsChanged(UsageRows value) => Apply();
 
-    partial void OnTaskbarBarLabelsChanged(TaskbarBarLabels value) => Apply();
+    partial void OnCompactShowLabelsChanged(bool value) => Apply();
 
-    partial void OnTaskbarBarShowResetTimeChanged(bool value) => Apply();
+    partial void OnCompactShowResetTimeChanged(bool value) => Apply();
 
     partial void OnTaskbarBarShowMascotChanged(bool value) => Apply();
 
@@ -521,9 +514,9 @@ public partial class SettingsViewModel : ObservableObject
         settings.TaskbarBarClickThrough = TaskbarBarClickThrough;
         settings.ShowTaskbarBar = ShowTaskbarBar;
         settings.ShowTaskbarBarOverFullScreen = ShowTaskbarBarOverFullScreen;
-        settings.TaskbarBarRows = TaskbarBarRows;
-        settings.TaskbarBarLabels = TaskbarBarLabels;
-        settings.TaskbarBarShowResetTime = TaskbarBarShowResetTime;
+        settings.VisibleRows = VisibleRows;
+        settings.CompactShowLabels = CompactShowLabels;
+        settings.CompactShowResetTime = CompactShowResetTime;
         settings.TaskbarBarShowMascot = TaskbarBarShowMascot;
         settings.FlyoutShowMascot = FlyoutShowMascot;
         settings.MascotAnimation = MascotAnimation;
