@@ -400,15 +400,6 @@
                                       ItemsSource="{x:Static vm:SettingsViewModel.VisibleRowsOptions}" SelectedValue="{Binding VisibleRows}" />
                         </views:SettingRow>
                         <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowLabels}"
-                                  views:SettingRow.Title="{loc:Tr Settings_CompactLabels}" views:SettingRow.Description="{loc:Tr Settings_CompactLabelsDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowPercentage}"
-                                  views:SettingRow.Title="{loc:Tr Settings_CompactPercentage}" views:SettingRow.Description="{loc:Tr Settings_CompactPercentageDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
-                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowResetTime}"
-                                  views:SettingRow.Title="{loc:Tr Settings_CompactResetTime}" views:SettingRow.Description="{loc:Tr Settings_CompactResetTimeDescription}" />
-                        <Border Style="{StaticResource CardDividerStyle}" />
                         <views:SettingRow Title="{loc:Tr Settings_TrayIcon}" Description="{loc:Tr Settings_TrayIconDescription}">
                             <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
                                       ItemsSource="{x:Static vm:SettingsViewModel.TrayIconStyleOptions}" SelectedValue="{Binding TrayIconStyle}" />
@@ -467,6 +458,21 @@
                             <ComboBox Style="{StaticResource SettingComboStyle}" Width="150"
                                       ItemsSource="{x:Static vm:SettingsViewModel.MascotAnimationOptions}" SelectedValue="{Binding MascotAnimation}" />
                         </views:SettingRow>
+                    </StackPanel>
+                </Border>
+                <!-- What each one-line row is made of, in the two places that have them; the heading
+                     says where, so the rows only name the part. -->
+                <TextBlock Text="{loc:Tr Settings_SectionCompact}" Style="{StaticResource SectionHeaderStyle}" Margin="4,24,0,12" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowLabels}"
+                                  views:SettingRow.Title="{loc:Tr Settings_CompactLabels}" views:SettingRow.Description="{loc:Tr Settings_CompactLabelsDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowPercentage}"
+                                  views:SettingRow.Title="{loc:Tr Settings_CompactPercentage}" views:SettingRow.Description="{loc:Tr Settings_CompactPercentageDescription}" />
+                        <Border Style="{StaticResource CardDividerStyle}" />
+                        <CheckBox Style="{StaticResource ToggleRowStyle}" IsChecked="{Binding CompactShowResetTime}"
+                                  views:SettingRow.Title="{loc:Tr Settings_CompactResetTime}" views:SettingRow.Description="{loc:Tr Settings_CompactResetTimeDescription}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
