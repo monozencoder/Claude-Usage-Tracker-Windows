@@ -1,7 +1,7 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using Microsoft.Win32;
+using static ClaudeUsageTracker.App.Interop.NativeMethods;
 
 namespace ClaudeUsageTracker.App.Themes;
 
@@ -18,9 +18,6 @@ public static class ThemeManager
     private const int DwmwaUseImmersiveDarkMode = 20;
 
     private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
-
-    [DllImport("dwmapi.dll", PreserveSig = true)]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
 
     private static AppTheme _mode = AppTheme.System;
     private static bool _listening;

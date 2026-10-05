@@ -693,6 +693,29 @@
         </Setter>
     </Style>
 
+    <!-- A usage bar: the pill, in the color of its row's status. For a ProgressBar whose
+         DataContext is a UsageRowViewModel. Colors come from the palette (Obsidian's green /
+         orange / red), so they follow the theme live. -->
+    <Style x:Key="UsageProgressBarStyle" TargetType="ProgressBar" BasedOn="{StaticResource PillProgressBarStyle}">
+        <Setter Property="Foreground" Value="{DynamicResource UsageSafeBrush}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Status}" Value="Moderate">
+                <Setter Property="Foreground" Value="{DynamicResource UsageModerateBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Critical">
+                <Setter Property="Foreground" Value="{DynamicResource UsageCriticalBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- One usage row in full on a single line ("Session (5h)  80% · Resets in 1h 58m"): what the
+         compact views' tooltips list, since they themselves show less. -->
+    <DataTemplate x:Key="UsageRowSummaryTemplate">
+        <TextBlock>
+            <Run Text="{Binding Label, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding PercentageText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ResetText, Mode=OneWay}" />
+        </TextBlock>
+    </DataTemplate>
+
     <!-- ===== Context menu (tray icon), Obsidian menu style =====
          Rounded 8px panel with a soft shadow; the outer margin leaves the shadow room inside
          the (transparent) popup so it isn't clipped. -->

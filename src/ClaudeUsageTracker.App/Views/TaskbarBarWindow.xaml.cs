@@ -1,9 +1,9 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using ClaudeUsageTracker.App.Settings;
+using static ClaudeUsageTracker.App.Interop.NativeMethods;
 
 namespace ClaudeUsageTracker.App.Views;
 
@@ -165,14 +165,4 @@ public partial class TaskbarBarWindow : Window
         Mouse.OverrideCursor = null;
         DragCompleted?.Invoke();
     }
-
-    private const int GwlExStyle = -20;
-    private const long WsExToolWindow = 0x00000080;
-    private const long WsExNoActivate = 0x08000000;
-
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
-    private static extern long GetWindowLongPtr(IntPtr hWnd, int index);
-
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
-    private static extern long SetWindowLongPtr(IntPtr hWnd, int index, long value);
 }

@@ -10,6 +10,7 @@ using ClaudeUsageTracker.App.Views;
 using Microsoft.Win32;
 using Drawing = System.Drawing;
 using WinForms = System.Windows.Forms;
+using static ClaudeUsageTracker.App.Interop.NativeMethods;
 
 namespace ClaudeUsageTracker.App.Tray;
 
@@ -317,21 +318,8 @@ public sealed class TaskbarBarController : IDisposable
 
     private static readonly IntPtr HwndTopmost = new(-1);
 
-    private const uint SwpNoSize = 0x0001;
-    private const uint SwpNoZOrder = 0x0004;
-    private const uint SwpNoActivate = 0x0010;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Rect
-    {
-        public int Left, Top, Right, Bottom;
-    }
-
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr FindWindowEx(IntPtr parent, IntPtr childAfter, string className, string? windowName);
-
-    [DllImport("user32.dll")]
-    private static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
 
     private const uint EventSystemForeground = 0x0003;
     private const uint WineventOutOfContext = 0x0000;
@@ -365,7 +353,4 @@ public sealed class TaskbarBarController : IDisposable
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int GetClassName(IntPtr hWnd, StringBuilder className, int maxCount);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
 }

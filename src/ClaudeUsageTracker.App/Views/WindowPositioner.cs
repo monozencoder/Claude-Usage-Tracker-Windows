@@ -4,6 +4,7 @@ using System.Windows.Interop;
 using ClaudeUsageTracker.App.Settings;
 using Drawing = System.Drawing;
 using WinForms = System.Windows.Forms;
+using static ClaudeUsageTracker.App.Interop.NativeMethods;
 
 namespace ClaudeUsageTracker.App.Views;
 
@@ -122,26 +123,10 @@ public static class WindowPositioner
         public IntPtr Hwnd;
         public uint CallbackMessage;
         public uint Edge; // ABE_LEFT / TOP / RIGHT / BOTTOM = 0..3, same order as TaskbarEdge
-        public Rect Rect;
+        public NativeRect Rect;
         public IntPtr LParam;
     }
 
     [DllImport("shell32.dll")]
     private static extern IntPtr SHAppBarMessage(uint message, ref AppBarData data);
-
-    private const uint SwpNoSize = 0x0001;
-    private const uint SwpNoZOrder = 0x0004;
-    private const uint SwpNoActivate = 0x0010;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Rect
-    {
-        public int Left, Top, Right, Bottom;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
 }

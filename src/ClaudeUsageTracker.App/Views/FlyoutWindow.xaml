@@ -82,15 +82,8 @@
         <StackPanel x:Name="CompactContent" Visibility="Collapsed">
             <StackPanel.ToolTip>
                 <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                    <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock>
-                                    <Run Text="{Binding Label, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding PercentageText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ResetText, Mode=OneWay}" />
-                                </TextBlock>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding Rows}" Focusable="False"
+                              ItemTemplate="{StaticResource UsageRowSummaryTemplate}" />
                 </ToolTip>
             </StackPanel.ToolTip>
             <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Grid.IsSharedSizeScope="True">
@@ -108,21 +101,8 @@
                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                             <ProgressBar Grid.Column="1" Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100"
                                          Height="4" Margin="0,1,6,0" VerticalAlignment="Center"
-                                         Background="{DynamicResource ProgressTrackBrush}">
-                                <ProgressBar.Style>
-                                    <Style TargetType="ProgressBar" BasedOn="{StaticResource PillProgressBarStyle}">
-                                        <Setter Property="Foreground" Value="{DynamicResource UsageSafeBrush}" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status}" Value="Moderate">
-                                                <Setter Property="Foreground" Value="{DynamicResource UsageModerateBrush}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Critical">
-                                                <Setter Property="Foreground" Value="{DynamicResource UsageCriticalBrush}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ProgressBar.Style>
-                            </ProgressBar>
+                                         Background="{DynamicResource ProgressTrackBrush}"
+                                         Style="{StaticResource UsageProgressBarStyle}" />
                             <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
                                        VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" />
                             <!-- Two columns ("4d" "10h" over "4h" "2m") so the units line up between the rows. -->

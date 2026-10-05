@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -9,6 +8,7 @@ using System.Windows.Threading;
 using ClaudeUsageTracker.App.Settings;
 using ClaudeUsageTracker.App.ViewModels;
 using Microsoft.Win32;
+using static ClaudeUsageTracker.App.Interop.NativeMethods;
 
 namespace ClaudeUsageTracker.App.Views;
 
@@ -64,9 +64,6 @@ public partial class FlyoutWindow : Window
     }
 
     private const int DwmwaTransitionsForceDisabled = 3;
-
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 
     /// <summary>
     /// Where the user last dragged the flyout (screen pixels), or null to open it near the

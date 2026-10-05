@@ -29,15 +29,8 @@
         <!-- Every row in full, whatever the strip itself shows: what each bar is, and when it resets. -->
         <Border.ToolTip>
             <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock>
-                                <Run Text="{Binding Label, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding PercentageText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ResetText, Mode=OneWay}" />
-                            </TextBlock>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False"
+                              ItemTemplate="{StaticResource UsageRowSummaryTemplate}" />
             </ToolTip>
         </Border.ToolTip>
         <ItemsControl ItemsSource="{Binding Rows}" VerticalAlignment="Center" Focusable="False" Grid.IsSharedSizeScope="True">
@@ -91,21 +84,8 @@
                         </TextBlock>
                         <ProgressBar Grid.Column="1" Value="{Binding Percentage, Mode=OneWay}" Minimum="0" Maximum="100"
                                      Height="4" Margin="0,1,6,0" VerticalAlignment="Center"
-                                     Background="{DynamicResource TaskbarBarTrackBrush}">
-                            <ProgressBar.Style>
-                                <Style TargetType="ProgressBar" BasedOn="{StaticResource PillProgressBarStyle}">
-                                    <Setter Property="Foreground" Value="{DynamicResource UsageSafeBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Status}" Value="Moderate">
-                                            <Setter Property="Foreground" Value="{DynamicResource UsageModerateBrush}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="Critical">
-                                            <Setter Property="Foreground" Value="{DynamicResource UsageCriticalBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ProgressBar.Style>
-                        </ProgressBar>
+                                     Background="{DynamicResource TaskbarBarTrackBrush}"
+                                     Style="{StaticResource UsageProgressBarStyle}" />
                         <TextBlock Grid.Column="2" Text="{Binding PercentageText}" FontSize="11" TextAlignment="Right"
                                    VerticalAlignment="Center" Foreground="{DynamicResource TaskbarBarTextBrush}" />
                         <!-- Time left until this row resets, in two columns ("4d" "10h" over "4h" "2m")

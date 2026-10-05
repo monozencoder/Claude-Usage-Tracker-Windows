@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using static ClaudeUsageTracker.App.Interop.NativeMethods;
 
 namespace ClaudeUsageTracker.App.Services;
 
@@ -66,15 +67,7 @@ public sealed class ClickThroughController : IDisposable
     }
 
     private const int VkControl = 0x11;
-    private const int GwlExStyle = -20;
-    private const long WsExTransparent = 0x00000020;
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int virtualKey);
-
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
-    private static extern long GetWindowLongPtr(IntPtr hWnd, int index);
-
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
-    private static extern long SetWindowLongPtr(IntPtr hWnd, int index, long value);
 }
